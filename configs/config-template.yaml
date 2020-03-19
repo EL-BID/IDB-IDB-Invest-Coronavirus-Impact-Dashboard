@@ -25,7 +25,7 @@ athena_database: spd_sdv_waze_corona
 # Where to find the raw Waze data
 raw_database: spd_sdv_waze_reprocessed
 
-tables: [historical, daily]
+tables: [historical, daily, metadata]
 
 # raw_table: jams
 # sql_path: sql/alerts
@@ -81,3 +81,34 @@ number_of_athena_jobs: 20
 countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
             TD,AV,SC,PO,SG,UY,GY,BH,GP,SX,VC,BF,AA,MB,FG,CJ,TK,SP,MH,ST,BD,CV,
             HA,AC,MF,BQ,GJ,VI,DO,MR]
+
+metadata:
+    regions_metadata:
+        columns: [
+            country_name,
+            country_iso,
+            region_slug,
+            region_name,
+            region_type,
+            population,
+            timezone,
+            region_shapefile_wkt]
+    country_waze_to_iso:
+        columns: [
+            waze_code,
+            iso2_code,
+            IDB_code,
+            country_name_IDB_eng,
+            country_name
+        ]
+    regions_waze_to_slug:
+        columns: [
+            country_waze_code,
+            region_slug,
+            region_waze_name
+        ]
+
+drive_config:
+    write_index:
+        spreadsheet_key: 1xBDV5Zm7zSRPK2TGBoVSHhkvPeqRT9hZFiD4AueoVeI
+        worksheet: 

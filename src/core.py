@@ -38,7 +38,9 @@ def initialize_dag(dependency_graph):
 def run_process(_attr, args):
 
     runner = importlib.import_module(f'runners.{_attr["runner"]}')
-
+    
+    name = _attr['name']
+    
     if (not runner.check_existence(_attr)) or (_attr['force']):
         
         exc = ''
@@ -50,6 +52,7 @@ def run_process(_attr, args):
             except Exception as e:
                 exc = e
                 _attr['force'] = True
+                _attr['name'] = name
                 print('Retrying')
                 continue
         else:

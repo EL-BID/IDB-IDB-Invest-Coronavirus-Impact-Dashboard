@@ -39,3 +39,56 @@
   ]
   name: daily
 
+- 
+  path: 'sql/metadata/load_tables.sql'
+  runner: create_local_table_athena
+  name: load_metadata_tables
+  force: True
+
+- 
+  path: 'sql/daily/filter-historical-tables.sql'
+  runner: basic_athena_query
+  depends_on: [
+    load_metadata_tables,
+    historical_2020
+  ]
+  name: filtered_2020
+  table: historical_2020
+
+- 
+  path: 'sql/daily/filter-historical-tables.sql'
+  runner: basic_athena_query
+  depends_on: [
+    load_metadata_tables,
+    historical_2019
+  ]
+  name: filtered_2019
+  table: historical_2019
+
+- 
+  path: 'sql/daily/filter-daily-table.sql'
+  runner: basic_athena_query
+  depends_on: [
+    load_metadata_tables,
+    daily
+  ]
+  name: filtered_daily
+
+- 
+  path: 'sql/daily/create-index-table.sql'
+  runner: basic_athena_query
+  depends_on: [
+    load_metadata_tables,
+    filtered_daily,
+    filtered_2019,
+    filtered_2020
+  ]
+  name: index
+
+- 
+  path: 'sql/daily/'
+  runner: create_local_table_athena
+  depends_on: [
+    index
+  ]
+  name: write_index
