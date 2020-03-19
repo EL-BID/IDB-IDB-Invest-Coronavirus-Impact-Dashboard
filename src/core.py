@@ -42,7 +42,7 @@ def run_process(_attr, args):
     if (not runner.check_existence(_attr)) or (_attr['force']):
         
         exc = ''
-        for i in range(_attr['n_tries']):
+        for i in range(_attr['n_tries'] - 1):
 
             try:
                 runner.start(_attr)
@@ -53,9 +53,10 @@ def run_process(_attr, args):
                 print('Retrying')
                 continue
         else:
+            runner.start(_attr)
             raise Exception(
                     'Number of tries exausted '
-                    f'{exc}'
+                   f'{exc}'
             )
 
 def get_raw_table(attr):

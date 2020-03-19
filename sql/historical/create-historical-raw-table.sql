@@ -17,6 +17,6 @@ and
 		{%- endif %} 
 		{% endfor %}
 group by uuid, pubmillis, country, 
-						city, street, roadtype, level, length, speed,
-						speedkmh, delay, line,  type,  turntype,
-						blockingalertuuid, startnode, endnode
+		city, street, roadtype, level, length, speed,
+		speedkmh, delay, line,  type,  turntype,
+		blockingalertuuid, startnode, endnode
