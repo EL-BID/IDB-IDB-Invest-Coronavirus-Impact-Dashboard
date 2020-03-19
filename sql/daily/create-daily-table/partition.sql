@@ -1,0 +1,1 @@
+MSCK REPAIR TABLE  {{ athena_database }}.{{ slug }}_{{ raw_table }}_{{ name }};
