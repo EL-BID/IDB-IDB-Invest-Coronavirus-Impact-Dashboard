@@ -1,0 +1,79 @@
+# This is a configuration file that sets up all the important 
+# paramenters to run a Waze normalization pipeline. Most of the 
+# time, users just have to modify simple parameters concerning 
+# the name of the process `slug` and dates. 
+
+
+# Name of the process. 
+# Everything will be saved under the `slug` name: Athena tables and 
+# S3 data. So it is very important that you remember it and that it 
+# means something. A resoanable `slug` is the name of the city or 
+# region that you are running the pipeline for.
+
+slug: pipeline_test
+
+# Athena 
+# Those variables are used build Athena queries and locate the working database,
+# raw database and save path.
+
+# Where the data is going to be saved. 
+s3_path: s3://iadbprod-public-stata-as-a-service/spd-sdv-omitnik-waze/corona
+
+# Where to save all tables to run the pipeline.
+athena_database: spd_sdv_waze_corona
+
+# Where to find the raw Waze data
+raw_database: spd_sdv_waze_reprocessed
+
+tables: [historical, daily]
+
+# raw_table: jams
+# sql_path: sql/alerts
+
+# Initial Filters
+# They are applied at the first step of the pipeline that extracts data
+# from the raw table. Those filters define the universe where all 
+# calculations are going to happen.
+# If ` - blockingalertuuid is null` is uncommented, then you will delete
+# all information about blocked roads. In the standard mode, blocked roads
+# are kept in the unbalanced panel, but are not part of the estiamates.
+initial_filters:
+    - speed >= 0
+    - length > 0
+    # - blockingalertuuid is null # uncomment to filter blocked roads
+
+# Filter by Minute Group
+feed_frequency: 5
+reference_timestamp: '2015-01-01 00:00:00' # do not change
+
+    
+cities: 
+    - campinas
+    - saopaulo
+    - riodejaneiro
+    - brasilia
+    - curitiba
+    - lima
+    - medellin
+    - buenosaires
+    - bogota
+    - santiago
+    - portoalegre
+    - quito
+    - belohorizonte
+
+shape_type: city
+ 
+historical_2019_interval:
+    start: 2019-03-08
+    end: 2019-04-30
+
+historical_2020_interval:
+    start: 2020-03-01
+    end: 2020-03-07
+
+number_of_athena_jobs: 50
+
+countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
+            TD,AV,SC,PO,SG,UY,GY,BH,GP,SX,VC,BF,AA,MB,FG,CJ,TK,SP,MH,ST,BD,CV,
+            HA,AC,MF,BQ,GJ,VI,DO,MR]

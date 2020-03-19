@@ -1,0 +1,66 @@
+- 
+  path: 'sql/historical/create-historical-raw-table.sql'
+  runner: basic_athena_query
+  name: historical_2019_raw
+  # force: True
+
+- 
+  path: 'sql/historical/create-historical-raw-table.sql'
+  runner: basic_athena_query
+  name: historical_2020_raw
+  # force: True
+
+- 
+  path: 'sql/historical/create-historical-table'
+  runner: partitioned_athena_query
+  name: historical_2019
+  depends_on: [
+    historical_2019_raw
+  ]
+  force: True
+  year: 2019
+
+- 
+  path: 'sql/historical/create-historical-table'
+  runner: partitioned_athena_query
+  name: historical_2020
+  depends_on: [
+    historical_2020_raw
+  ]
+  force: True
+  year: 2020
+# - 
+#   path: 'sql/historical/create-historical-table'
+#   runner: partitioned_athena_query
+#   name: historical
+#   depends_on: [
+#     historical_raw
+#   ]
+#   pass: True
+
+- 
+  path: 'sql/daily/create-daily-raw-table.sql'
+  runner: basic_athena_query
+  name: daily_raw
+  pass: True
+
+- 
+  path: 'sql/daily/create-daily-table'
+  runner: partitioned_athena_query
+  depends_on: [
+    daily_raw
+  ]
+  name: daily
+  pass: True
+
+# - 
+#   path: 'sql/daily/create-diff-table.sql'
+#   runner: basic_athena_query
+#   depends_on: [
+#     'historical', 'daily'
+#   ]
+#   name: diff
+#   pass: True
+  
+  
+
