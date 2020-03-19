@@ -43,9 +43,16 @@ def historical_2019(config):
 
     return _country_partition(config)
 
+
 def historical_2020(config):
 
     return _country_partition(config)
+
+
+def daily(config):
+
+    return _country_partition(config)
+
 
 def perform_query(query):
     """Simply calls Athena and logs the exceptions.
@@ -68,13 +75,15 @@ def perform_query(query):
         except Exception as e:
             print(e)
 
+
 def check_existence(config):
 
     res = get_data_from_athena(
                 f"show tables in \
-                    {config['athena_database']} '{config['slug']}_{config['name']}'")
+                    {config['athena_database']} '{config['slug']}_{config['raw_table']}_{config['name']}'")
 
     return len(res) > 0
+
 
 def partition_query(query_path, config):
     """Entrypoint function.

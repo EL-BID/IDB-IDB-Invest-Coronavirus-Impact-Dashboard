@@ -37,4 +37,3 @@ from (
 	where n_row = 1
 	group by  city,  month, dow, day)
 group by city, dow
-

@@ -258,7 +258,8 @@ def break_list_in_chunks(data, chunk):
 
 def add_query_dates(start, end):
 
-    print(start)
+    if end == 'today':
+        end = datetime.now()
 
     return  [dt.strftime("%Y%m%d") 
                     for dt in rrule.rrule(rrule.DAILY,
