@@ -84,5 +84,6 @@ target/
 data/
 
 configs/athena.yaml
+configs/gcloud-credentials.json
 reports/auto-report.nbconvert.ipynb
 
