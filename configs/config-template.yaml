@@ -14,8 +14,7 @@ slug: pipeline_test
 
 # Athena 
 # Those variables are used build Athena queries and locate the working database,
-# raw database and save path.
-
+ 
 # Where the data is going to be saved. 
 s3_path: s3://iadbprod-public-stata-as-a-service/spd-sdv-omitnik-waze/corona
 
@@ -25,7 +24,7 @@ athena_database: spd_sdv_waze_corona
 # Where to find the raw Waze data
 raw_database: spd_sdv_waze_reprocessed
 
-tables: [historical, daily, metadata]
+tables: [daily, metadata, historical] #historical
 
 # raw_table: jams
 # sql_path: sql/alerts
@@ -76,7 +75,9 @@ daily_interval:
     start: 2020-03-08
     end: 'today'
 
-number_of_athena_jobs: 20
+number_of_athena_jobs: 2
+
+polygon_area_minimum: 0.6
 
 countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
             TD,AV,SC,PO,SG,UY,GY,BH,GP,SX,VC,BF,AA,MB,FG,CJ,TK,SP,MH,ST,BD,CV,
@@ -91,6 +92,7 @@ metadata:
             region_name,
             region_type,
             population,
+            dashboard,
             timezone,
             region_shapefile_wkt]
     country_waze_to_iso:
@@ -101,12 +103,7 @@ metadata:
             country_name_IDB_eng,
             country_name
         ]
-    regions_waze_to_slug:
-        columns: [
-            country_waze_code,
-            region_slug,
-            region_waze_name
-        ]
+
 
 drive_config:
     write_index:

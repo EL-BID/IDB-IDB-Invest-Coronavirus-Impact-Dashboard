@@ -13,7 +13,6 @@ import importlib
 warnings.filterwarnings('ignore')
 
 from utils import safe_create_path, get_data_from_athena, to_wkt, get_geometry, generate_query, query_athena, get_config, connect_athena, timed_log
-import partitioned
 
 
 def do_drop_tables(config):

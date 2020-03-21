@@ -17,7 +17,8 @@ warnings.filterwarnings('ignore')
 from utils import printlog, get_dependency_graph, safe_create_path, get_data_from_athena, to_wkt, get_geometry, generate_query, query_athena, get_config, connect_athena, timed_log
 from document import document
 
-def initialize_dag(dependency_graph):
+
+def make_dag(dependency_graph):
     
     dag = nx.DiGraph()
     
@@ -25,15 +26,43 @@ def initialize_dag(dependency_graph):
     
     edges = []
     for d in dependency_graph:
-        if 'depends_on' in d.keys():
+        if ('depends_on' in d.keys()):
             for i in d['depends_on']:
-                edges.append((i, d['name'],))
-                
+                if i in [d['name'] for d in dependency_graph]:
+                    edges.append((i, d['name']))
+    
     dag.add_edges_from(edges)
 
+    safe_create_path('data/output')
     p.dump(dag, open('data/output/dependency_graph.p', 'wb'))
     
     return dag
+
+def initialize_dag(args):
+
+    dependency_graph = get_dependency_graph(args.dependency_graph_path)
+    
+    G = make_dag(dependency_graph)
+    
+    if not args.force:
+
+        sources = [d['name'] for d in dependency_graph if d.get('force')]
+
+        flatten = lambda l: [item for sublist in l for item in sublist]
+        nodes_to_run = set(flatten([[d for d in nx.dfs_preorder_nodes(G, source=s)] for s in sources]))
+        
+        if args.force_downstream:
+
+            dependency_graph = [dict({'force': True}, **d) 
+                                for d in dependency_graph if d['name'] in nodes_to_run]
+        else:
+
+            dependency_graph = [d for d in dependency_graph if d['name'] in nodes_to_run]
+
+        G = make_dag(dependency_graph)
+
+    
+    return [G.node[name] for name in nx.topological_sort(G)]
 
 def run_process(_attr, args):
 
@@ -87,15 +116,11 @@ def core(args):
             force=args.force,
             n_tries=args.n_tries))
 
-    dependency_graph = get_dependency_graph(args.dependency_graph_path)
-
-    dag = initialize_dag(dependency_graph)
-
     if args.run_queries:
 
-        for node_name in nx.topological_sort(dag):
+        for attr in initialize_dag(args):
 
-            attr = dict(config, **dag.node[node_name])
+            attr = dict(config, **attr)
 
             attr = get_raw_table(attr)
 

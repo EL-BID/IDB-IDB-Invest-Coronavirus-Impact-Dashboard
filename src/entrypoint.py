@@ -66,10 +66,11 @@ class Run(object):
         queries_to_run=[],
         verbose=False,
         dryrun=False,
+        force_downstream=True,
         runall=False,
         force=False,
         report=True,
-        n_tries=3,
+        n_tries=5,
         run_queries=True,
         document=False,
         dependency_graph_path='configs/dependency_graph.yaml',
@@ -121,6 +122,7 @@ class Run(object):
         self.verbose = verbose 
         self.dryrun = dryrun 
         self.runall = runall 
+        self.force_downstream = force_downstream
         self.report = report 
         self.tables_to_drop = tables_to_drop 
         self.force = force
