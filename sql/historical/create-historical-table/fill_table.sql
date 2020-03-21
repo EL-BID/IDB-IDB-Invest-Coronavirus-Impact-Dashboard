@@ -1,11 +1,10 @@
 create table {{ athena_database }}.{{ slug }}_{{ raw_table }}_{{ name }}_{{ partition }}
 with (
-      external_location = '{{ s3_path }}/{{ slug }}/{{ current_millis }}/{{ raw_table }}/{{ name }}/country_waze={{ partition }}',
+      external_location = '{{ s3_path }}/{{ slug }}/{{ current_millis }}/{{ raw_table }}/{{ name }}/region_slug={{ partition }}',
 	  format='orc', orc_compression = 'ZLIB'
       ) as
 with t as (
       select 
-            city,
             length,
             year(retrievaltime) as year,
             month(retrievaltime) as month,
@@ -21,19 +20,20 @@ with t as (
 											timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
                                           timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') order by retrievaltime) n_row
       from {{ athena_database }}.pipeline_test_historical_historical_{{ year }}_raw
-      where country = '{{ partition }}')
+      where country = '{{ waze_code }}'
+	  and  st_intersects(
+	      st_polygon('{{ region_shapefile_wkt }}'),
+	      st_line(line)) )
 select
-      city,
       dow, 
       avg(sum_length) as avg_sum_length
 from (
-	select 
-		city,
-	      month, 
-	      dow, 
-	      day, 
-	      sum(length) as sum_length
-	from t
-	where n_row = 1
-	group by  city,  month, dow, day)
-group by city, dow
+        select 
+              month, 
+              dow, 
+              day, 
+              sum(length) as sum_length
+        from t
+        where n_row = 1
+        group by month, dow, day)
+group by dow

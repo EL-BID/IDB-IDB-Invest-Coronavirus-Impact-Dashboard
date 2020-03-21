@@ -33,25 +33,32 @@ def _create_cities_partitions(config):
                   columns={'city_slug': 'partition'}).to_dict('records')
 
 
-def _country_partition(config):
+def _region_slug_partition(config):
 
-    return [{'partition': country} 
-            for country in set(config['countries'])]
+    data = get_data_from_athena(
+             "select * from "
+            f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready"
+            ).to_dict('records')
+
+    for d in data:
+        d['partition'] = d['region_slug']
+
+    return data
 
 
 def historical_2019(config):
 
-    return _country_partition(config)
+    return _region_slug_partition(config)
 
 
 def historical_2020(config):
 
-    return _country_partition(config)
+    return _region_slug_partition(config)
 
 
 def daily(config):
 
-    return _country_partition(config)
+    return _region_slug_partition(config)
 
 
 def perform_query(query):
@@ -65,7 +72,7 @@ def perform_query(query):
     """
     for i in range(query['config']['n_tries']):
         try:
-            print(query['drop'])
+            
             query_athena(query['drop'], query['config'])
 
             query_athena(query['make'], query['config'])
@@ -73,7 +80,9 @@ def perform_query(query):
             query_athena(query['drop'], query['config'])
             break
         except Exception as e:
-            print(e)
+            if query['config']['verbose']:
+                print(e)
+            continue
 
 
 def check_existence(config):

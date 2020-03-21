@@ -8,7 +8,7 @@ select
 	h.dow,
 	sum(h.avg_sum_length) avg_sum_length
 from {{ athena_database }}.{{ slug }}_historical_{{ table }} h
-join {{ athena_database }}.{{ slug }}_metadata_regions_waze_to_slug r
+join {{ athena_database }}.{{ slug }}_metadata_region_to_waze_{{ year }} r
 on h.city = r.region_waze_name
 and h.country_waze = r.country_waze_code
 group by r.region_slug, h.dow

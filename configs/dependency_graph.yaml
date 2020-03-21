@@ -1,3 +1,5 @@
+# Historical Queries
+
 - 
   path: 'sql/historical/create-historical-raw-table.sql'
   runner: basic_athena_query
@@ -25,7 +27,62 @@
     historical_2020_raw
   ]
   year: 2020
+  force: True
 
+- 
+  path: 'sql/historical/create-cities-boundaries.sql'
+  runner: basic_athena_query
+  name: cities_boundaries_2020
+  depends_on: [
+    historical_2020_raw
+  ]
+  year: 2020
+
+- 
+  path: 'sql/historical/create-cities-boundaries.sql'
+  runner: basic_athena_query
+  name: cities_boundaries_2019
+  depends_on: [
+    historical_2019_raw
+  ]
+  year: 2019
+
+# Metadata Queries
+
+- 
+  path: 'sql/metadata/load_tables.sql'
+  runner: create_local_table_athena
+  name: load_metadata_tables
+
+- 
+  path: 'sql/metadata/create-metadata-ready.sql'
+  runner: basic_athena_query
+  depends_on: [
+    load_metadata_tables
+  ]
+  name: metadata_ready
+
+- 
+  path: 'sql/metadata/match-slugregion-to-wazeregion.sql'
+  runner: basic_athena_query
+  depends_on: [
+    metadata_ready,
+    cities_boundaries_2019
+  ]
+  name: region_to_waze_2019
+  year: 2019
+
+- 
+  path: 'sql/metadata/match-slugregion-to-wazeregion.sql'
+  runner: basic_athena_query
+  depends_on: [
+    metadata_ready,
+    cities_boundaries_2020
+  ]
+  name: region_to_waze_2020
+  year: 2020
+
+# Daily Queries
 - 
   path: 'sql/daily/create-daily-raw-table.sql'
   runner: basic_athena_query
@@ -40,50 +97,48 @@
   name: daily
 
 - 
-  path: 'sql/metadata/load_tables.sql'
-  runner: create_local_table_athena
-  name: load_metadata_tables
-  force: True
-
-- 
   path: 'sql/daily/filter-historical-tables.sql'
   runner: basic_athena_query
   depends_on: [
-    load_metadata_tables,
+    region_to_waze_2020,
     historical_2020
   ]
   name: filtered_2020
   table: historical_2020
+  year: 2020
 
 - 
   path: 'sql/daily/filter-historical-tables.sql'
   runner: basic_athena_query
   depends_on: [
-    load_metadata_tables,
+    region_to_waze_2019,
     historical_2019
   ]
   name: filtered_2019
   table: historical_2019
+  year: 2020
 
 - 
   path: 'sql/daily/filter-daily-table.sql'
   runner: basic_athena_query
   depends_on: [
-    load_metadata_tables,
+    metadata_ready,
     daily
   ]
   name: filtered_daily
+
 
 - 
   path: 'sql/daily/create-index-table.sql'
   runner: basic_athena_query
   depends_on: [
-    load_metadata_tables,
+    metadata_ready,
     filtered_daily,
     filtered_2019,
     filtered_2020
   ]
   name: index
+
 
 - 
   path: 'sql/daily/'

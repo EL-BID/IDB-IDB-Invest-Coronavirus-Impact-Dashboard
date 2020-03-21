@@ -80,8 +80,6 @@ target/
 # Mac OS-specific storage files
 .DS_Store
 
-# Data
-data/
 
 configs/athena.yaml
 configs/gcloud-credentials.json

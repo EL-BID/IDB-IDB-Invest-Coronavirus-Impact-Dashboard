@@ -4,7 +4,7 @@ with (
 	  format='orc', orc_compression = 'ZLIB'
       ) as
 select uuid, country, 
-		city, length,
+		city, length, line,
 		arbitrary(from_unixtime(retrievaltime/1000)) retrievaltime
 from "p-waze-parquet-waze"."jams"
 where regexp_like(datetime, '{{ dates }}')

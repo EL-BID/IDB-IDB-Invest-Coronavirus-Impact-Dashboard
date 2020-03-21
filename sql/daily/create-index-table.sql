@@ -28,6 +28,7 @@ with ratios as (
 	on d.region_slug = h.region_slug
 	and d.dow = h.dow)
 select
+	localtimestamp last_updated_utc,
 	metadata.region_slug,
 	metadata.region_name,
 	metadata.country_name_idb_eng as country_name,
@@ -44,14 +45,8 @@ select
 	ratios.expected_2020,
 	ratios.ratio_19,
 	ratios.ratio_20,
+	metadata.dashboard,
 	metadata.region_shapefile_wkt
 from ratios
-join 
-	(select 
-		r.*,
-		c.idb_code,
-		c.country_name_idb_eng
-	from {{ athena_database }}.{{ slug }}_metadata_country_waze_to_iso c
-	join {{ athena_database }}.{{ slug }}_metadata_regions_metadata r
-	on c.iso2_code = r.country_iso) metadata
+join {{ athena_database }}.{{ slug }}_metadata_metadata_ready metadata
 on ratios.region_slug = metadata.region_slug

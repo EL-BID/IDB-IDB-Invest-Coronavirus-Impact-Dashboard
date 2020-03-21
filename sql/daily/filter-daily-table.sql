@@ -10,7 +10,7 @@ select
 	d.day,
 	sum(d.sum_length) sum_length
 from {{ athena_database }}.{{ slug }}_daily_daily d
-join {{ athena_database }}.{{ slug }}_metadata_regions_waze_to_slug r
+join {{ athena_database }}.{{ slug }}_metadata_region_to_waze_2020 r
 on d.city = r.region_waze_name
 and d.country_waze = r.country_waze_code
 group by r.region_slug, d.day, d.month, d.dow
