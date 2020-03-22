@@ -10,7 +10,7 @@
 # means something. A resoanable `slug` is the name of the city or 
 # region that you are running the pipeline for.
 
-slug: pipeline_test
+slug: prod
 
 # Athena 
 # Those variables are used build Athena queries and locate the working database,
@@ -24,7 +24,7 @@ athena_database: spd_sdv_waze_corona
 # Where to find the raw Waze data
 raw_database: spd_sdv_waze_reprocessed
 
-tables: [daily, metadata, historical] #historical
+tables: [daily, metadata] #, historical] #
 
 # raw_table: jams
 # sql_path: sql/alerts
@@ -45,23 +45,7 @@ initial_filters:
 feed_frequency: 5
 reference_timestamp: '2015-01-01 00:00:00' # do not change
 
-    
-cities: 
-    - campinas
-    - saopaulo
-    - riodejaneiro
-    - brasilia
-    - curitiba
-    - lima
-    - medellin
-    - buenosaires
-    - bogota
-    - santiago
-    - portoalegre
-    - quito
-    - belohorizonte
-
-shape_type: city
+number_of_athena_jobs: 30
  
 historical_2019_interval:
     start: 2019-03-08
@@ -74,8 +58,6 @@ historical_2020_interval:
 daily_interval:
     start: 2020-03-08
     end: 'today'
-
-number_of_athena_jobs: 2
 
 polygon_area_minimum: 0.6
 
@@ -107,5 +89,9 @@ metadata:
 
 drive_config:
     write_index:
-        spreadsheet_key: 1xBDV5Zm7zSRPK2TGBoVSHhkvPeqRT9hZFiD4AueoVeI
-        worksheet: 
+        dev: 
+            spreadsheet_key: 1XifbMbgr8KsIZW4dgvEO8MC7bLQPJHcFEdlcHR6puW0
+            worksheet: main
+        prod: 
+            spreadsheet_key: 1xBDV5Zm7zSRPK2TGBoVSHhkvPeqRT9hZFiD4AueoVeI
+            worksheet: main
