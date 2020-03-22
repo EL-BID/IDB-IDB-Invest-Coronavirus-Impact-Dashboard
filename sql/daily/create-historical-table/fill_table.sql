@@ -19,7 +19,7 @@ with t as (
 										cast(date_diff('minute',
 											timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
                                           timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') order by retrievaltime) n_row
-      from {{ athena_database }}.pipeline_test_historical_historical_{{ year }}_raw
+      from {{ athena_database }}.{{ slug }}_historical_historical_{{ year }}_raw
       where country = '{{ waze_code }}'
 	  and  st_intersects(
 	      st_polygon('{{ region_shapefile_wkt }}'),

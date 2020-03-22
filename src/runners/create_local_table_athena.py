@@ -110,7 +110,7 @@ def write_index(config):
         )
 
 
-    _write_sheets_table(df, config, config['drive_config'][config['name']])
+    _write_sheets_table(df, config, config['drive_config'][config['name']][config['slug']])
     
 def check_existence(config):
 

@@ -20,11 +20,11 @@ with ratios as (
 			h20.dow,
 			h19.avg_sum_length as expected_2019,
 			h20.avg_sum_length as expected_2020
-		from {{ athena_database }}.{{ slug }}_daily_filtered_2019 h19
-		join {{ athena_database }}.{{ slug }}_daily_filtered_2020 h20
+		from {{ athena_database }}.{{ slug }}_daily_historical_2019 h19
+		join {{ athena_database }}.{{ slug }}_daily_historical_2020 h20
 		on h19.region_slug = h20.region_slug
 		and h19.dow = h20.dow) h
-	join {{ athena_database }}.{{ slug }}_daily_filtered_daily d
+	join {{ athena_database }}.{{ slug }}_daily_daily d
 	on d.region_slug = h.region_slug
 	and d.dow = h.dow)
 select

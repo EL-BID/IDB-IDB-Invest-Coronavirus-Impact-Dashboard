@@ -207,7 +207,7 @@ def to_wkt(x):
                             .replace('[', '(')\
                             .replace(']', ')')
 
-def get_geometry(path='configs/geometry.json'):
+def simplify_geometry(geometry):
     """Loads region geometry file.
     
     Parameters
@@ -220,8 +220,6 @@ def get_geometry(path='configs/geometry.json'):
     dict
         geometry with geojson structure
     """
-
-    geometry = json.load(open(path, 'r'))
     
     if 'features' in geometry.keys():
         geometry = geometry['features'][0]['geometry']

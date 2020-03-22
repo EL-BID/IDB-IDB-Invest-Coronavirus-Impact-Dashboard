@@ -86,10 +86,6 @@ def run_process(_attr, args):
                 continue
         else:
             runner.start(_attr)
-            raise Exception(
-                    'Number of tries exausted '
-                   f'{exc}'
-            )
 
 def get_raw_table(attr):
 
