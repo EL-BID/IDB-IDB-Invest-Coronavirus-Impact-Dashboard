@@ -1,7 +1,7 @@
 ---
 name: Region Request
 about: Add new region to congestion track pipeline
-title: ''
+title: "[Region Request] <add short description>"
 labels: enhancement
 assignees: JoaoCarabetta
 
