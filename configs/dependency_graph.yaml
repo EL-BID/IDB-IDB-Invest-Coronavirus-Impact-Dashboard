@@ -3,7 +3,8 @@
   path: 'sql/historical/create-historical-raw-table.sql'
   runner: basic_athena_query
   name: historical_2019_raw
-
+  force: True
+  
 - 
   path: 'sql/historical/create-historical-raw-table.sql'
   runner: basic_athena_query
@@ -15,7 +16,7 @@
   path: 'sql/metadata/load_tables.sql'
   runner: create_local_table_athena
   name: load_metadata_tables
-  force: True
+
 
 
 - 
@@ -25,7 +26,7 @@
     load_metadata_tables
   ]
   name: metadata_ready
-  force: True
+
 
 # Daily Queries
 - 
@@ -52,7 +53,7 @@
     metadata_ready
   ]
   year: 2020
-  force: True
+
 
 - 
   path: 'sql/daily/create-daily-table'
@@ -62,7 +63,7 @@
     metadata_ready
   ]
   name: daily
-  force: True
+
 
 - 
   path: 'sql/daily/create-index-table.sql'

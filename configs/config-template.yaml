@@ -14,7 +14,7 @@ slug: dev # prod
 
 # Pipeline Groups
 # Add historical to run full pipeline
-tables: [daily, metadata] #, historical] #
+tables: [daily, metadata, historical] #
 
 # Athena 
 # Those variables are used build Athena queries and locate the working database,

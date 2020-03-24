@@ -3,11 +3,5 @@
   "tests/test_sql/test_sql.py::test_all_polygons[daily_historical_2019]": true,
   "tests/test_sql/test_sql.py::test_all_polygons[daily_historical_2020]": true,
   "tests/test_sql/test_sql.py::test_all_polygons[daily_index]": true,
-  "tests/test_sql/test_sql.py::test_all_polygons[metadata_metadata_ready]": true,
-  "tests/test_sql/test_sql.py::test_all_polygons[spd_sdv_waze_corona-dev-daily_historical_2020]": true,
-  "tests/test_sql/test_sql.py::test_all_polygons[spd_sdv_waze_corona-dev-daily_index]": true,
-  "tests/test_sql/test_sql.py::test_all_polygons[spd_sdv_waze_corona-prod-daily_historical_2019]": true,
-  "tests/test_sql/test_sql.py::test_all_polygons[spd_sdv_waze_corona-prod-daily_historical_2020]": true,
-  "tests/test_sql/test_sql.py::test_all_polygons[spd_sdv_waze_corona-prod-daily_index]": true,
-  "tests/test_sql/test_sql.py::test_existence[spd_sdv_waze_corona-prod-daily_daily_raw]": true
+  "tests/test_sql/test_sql.py::test_all_polygons[metadata_metadata_ready]": true
 }

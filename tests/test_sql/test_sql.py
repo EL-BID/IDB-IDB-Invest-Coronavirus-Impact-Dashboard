@@ -2,6 +2,8 @@ from src.utils import get_data_from_athena, get_config, connect_athena
 import pandas as pd
 import pytest
 
+
+
 def get_tables(key):
 
     config = get_config('configs/config-template.yaml')
