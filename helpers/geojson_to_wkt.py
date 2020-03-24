@@ -18,7 +18,6 @@ def convert(path, region_type):
             dashboard='TRUE',
             population=d['properties']['alltags'].get('population'),
             timezone=d['properties']['alltags'].get('timezone'),
-            region_shapefile_wkt_1=None,
             region_shapefile_wkt=shape(d['geometry']).simplify(0.05, preserve_topology=False).wkt
         ))
     pd.DataFrame(converted).to_csv(Path(path) / 'converted.csv', index=False)

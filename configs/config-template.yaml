@@ -10,7 +10,11 @@
 # means something. A resoanable `slug` is the name of the city or 
 # region that you are running the pipeline for.
 
-slug: prod
+slug: dev # prod
+
+# Pipeline Groups
+# Add historical to run full pipeline
+tables: [daily, metadata] #, historical] #
 
 # Athena 
 # Those variables are used build Athena queries and locate the working database,
@@ -24,10 +28,10 @@ athena_database: spd_sdv_waze_corona
 # Where to find the raw Waze data
 raw_database: spd_sdv_waze_reprocessed
 
-tables: [daily, metadata] #, historical] #
 
-# raw_table: jams
-# sql_path: sql/alerts
+
+# Athena Configurations
+number_of_athena_jobs: 30
 
 # Initial Filters
 # They are applied at the first step of the pipeline that extracts data
@@ -41,12 +45,11 @@ initial_filters:
     - length > 0
     # - blockingalertuuid is null # uncomment to filter blocked roads
 
-# Filter by Minute Group
+# Waze Feed
 feed_frequency: 5
 reference_timestamp: '2015-01-01 00:00:00' # do not change
 
-number_of_athena_jobs: 30
- 
+# Pipeline Intervals 
 historical_2019_interval:
     start: 2019-03-08
     end: 2019-04-30
@@ -59,12 +62,12 @@ daily_interval:
     start: 2020-03-08
     end: 'today'
 
-polygon_area_minimum: 0.6
-
+# Countries partitions
 countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
             TD,AV,SC,PO,SG,UY,GY,BH,GP,SX,VC,BF,AA,MB,FG,CJ,TK,SP,MH,ST,BD,CV,
             HA,AC,MF,BQ,GJ,VI,DO,MR]
 
+# Metadata 
 metadata:
     regions_metadata:
         columns: [
@@ -86,12 +89,21 @@ metadata:
             country_name
         ]
 
+# Tests
+tests:
+    all_polygons:
+        - metadata_metadata_ready
+        - daily_historical_2019
+        - daily_historical_2020
+        - daily_index
 
-drive_config:
-    write_index:
-        dev: 
-            spreadsheet_key: 1XifbMbgr8KsIZW4dgvEO8MC7bLQPJHcFEdlcHR6puW0
-            worksheet: main
-        prod: 
-            spreadsheet_key: 1xBDV5Zm7zSRPK2TGBoVSHhkvPeqRT9hZFiD4AueoVeI
-            worksheet: main
+    existence:
+        - metadata_regions_metadata
+        - metadata_metadata_ready
+        - daily_historical_2019
+        - daily_historical_2020
+        - daily_index
+        - historical_historical_2019_raw
+        - historical_historical_2020_raw
+        - daily_daily_raw
+        - daily_daily

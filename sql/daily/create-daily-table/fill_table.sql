@@ -20,10 +20,14 @@ with t as (
 											timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
                                           timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') order by retrievaltime) n_row
       from {{ athena_database }}.{{ slug }}_daily_daily_raw
-      where country = '{{ waze_code }}'
-	  and st_intersects(
+      where 
+      {% if waze_code != 'continent' %}   
+            country = '{{ waze_code }}' and
+		st_intersects(
 	      st_polygon('{{ region_shapefile_wkt }}'),
-	      st_line(line)))
+	      st_line(line))
+      {%endif %}
+		  )
 select 
 	year,
 	month, 

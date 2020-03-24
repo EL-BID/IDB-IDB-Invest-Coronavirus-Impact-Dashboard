@@ -1,21 +1,14 @@
 import paths
-from collections import namedtuple
-from copy import deepcopy
 from fire import Fire
 import logging
-import os
 from pathlib import Path
-import logging
-import time
-import json
-import warnings
 import networkx as nx
 import pickle as p
 import importlib
+import warnings
 warnings.filterwarnings('ignore')
 
-from utils import printlog, get_dependency_graph, safe_create_path, get_data_from_athena, to_wkt, get_geometry, generate_query, query_athena, get_config, connect_athena, timed_log
-from document import document
+from utils import get_dependency_graph, safe_create_path , timed_log
 
 
 def make_dag(dependency_graph):
@@ -38,20 +31,20 @@ def make_dag(dependency_graph):
     
     return dag
 
-def initialize_dag(args):
+def initialize_dag(config):
 
-    dependency_graph = get_dependency_graph(args.dependency_graph_path)
+    dependency_graph = get_dependency_graph(config['dependency_graph_path'])
     
     G = make_dag(dependency_graph)
     
-    if not args.force:
+    if not config['force']:
 
         sources = [d['name'] for d in dependency_graph if d.get('force')]
 
         flatten = lambda l: [item for sublist in l for item in sublist]
         nodes_to_run = set(flatten([[d for d in nx.dfs_preorder_nodes(G, source=s)] for s in sources]))
         
-        if args.force_downstream:
+        if config['force_downstream']:
 
             dependency_graph = [dict({'force': True}, **d) 
                                 for d in dependency_graph if d['name'] in nodes_to_run]
@@ -64,7 +57,7 @@ def initialize_dag(args):
     
     return [G.node[name] for name in nx.topological_sort(G)]
 
-def run_process(_attr, args):
+def run_process(_attr):
 
     runner = importlib.import_module(f'runners.{_attr["runner"]}')
     
@@ -100,39 +93,22 @@ def get_raw_table(attr):
 
     return attr
 
-def core(args):
+def core(config):
 
-    args = namedtuple('args', args.keys())(*args.values())
+    for attr in initialize_dag(config):
 
-    config = args.config
-    config.update(
-        dict(verbose=args.verbose, 
-            dryrun=args.dryrun,
-            runall=args.runall,
-            force=args.force,
-            n_tries=args.n_tries))
+        attr = dict(config, **attr)
 
-    if args.run_queries:
+        attr = get_raw_table(attr)
 
-        for attr in initialize_dag(args):
+        if ((attr.get('raw_table') is None) or # skip if table was not selected in config file
+            (attr.get('pass') == True)):       # skip if pass == True in dependency graph
 
-            attr = dict(config, **attr)
+            with timed_log(name=attr['name'], config=config, time_chunk='seconds', force='skiped'):
+                continue
 
-            attr = get_raw_table(attr)
-
-            if ((attr.get('raw_table') is None) or # skip if table was not selected in config file
-                (attr.get('pass') == True)):       # skip if pass == True in dependency graph
-
-                with timed_log(name=attr['name'], config=config, time_chunk='seconds', force='skiped'):
-                    continue
-
-            with timed_log(name=attr['name'], config=config, time_chunk='seconds', force=attr['force']):
-                run_process(attr, args)
-
-    with timed_log(name='documenting', config=config, time_chunk='seconds', force=args.document):
-        if args.document:
-            document(args, config)
-    
+        with timed_log(name=attr['name'], config=config, time_chunk='seconds', force=attr['force']):
+            run_process(attr)
 
 if __name__ == "__main__":
 

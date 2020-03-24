@@ -6,6 +6,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 import logging
 from df2gspread import df2gspread as d2g
+import yaml
 
 from utils import safe_create_path, get_data_from_athena, generate_query, query_athena
 
@@ -108,9 +109,19 @@ def write_index(config):
             f"{config['athena_database']}.{config['slug']}_"
             f"{config['raw_table']}_index"
         )
+    
+    drive_config = yaml.load(open('configs/drive-config.yaml', 'r'))
 
+    if config['slug'] == 'dev':
+        _write_sheets_table(df, config, drive_config[config['name']][config['slug']])
+    
+    elif config['slug'] == 'prod':
+        print(drive_config)
+        _write_sheets_table(df, config, drive_config[config['name']][config['slug']])
 
-    _write_sheets_table(df, config, config['drive_config'][config['name']][config['slug']])
+        drop_rows = ['observed', 'expected_2019', 'expected_2020', 'dashboard']
+        df = df.drop(drop_rows, 1)
+        _write_sheets_table(df, config, drive_config[config['name']]['public'])
     
 def check_existence(config):
 

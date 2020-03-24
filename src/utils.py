@@ -16,6 +16,7 @@ from dateutil import rrule
 
 from contextlib import contextmanager
 
+
 class CsvFormatter(logging.Formatter):
     def __init__(self):
         super().__init__()
@@ -28,6 +29,7 @@ class CsvFormatter(logging.Formatter):
         self.output.truncate(0)
         self.output.seek(0)
         return data.strip()
+
 
 def logger():
     log = logging.getLogger(__name__)
@@ -86,6 +88,7 @@ def timed_log(name, config, time_chunk='seconds', force=False):
         elif time_chunk == 'minutes':
             printlog(name, config, round(total_time / 60, 2), time_chunk, force)
 
+
 def get_config(path='configs/config.yaml'):
     """Load configuration file
     
@@ -110,6 +113,7 @@ def get_config(path='configs/config.yaml'):
     
     return config
 
+
 def get_dependency_graph(path='configs/dependency_graph.yaml'):
     """Load dependency_graph file
     
@@ -128,6 +132,7 @@ def get_dependency_graph(path='configs/dependency_graph.yaml'):
     
     return config
 
+
 def connect_athena(path='configs/athena.yaml'):
     """Gets athena cursor given athena an athena configuration file.`
     
@@ -141,6 +146,7 @@ def connect_athena(path='configs/athena.yaml'):
     
     return connect(**athena_config)
 
+
 def get_data_from_athena(query, config_path='configs/athena.yaml'):
     
     con = connect_athena(config_path)
@@ -148,6 +154,7 @@ def get_data_from_athena(query, config_path='configs/athena.yaml'):
     res = pd.read_sql_query(query, con)
 
     return res
+
 
 def query_athena(query, config, config_path='configs/athena.yaml'):
     """Execute a query in athena
@@ -207,34 +214,6 @@ def to_wkt(x):
                             .replace('[', '(')\
                             .replace(']', ')')
 
-def simplify_geometry(geometry):
-    """Loads region geometry file.
-    
-    Parameters
-    ----------
-    path : str, optional
-        geometry.json path, by default 'configs/geometry.json'
-    
-    Returns
-    -------
-    dict
-        geometry with geojson structure
-    """
-    
-    if 'features' in geometry.keys():
-        geometry = geometry['features'][0]['geometry']
-    else:
-        geometry = geometry['geometry']
-
-
-    if geometry['type'].lower() == 'multipolygon':
-        
-        geometry['type'] = 'Polygon'
-        geometry['coordinates'] = geometry['coordinates'][0]
-
-    geometry['coordinates'] = [rdp(geometry['coordinates'][0], epsilon=0.005)]
-
-    return geometry
 
 def safe_create_path(path, replace=False):
     
@@ -251,8 +230,10 @@ try:
 except IndexError:
     pass
 
+
 def break_list_in_chunks(data, chunk):
     return [data[x:x+chunk] for x in range(0, len(data), chunk)]
+
 
 def add_query_dates(start, end):
 
