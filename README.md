@@ -1,43 +1,71 @@
-## IDB-Covid-19-Traffic-Impact-Dashboard
+# Covid-19 Traffic Congestion Impact in Latin America with Waze Data
 
-One Paragraph of project description goes here.
+Follow  the impact of COVID-19 outbreak in Latin America in **real time**.
 
-### Getting Started
+[IMAGE PLACEHOLDER WITH LINK]
 
-Check out the instruction to run the pipeline at `docs/running_the_pipeline.md`
+## Use the data
 
-### Project Organization
+### Python
 
-    ├── configs                    <- Configuration files needed to run pipeline
-    ├── data
-    │   ├── output                 <- Output processed data
-    │   ├── treated                <- The cleaned and treated data for analysis
-    │   ├── support_tables         <- Tables added to athena to support 
-    ├── docs                       <- Code documentation   
-    ├── notebooks                  <- Jupyter notebooks
-    ├── reports                    <- Reports to be auto-generated
-    ├── scripts                    <- Python files
-    ├── sql                        <- SQL files called to run pipeline
-    ├── src                        <- Pipeline python files
-    ├── tests                      <- Test module file
-    ├── config.py                  <- File to setup notebooks paths 
-    ├── environment.yaml           <- Conda env file
-    ├── LICENSE                    <- Code license
-    ├── Makefile                   <- Useful to build the env
-    ├── names.md                   <- Developer names
-    ├── README.md                  <- The top-level README for developers using this                                     project (also known as this file!)
-    ├── requirements.txt           <- Packages used in the code
+```
+import pandas as pd
+url = 'https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id'
+df = pd.read_csv(url)
+```
 
-#### Changing author
+### R
 
-You need change to your name on the files: [LICENSE.md](LICENSE.md), here (below) and optionally put on your code files :)
+```
+library(readr)
 
-### Authors
+df<-read.csv('https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id')
+```
+Obs: I am not sure if it works. Submit a PR if you find a way to do it.
 
-* **Joao Carabetta** - *Code maker*
-* **Daniel Enriquez** - *Conceptual designer*
-* **Oscar Mitnik** - *Conceptual designer*
-* **Edgar Chavez** - *Conceptual designer*
+### Stata
+
+```
+import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id", clear
+```
+
+## Ask for an specific region
+
+The way that the pipeline was implemented allow us to query any region in Latin
+America. To ask for an specific region(s) of interest please submit an issue.
+
+[CLICK HERE TO REQUEST REGIONS](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/issues/new?assignees=JoaoCarabetta&labels=enhancement&template=region-request.md&title=%5BRegion+Request%5D+%3Cadd+short+description%3E)
+
+## Methodological Note
+
+
+
+## Team 
+
+Development Effectiveness Division Chiefs 
+
+- IDB: Carola Alvarez 
+
+- IDB Invest: Alessandro Maffioli 
+
+Technical Team Leaders 
+
+- IDB: Oscar Mitnik 
+
+- IDB Invest: Patricia Yañez-Pagans 
+
+Technical Team 
+
+- IDB: João Carabetta, Daniel Martinez, Edgar Salgado, Beatrice Zimmermann 
+
+- IDB Invest: Mattia Chiapello, Luciano Sanguino
+
+Communications Team 
+
+- IDB: Lina Botero, Andrés Gómez-Peña 
+
+- IDB Invest: Norah Sullivan 
+
 
 ### License
 
@@ -47,4 +75,3 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 * This README was adapted from [*A template to make good README.md*](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * The structure of this repository was adapted from [*Fast Project Templates*](https://github.com/JoaoCarabetta/project-templates)
-
