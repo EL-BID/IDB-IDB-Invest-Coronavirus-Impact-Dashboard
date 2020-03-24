@@ -34,7 +34,9 @@ Obs: I am not sure if it works. Submit a PR if you find a way to do it.
 import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id", clear
 ```
 
+Make sure you understand the data:
 [Data Dictionary](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/docs/Data%20Dictionary.md)
+[Methodology]()
 
 ## Ask for a specific region
 
