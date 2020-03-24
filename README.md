@@ -2,9 +2,14 @@
 
 Follow  the impact of COVID-19 outbreak in Latin America in **real time**.
 
-[IMAGE PLACEHOLDER WITH LINK]
+![landing_dash](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/imgs/dashboard_landing.png?raw=true)
+[GO TO DASH](https://www.iadb.org/en/impactdashboardCOVID-19)
 
 ## Use the data
+
+### Mannualy download
+
+[CLICK HERE](https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id)
 
 ### Python
 
@@ -29,15 +34,14 @@ Obs: I am not sure if it works. Submit a PR if you find a way to do it.
 import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id", clear
 ```
 
-## Ask for an specific region
+## Ask for a specific region
 
 The way that the pipeline was implemented allow us to query any region in Latin
 America. To ask for an specific region(s) of interest please submit an issue.
 
 [CLICK HERE TO REQUEST REGIONS](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/issues/new?assignees=JoaoCarabetta&labels=enhancement&template=region-request.md&title=%5BRegion+Request%5D+%3Cadd+short+description%3E)
 
-## Methodological Note
-
+## Don't forget to cite us :)
 
 
 ## Team 
@@ -65,7 +69,6 @@ Communications Team
 - IDB: Lina Botero, Andrés Gómez-Peña 
 
 - IDB Invest: Norah Sullivan 
-
 
 ### License
 
