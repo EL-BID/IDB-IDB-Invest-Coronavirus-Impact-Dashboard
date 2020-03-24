@@ -85,3 +85,4 @@ configs/athena.yaml
 configs/gcloud-credentials.json
 reports/auto-report.nbconvert.ipynb
 
+configs/drive_config.yaml

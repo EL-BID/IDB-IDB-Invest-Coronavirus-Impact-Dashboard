@@ -6,12 +6,11 @@ start:
 	make activate-extensions
 
 aws-c:
-	@source activate corona_envnv; python ~/private/configs/generate_aws_credentials.py;
+	@source activate norm_env; python ~/private/configs/generate_aws_credentials.py;
 	cat ~/private/configs/credentials	
 
 update-env:
 	@pip freeze > requirements.txt
-	@sed -i '/h3/d' requirements.txt  
 
 activate-extensions:
 	@source activate condaenv;  \
@@ -20,3 +19,6 @@ activate-extensions:
 	jupyter nbextension enable toc2/main --user; \
 	jupyter nbextension install --py --user keplergl; \
 	jupyter nbextension enable --py --user keplergl
+
+run-prod:
+	cd /home/joaom/projects/waze_coronavirus; source activate norm_env && python src/entrypoint.py single --config_path=configs/config-production.yaml --force &>> log.log

@@ -15,6 +15,8 @@
   path: 'sql/metadata/load_tables.sql'
   runner: create_local_table_athena
   name: load_metadata_tables
+  force: True
+
 
 - 
   path: 'sql/metadata/create-metadata-ready.sql'
@@ -23,6 +25,7 @@
     load_metadata_tables
   ]
   name: metadata_ready
+  force: True
 
 # Daily Queries
 - 
@@ -39,7 +42,6 @@
     metadata_ready
   ]
   year: 2019
-  force: True
 
 - 
   path: 'sql/daily/create-historical-table'
@@ -60,7 +62,7 @@
     metadata_ready
   ]
   name: daily
-
+  force: True
 
 - 
   path: 'sql/daily/create-index-table.sql'

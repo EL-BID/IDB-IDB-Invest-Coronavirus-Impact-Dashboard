@@ -10,7 +10,7 @@ import pandas as pd
 import logging
 log = logging.getLogger(__name__)
 
-from utils import break_list_in_chunks, add_query_dates, to_wkt, query_athena, generate_query, get_geometry, get_data_from_athena
+from utils import break_list_in_chunks, add_query_dates, to_wkt, query_athena, generate_query, get_data_from_athena
 
 def _load_cities(
     path= 'data/raw/cities_metadata.csv'):
@@ -37,7 +37,7 @@ def _region_slug_partition(config):
 
     data = get_data_from_athena(
              "select * from "
-            f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready"
+            f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready "
             ).to_dict('records')
 
     for d in data:
@@ -70,6 +70,7 @@ def perform_query(query):
         dict with two objects, `make` and `drop`. The first to create
         a table and the second to drop the same table.
     """
+
     for i in range(query['config']['n_tries']):
         try:
             
