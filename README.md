@@ -9,7 +9,7 @@ Follow  the impact of COVID-19 outbreak in Latin America in **real time**.
 
 ### Mannualy download
 
-[CLICK HERE](https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id)
+[Download](https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id)
 
 ### Python
 
@@ -34,12 +34,14 @@ Obs: I am not sure if it works. Submit a PR if you find a way to do it.
 import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id", clear
 ```
 
+[Data Dictionary](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/docs/Data%20Dictionary.md)
+
 ## Ask for a specific region
 
 The way that the pipeline was implemented allow us to query any region in Latin
 America. To ask for an specific region(s) of interest please submit an issue.
 
-[CLICK HERE TO REQUEST REGIONS](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/issues/new?assignees=JoaoCarabetta&labels=enhancement&template=region-request.md&title=%5BRegion+Request%5D+%3Cadd+short+description%3E)
+[Click here to request regions](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/issues/new?assignees=JoaoCarabetta&labels=enhancement&template=region-request.md&title=%5BRegion+Request%5D+%3Cadd+short+description%3E)
 
 ## Don't forget to cite us :)
 
