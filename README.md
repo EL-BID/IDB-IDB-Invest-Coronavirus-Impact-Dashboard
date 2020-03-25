@@ -35,8 +35,8 @@ import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqp
 ```
 
 Make sure you understand the data:
-[Data Dictionary](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/docs/Data%20Dictionary.md)
-[Methodology](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note)
+- [Data Dictionary](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/docs/Data%20Dictionary.md)
+- [Methodology](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note)
 
 ## Ask for a specific region
 
