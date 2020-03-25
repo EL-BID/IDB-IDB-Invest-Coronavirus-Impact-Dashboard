@@ -116,10 +116,10 @@ def write_index(config):
         _write_sheets_table(df, config, drive_config[config['name']][config['slug']])
     
     elif config['slug'] == 'prod':
-        print(drive_config)
+
         _write_sheets_table(df, config, drive_config[config['name']][config['slug']])
 
-        drop_rows = ['observed', 'expected_2019', 'expected_2020', 'dashboard']
+        drop_rows = ['observed', 'expected_2019', 'expected_2020', 'dashboard', 'ratio_19']
         df = df.drop(drop_rows, 1)
         _write_sheets_table(df, config, drive_config[config['name']]['public'])
     
