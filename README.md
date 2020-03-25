@@ -3,7 +3,7 @@
 Follow  the impact of COVID-19 outbreak in Latin America in **real time**.
 
 ![landing_dash](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/imgs/dashboard_landing.png?raw=true)
-[GO TO DASH](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note)
+[GO TO DASH]()
 
 ## Use the data
 
@@ -36,7 +36,7 @@ import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqp
 
 Make sure you understand the data:
 [Data Dictionary](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/docs/Data%20Dictionary.md)
-[Methodology]()
+[Methodology](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note)
 
 ## Ask for a specific region
 
