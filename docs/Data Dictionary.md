@@ -13,5 +13,5 @@
 | day                  | Day in 2019                                                        |
 | dow                  | Day of the week                                                    |
 | ratio_19             | Traffic congestion ratio from March and April of 2019 baseline     |
-| ratio_20             | Traffic congestion ratio from first week of March of 2020 baseline |
+| ratio_20             | Percentage change in Traffic Congestion Intensity from first week of March of 2020 |
 | region_shapefile_wkt | Region shapefile in WKT                                            |
