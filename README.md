@@ -1,16 +1,27 @@
 # Coronavirus Traffic Congestion Impact in Latin America with Waze Data
 
-Follow  the impact of Coronavirus outbreak in Latin America in **real time**.
+Follow  the impact of Coronavirus outbreak in Latin America in **real time**. 
 
 ![landing_dash](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/imgs/dashboard_landing.png?raw=true)
 Go to dashboard: [ENGLISH](https://www.iadb.org/en/topics-effectiveness-improving-lives/coronavirus-impact-dashboard)
 [ESPAÑOL](https://www.iadb.org/es/topics-effectiveness-improving-lives/coronavirus-impact-dashboard)
 
+The Coronavirus Impact Dashboard has been created by the IDB and IDB Invest to track in real
+time the impact of the coronavirus (also known as COVID-19) on the countries of Latin America
+and the Caribbean. The dashboard aims to track a range of variables of interest in order to provide
+policymakers, epidemiologists, and the general public in the region with measures of the impact
+that “social distancing” restrictions and recommendations due to the coronavirus outbreak are
+having on the population and on economic activity.
+
 ## Use the data
 
 The data was also though to be used by the broad community of researchers, journalists and developers. If you have any ideas or doubts about using the data, do not hesitate to submit an [issue](https://github.com/EL-BID/IDB-IDB-Invest-Coronavirus-Impacto-Dashboard/issues/new).
 
-The latest version is easily available through the methods below.
+But first, make sure you understand the data:
+- [Data Dictionary](docs/Data%20Dictionary.md)
+- The [Methodological Note](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note)  will also continuously track and update methodological changes (when necessary) and changes/additions to data sources. The version of the Methodological Note and its date of creation are shown at the top of the document.
+
+The latest version of the data is easily available through the methods below.
 
 ### Mannualy download
 
@@ -38,10 +49,6 @@ Obs: Not sure if it works. Submit a PR if you find a way to do it.
 ```
 import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id", clear
 ```
-
-Make sure you understand the data:
-- [Data Dictionary](docs/Data%20Dictionary.md)
-- This [Methodological Note](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note)  will also continuously track and update methodological changes (when necessary) and changes/additions to data sources. The version of the Methodological Note and its date of creation are shown at the top of the document.
 
 ## Ask for a specific region
 
