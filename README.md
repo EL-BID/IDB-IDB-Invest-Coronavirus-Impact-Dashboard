@@ -3,7 +3,8 @@
 Follow  the impact of Coronavirus outbreak in Latin America in **real time**.
 
 ![landing_dash](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/imgs/dashboard_landing.png?raw=true)
-[GO TO DASH]()
+Go to dashboard: [ENGLISH](https://www.iadb.org/en/topics-effectiveness-improving-lives/coronavirus-impact-dashboard)
+[ESPAÑOL](https://www.iadb.org/es/topics-effectiveness-improving-lives/coronavirus-impact-dashboard)
 
 ## Use the data
 
