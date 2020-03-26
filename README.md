@@ -74,6 +74,12 @@ Communications Team
 
 - IDB Invest: Norah Sullivan 
 
+IT Team 
+
+- IDB: eBFactory  
+
+- IDB Invest: Maiquel Sampaio de Melo 
+
 ### License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
@@ -82,3 +88,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 * This README was adapted from [*A template to make good README.md*](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * The structure of this repository was adapted from [*Fast Project Templates*](https://github.com/JoaoCarabetta/project-templates)
+
+### About
+This repository reflects the code being used in the most current version of the dashboard
