@@ -36,7 +36,7 @@ import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqp
 
 Make sure you understand the data:
 - [Data Dictionary](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/docs/Data%20Dictionary.md)
-- [Methodology](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note)
+- [Methodology](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note) This Methodological Note will also continuously track and update methodological changes (when necessary) and changes/additions to data sources. The version of the Methodological Note and its date of creation are shown at the top of the document.
 
 ## Ask for a specific region
 
