@@ -8,7 +8,9 @@ Go to dashboard: [ENGLISH](https://www.iadb.org/en/topics-effectiveness-improvin
 
 ## Use the data
 
-The data was also though to be used by the broad community of researchers, journalists and developers. The latest version is easily available 
+The data was also though to be used by the broad community of researchers, journalists and developers. If you have any ideas or doubts about using the data, do not hesitate to submit an [issue](https://github.com/EL-BID/IDB-IDB-Invest-Coronavirus-Impacto-Dashboard/issues/new).
+
+The latest version is easily available through the methods below.
 
 ### Mannualy download
 
@@ -39,14 +41,14 @@ import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqp
 
 Make sure you understand the data:
 - [Data Dictionary](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/docs/Data%20Dictionary.md)
-- [Methodology](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note) This Methodological Note will also continuously track and update methodological changes (when necessary) and changes/additions to data sources. The version of the Methodological Note and its date of creation are shown at the top of the document.
+- This [Methodological Note](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note)  will also continuously track and update methodological changes (when necessary) and changes/additions to data sources. The version of the Methodological Note and its date of creation are shown at the top of the document.
 
 ## Ask for a specific region
 
 The way that the pipeline was implemented allow us to query any region in Latin
 America. To ask for an specific region(s) of interest please submit an issue.
 
-[Click here to request regions](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/issues/new?assignees=JoaoCarabetta&labels=enhancement&template=region-request.md&title=%5BRegion+Request%5D+%3Cadd+short+description%3E)
+[Click here to request regions](https://github.com/EL-BID/IDB-IDB-Invest-Coronavirus-Impacto-Dashboard/issues/new?assignees=JoaoCarabetta&labels=enhancement&template=region-request.md&title=%5BRegion+Request%5D+%3Cadd+short+description%3E)
 
 ## Don't forget to cite us :)
 
@@ -93,4 +95,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 * The structure of this repository was adapted from [*Fast Project Templates*](https://github.com/JoaoCarabetta/project-templates)
 
 ### About
-This repository reflects the code being used in the most current version of the dashboard
+This repository reflects the code being used in the most current version of the dashboard at the *Traffic Congestion* tab.
