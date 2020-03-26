@@ -12,5 +12,5 @@
 | month                | Month in 2019                                                      |
 | day                  | Day in 2019                                                        |
 | dow                  | Day of the week                                                    |
-| ratio_20             | Percentage change in Traffic Congestion Intensity (TCI) is `TCI = (1 - ratio_20) * 100` |
+| ratio_20             | Percentage change in Traffic Congestion Intensity (TCI) is `change_TCI = (ratio_20 - 1) * 100` |
 | region_shapefile_wkt | Region shapefile in WKT                                            |
