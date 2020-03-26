@@ -1,4 +1,4 @@
-| Columns Name         | Description                                                        |
+| Column Name         | Description                                                        |
 |----------------------|--------------------------------------------------------------------|
 | last_updated_utc     | Last updated date in UTC time                                      |
 | region_slug          | Region unique name                                                 |
