@@ -40,7 +40,7 @@ import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqp
 ```
 
 Make sure you understand the data:
-- [Data Dictionary](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/docs/Data%20Dictionary.md)
+- [Data Dictionary](docs/Data%20Dictionary.md)
 - This [Methodological Note](https://iadb-comms.org/COVID19-Impact-Dashboard-Methodological-Note)  will also continuously track and update methodological changes (when necessary) and changes/additions to data sources. The version of the Methodological Note and its date of creation are shown at the top of the document.
 
 ## Ask for a specific region
@@ -52,6 +52,13 @@ America. To ask for an specific region(s) of interest please submit an issue.
 
 ## Don't forget to cite us :)
 
+To cite the IDB and IDB Invest Coronavirus Impact Dashboard, please use the following reference:
+
+> Inter-American Development Bank and IDB Invest. "IDB And IDB Invest Coronavirus Impact Dashboard". 2020. Inter-American Development Bank.www.iadb.org/coronavirus-impact-dashboard
+
+To cite this Methodological Note, please use the following reference: 
+
+> Inter-American Development Bank and IDB Invest. IDB And IDB Invest Coronavirus Impact Dashboard Methodological Note. Washington, DC: Inter-American Development Bank, 2020.https://iadb-comms.org/coronavirus-impact-dashboard-methodological-note.
 
 ## Team 
 
@@ -87,7 +94,7 @@ IT Team
 
 ### License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This work is licensed under a Creative Commons IGO 3.0 - see the [LICENSE.md](LICENSE.md) file for details.
 
 ### Acknowledgments
 
