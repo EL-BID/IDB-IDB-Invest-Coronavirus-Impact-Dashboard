@@ -1,11 +1,13 @@
-# Covid-19 Traffic Congestion Impact in Latin America with Waze Data
+# Coronavirus Traffic Congestion Impact in Latin America with Waze Data
 
-Follow  the impact of COVID-19 outbreak in Latin America in **real time**.
+Follow  the impact of Coronavirus outbreak in Latin America in **real time**.
 
 ![landing_dash](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/imgs/dashboard_landing.png?raw=true)
 [GO TO DASH]()
 
 ## Use the data
+
+The data was also though to be used by the broad community of researchers, journalists and developers. The latest version is easily available 
 
 ### Mannualy download
 
@@ -26,7 +28,7 @@ library(readr)
 
 df<-read.csv('https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id')
 ```
-Obs: I am not sure if it works. Submit a PR if you find a way to do it.
+Obs: Not sure if it works. Submit a PR if you find a way to do it.
 
 ### Stata
 
