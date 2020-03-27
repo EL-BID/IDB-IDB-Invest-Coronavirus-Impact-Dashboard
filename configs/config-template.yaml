@@ -10,7 +10,7 @@
 # means something. A resoanable `slug` is the name of the city or 
 # region that you are running the pipeline for.
 
-slug: dev # prod
+slug: prod # prod
 
 # Pipeline Groups
 # Add historical to run full pipeline
@@ -31,7 +31,7 @@ raw_database: spd_sdv_waze_reprocessed
 
 
 # Athena Configurations
-number_of_athena_jobs: 30
+number_of_athena_jobs: 50
 
 # Initial Filters
 # They are applied at the first step of the pipeline that extracts data
