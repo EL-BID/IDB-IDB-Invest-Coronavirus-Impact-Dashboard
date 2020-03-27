@@ -17,8 +17,6 @@
   runner: create_local_table_athena
   name: load_metadata_tables
 
-
-
 - 
   path: 'sql/metadata/create-metadata-ready.sql'
   runner: basic_athena_query
