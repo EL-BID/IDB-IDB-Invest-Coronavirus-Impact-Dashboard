@@ -122,6 +122,20 @@ def write_index(config):
         drop_rows = ['observed', 'expected_2019', 'expected_2020', 'dashboard', 'ratio_19']
         df = df.drop(drop_rows, 1)
         _write_sheets_table(df, config, drive_config[config['name']]['public'])
+
+def write_analysis_daily(config):
+
+    df = get_data_from_athena(
+            "select * from "
+            f"{config['athena_database']}.{config['slug']}_"
+            f"{config['raw_table']}_analysis_daily"
+        )
+
+    drive_config = yaml.load(open('configs/drive-config.yaml', 'r'))
+
+    print(config['slug'])
+    _write_sheets_table(df, config, drive_config[config['name']][config['slug']])
+
     
 def check_existence(config):
 

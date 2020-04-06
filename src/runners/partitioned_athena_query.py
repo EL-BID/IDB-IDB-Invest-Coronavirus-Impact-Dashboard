@@ -17,29 +17,22 @@ def _load_cities(
 
     return pd.read_csv(path)
 
-def _create_cities_partitions(config):
-    
-    cities = _load_cities()
-    
-    c = cities.query(f'city_slug in {config["cities"]}')\
-          .query(f'shape_type == "{config["shape_type"]}"')
-    
-    return c[['country_name', 
-              'country_iso',
-              'city_name',
-              'city_slug',
-              'timezone',
-              'city_shapefile_wkt']].rename(
-                  columns={'city_slug': 'partition'}).to_dict('records')
-
 
 def _region_slug_partition(config):
 
     data = get_data_from_athena(
              "select * from "
             f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready "
-            ).to_dict('records')
+            )
 
+    if config['sample_cities']:
+
+        data = data[data['population'].apply(
+            lambda x: x.replace(',', '').replace('.00', '')).astype(float) < 4000000]
+
+    data = data.to_dict('records')
+    
+    print(len(data))
     for d in data:
         d['partition'] = d['region_slug']
 
@@ -60,6 +53,9 @@ def daily(config):
 
     return _region_slug_partition(config)
 
+def analysis_daily(config):
+
+    return _region_slug_partition(config)
 
 def perform_query(query):
     """Simply calls Athena and logs the exceptions.
