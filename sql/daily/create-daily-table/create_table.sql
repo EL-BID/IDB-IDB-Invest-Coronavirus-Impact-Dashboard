@@ -3,7 +3,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS {{ athena_database }}.{{ slug }}_{{ raw_tabl
   `month` int,
   `dow` int , 
   `day` int,
-  `sum_length` bigint
+  `sum_length` double
   )
   PARTITIONED BY (
 	region_slug string
