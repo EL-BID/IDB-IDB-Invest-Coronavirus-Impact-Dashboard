@@ -3,7 +3,7 @@ from pathlib import Path
 
 from core import core
 from utils import timed_log, get_config
-
+import logger
 
 class Run(object):
 
@@ -11,7 +11,7 @@ class Run(object):
         slug='dev',
         verbose=False,
         dryrun=False,
-        force_downstream=True,
+        force_downstream=False,
         runall=False,
         force=False,
         n_tries=5,
@@ -52,8 +52,10 @@ class Run(object):
                 
         with timed_log(name='Full process', config=config, time_chunk='minutes', 
                         force=config['force']):
-            core(config)
-
+            try:
+                core(config)
+            except Exception as e:
+                logger.post(e)
 
 if __name__ == "__main__":
 
