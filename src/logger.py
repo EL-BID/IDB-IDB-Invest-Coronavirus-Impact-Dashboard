@@ -18,7 +18,7 @@ def post(content):
     myMessageSection.title("Waze TCP Pipeline Error")
 
     # Section Text
-    myMessageSection.text('**ERROR:** @alerts ' + str(content))
+    myMessageSection.text('**ERROR:** ' + str(content))
 
     # Section Images
     myMessageSection.addImage("http://i.imgur.com/c4jt321l.png", ititle="This Is Fine")
