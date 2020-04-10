@@ -52,10 +52,14 @@ class Run(object):
                 
         with timed_log(name='Full process', config=config, time_chunk='minutes', 
                         force=config['force']):
-            try:
+
+            if config['slug'] == 'prod':
+                try:
+                    core(config)
+                except Exception as e:
+                    logger.post(e)
+            else:
                 core(config)
-            except Exception as e:
-                logger.post(e)
 
 if __name__ == "__main__":
 

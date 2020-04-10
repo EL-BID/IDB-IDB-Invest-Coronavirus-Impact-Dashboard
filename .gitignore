@@ -86,3 +86,7 @@ configs/gcloud-credentials.json
 reports/auto-report.nbconvert.ipynb
 
 configs/drive-config.yaml
+.pytest_cache/v/cache/lastfailed
+configs/teams.yaml
+configs/drive-config.yaml
+configs/drive-config.yaml
