@@ -1,4 +1,5 @@
 CREATE EXTERNAL TABLE IF NOT EXISTS {{ athena_database }}.{{ slug }}_{{ raw_table }}_{{ name }} (
+  `region_slug` string,
   `year` int,
   `month` int,
   `dow` int , 
@@ -6,7 +7,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS {{ athena_database }}.{{ slug }}_{{ raw_tabl
   `sum_length` double
   )
   PARTITIONED BY (
-	region_slug string
+	  country_iso string
   )
   STORED AS ORC
   LOCATION '{{ s3_path }}/{{ slug }}/{{ current_millis }}/{{ raw_table }}/{{ name }}'

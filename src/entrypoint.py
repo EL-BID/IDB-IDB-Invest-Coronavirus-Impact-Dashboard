@@ -58,6 +58,7 @@ class Run(object):
                     core(config)
                 except Exception as e:
                     logger.post(e)
+                    print(e)
             else:
                 core(config)
 
