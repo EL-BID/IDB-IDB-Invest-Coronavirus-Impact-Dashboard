@@ -22,20 +22,41 @@ def _region_slug_partition(config):
 
     data = get_data_from_athena(
              "select * from "
-            f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready "
+            f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready ",
+            config
             )
 
-    if config['sample_cities']:
+    if config.get('if_exists') == 'append':
 
-        data = data[data['population'].apply(
-            lambda x: x.replace(',', '').replace('.00', '')).astype(float) < 4000000]
+        # check if table exists
+
+        skip = get_data_from_athena(
+            "select distinct region_shapefile_wkt from "
+            f"{config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}",
+            config
+        )
+
+        data = data[~data['region_shapefile_wkt'].isin(skip['region_shapefile_wkt'])]
+
+    if config.get('filter_by_coef'):
+
+        skip = get_data_from_athena(
+            "select region_slug from "
+            f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation "
+            "where weekly_approved = true or daily_approved = true", config
+        )
+
+        data = data[data['region_slug'].isin(skip['region_slug'])]       
+
+    if config.get('sample_cities'):
+
+        data = data[:config['sample_cities']]
 
     data = data.to_dict('records')
     
-    print(len(data))
     for d in data:
         d['partition'] = d['region_slug']
-
+        
     return data
 
 
@@ -66,7 +87,7 @@ def perform_query(query):
         dict with two objects, `make` and `drop`. The first to create
         a table and the second to drop the same table.
     """
-
+    print(query['partition'])
     for i in range(query['config']['n_tries']):
         try:
             
@@ -144,10 +165,9 @@ def start(config):
     # create table
     sql = generate_query(sql_path / 'create_table.sql', config)
 
-    if config['verbose']:
-        print(sql)
-
-    query_athena(sql, config)
+    if not((config.get('if_exists') == 'append') and check_existence(config)):
+        print('replacing')
+        query_athena(sql, config)
 
     config['force'] = False
 

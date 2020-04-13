@@ -147,9 +147,12 @@ def connect_athena(path='configs/athena.yaml'):
     return connect(**athena_config)
 
 
-def get_data_from_athena(query, config_path='configs/athena.yaml'):
+def get_data_from_athena(query, config=dict(), config_path='configs/athena.yaml'):
     
     con = connect_athena(config_path)
+
+    if config.get('verbose'):
+        print(query)
     
     res = pd.read_sql_query(query, con)
 
@@ -165,14 +168,14 @@ def query_athena(query, config, config_path='configs/athena.yaml'):
         a valid sql query
     """
     cursor = connect_athena(config_path).cursor()
+ 
+    if config['verbose']:
+        print(query)
 
     if not config['dryrun']:
 
         if config['force']:
 
-            if config['verbose']:
-                print(f'{config["athena_database"]}.{config["slug"]}_{config["raw_table"]}_{config["name"]}')
-            
             cursor.execute(f'drop table \
                 {config["athena_database"]}.{config["slug"]}_{config["raw_table"]}_{config["name"]}')
 

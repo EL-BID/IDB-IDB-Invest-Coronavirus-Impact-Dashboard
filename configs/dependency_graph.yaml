@@ -3,7 +3,6 @@
   path: 'sql/historical/create-historical-raw-table.sql'
   runner: basic_athena_query
   name: historical_2019_raw
-  force: True
   
 - 
   path: 'sql/historical/create-historical-raw-table.sql'
@@ -16,6 +15,7 @@
   path: 'sql/metadata/load_tables.sql'
   runner: create_local_table_athena
   name: load_metadata_tables
+  force: True
 
 - 
   path: 'sql/metadata/create-metadata-ready.sql'
@@ -24,7 +24,35 @@
     load_metadata_tables
   ]
   name: metadata_ready
+  force: True
 
+# Analysis
+
+- 
+  path: 'sql/analysis/create_dummy_year.sql'
+  runner: create_local_table_athena
+  name: dummy_2019
+  year: 2019
+
+- 
+  path: 'sql/analysis/create-daily-table'
+  runner: partitioned_athena_query
+  depends_on: [
+    metadata_ready
+  ]
+  name: analysis_daily
+  year: 2019
+  if_exists: 'append'
+  current_millis: 'fixed4'
+  force: True
+  
+- 
+  path: 'sql/analysis/add_variation_to_metadata.sql'
+  runner: basic_athena_query
+  depends_on: [
+    analysis_daily
+  ]
+  name: metadata_variation
 
 # Daily Queries
 - 
@@ -38,9 +66,10 @@
   name: historical_2019
   depends_on: [
     historical_2019_raw,
-    metadata_ready
+    metadata_variation, 
   ]
   year: 2019
+  filter_by_coef: True
 
 - 
   path: 'sql/daily/create-historical-table'
@@ -48,9 +77,10 @@
   name: historical_2020
   depends_on: [
     historical_2020_raw,
-    metadata_ready
+    metadata_variation
   ]
   year: 2020
+  filter_by_coef: True
 
 
 - 
@@ -58,27 +88,48 @@
   runner: partitioned_athena_query
   depends_on: [
     daily_raw,
-    metadata_ready
+    metadata_variation
   ]
   name: daily
-
+  filter_by_coef: True
 
 - 
-  path: 'sql/daily/create-index-table.sql'
+  path: 'sql/daily/create-daily-index-table.sql'
   runner: basic_athena_query
   depends_on: [
-    metadata_ready,
+    metadata_variation,
     daily,
     historical_2019,
     historical_2020
   ]
-  name: index
+  name: daily_index
 
+- 
+  path: 'sql/daily/create-weekly-index-table.sql'
+  runner: basic_athena_query
+  depends_on: [
+    metadata_variation,
+    daily,
+    historical_2019,
+    historical_2020
+  ]
+  name: weekly_index
 
 - 
   path: 'sql/daily/'
   runner: create_local_table_athena
   depends_on: [
-    index
+    weekly_index,
+    daily_index
   ]
   name: write_index
+  to_write: 
+    - table: daily_daily_index
+      worksheet: daily
+      public_drop: ['observed', 'expected_2019', 'expected_2020', 'dashboard', 'ratio_19']
+    - table: daily_weekly_index
+      worksheet: weekly
+      public_drop: ['observed', 'expected_2019', 'expected_2020', 'dashboard', 'ratio_19']
+    - table: analysis_metadata_variation
+      worksheet: metadata
+      public_drop: ['daily_mean', 'weekly_mean', 'daily_std', 'weekly_std', 'ratio_19']
