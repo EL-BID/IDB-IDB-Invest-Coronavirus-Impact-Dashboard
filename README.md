@@ -42,9 +42,8 @@ df = pd.read_csv(url)
 ```
 library(readr)
 
-df<-read.csv('https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id')
+df<-read_csv('https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id')
 ```
-Obs: Not sure if it works. Submit a PR if you find a way to do it.
 
 ### Stata
 
