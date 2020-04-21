@@ -6,11 +6,10 @@ from copy import deepcopy
 import pyathena
 import pandas as pd
 
-
 import logging
 log = logging.getLogger(__name__)
 
-from utils import break_list_in_chunks, add_query_dates, to_wkt, query_athena, generate_query, get_data_from_athena
+from utils import break_list_in_chunks, add_query_dates, to_wkt, query_athena, generate_query, get_data_from_athena, delete_s3_path
 
 def _load_cities(
     path= 'data/raw/cities_metadata.csv'):
@@ -26,24 +25,35 @@ def _region_slug_partition(config):
             config
             )
 
+    rerun = data[data['rerun'] == 'TRUE']
+    len(rerun)
+
     if config.get('if_exists') == 'append':
 
         # check if table exists
-
-        skip = get_data_from_athena(
-            "select distinct region_shapefile_wkt from "
-            f"{config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}",
-            config
-        )
-
+        try:
+            skip = get_data_from_athena(
+                "select distinct region_shapefile_wkt from "
+                f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation ",
+                config
+            )
+        except:
+            skip = pd.DataFrame([], columns=['region_shapefile_wkt'])
+        
         data = data[~data['region_shapefile_wkt'].isin(skip['region_shapefile_wkt'])]
+        
+
+        if config['name'] == 'analysis_daily':
+            data = data[~data['region_slug'].isin(config['cv_exception'])]
 
     if config.get('filter_by_coef'):
 
         skip = get_data_from_athena(
             "select region_slug from "
             f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation "
-            "where weekly_approved = true or daily_approved = true", config
+            "where (weekly_approved = true or daily_approved = true) "
+            f"""or (region_slug in ('{"','".join(config['cv_exception'])}')) """
+            , config
         )
 
         data = data[data['region_slug'].isin(skip['region_slug'])]       
@@ -52,11 +62,18 @@ def _region_slug_partition(config):
 
         data = data[:config['sample_cities']]
 
+    data = pd.concat([data, rerun]).drop_duplicates()
+
     data = data.to_dict('records')
     
     for d in data:
         d['partition'] = d['region_slug']
         
+        if config['name'] == 'analysis_daily':
+            d['p_path'] = deepcopy('country_iso={country_iso}/{partition}'.format(**d))
+        else:
+            d['p_path'] = deepcopy('region_slug={partition}'.format(**d))
+
     return data
 
 
@@ -87,9 +104,11 @@ def perform_query(query):
         dict with two objects, `make` and `drop`. The first to create
         a table and the second to drop the same table.
     """
-    print(query['partition'])
+
     for i in range(query['config']['n_tries']):
         try:
+            
+            delete_s3_path(query['p_path'], query['config'])
             
             query_athena(query['drop'], query['config'])
 
@@ -97,9 +116,12 @@ def perform_query(query):
 
             query_athena(query['drop'], query['config'])
             break
+
         except Exception as e:
             if query['config']['verbose']:
                 print(e)
+            if i == query['config']['n_tries'] - 1:
+                raise e
             continue
 
 
@@ -152,6 +174,7 @@ def partition_query(query_path, config):
                 drop=
                 f"drop table {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}_{config['partition']}",
                 config=config,
+                p_path=deepcopy(partition['p_path']),
                 partition=config['partition']
         ))
 
@@ -176,8 +199,5 @@ def start(config):
 
     # partition
     sql = generate_query(sql_path / 'partition.sql', config)
-
-    if config['verbose']:
-        print(sql)
 
     query_athena(sql, config)
