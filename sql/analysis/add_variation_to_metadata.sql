@@ -47,5 +47,5 @@ select m.*,
 	   c.daily_approved,
 	   c.weekly_approved
 from coef_var c
-join {{ athena_database }}.{{ slug }}_metadata_metadata_ready m
+right join {{ athena_database }}.{{ slug }}_metadata_metadata_ready m
 on m.region_slug = c.region_slug
