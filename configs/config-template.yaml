@@ -22,6 +22,9 @@ tables: [analysis, daily, metadata] #[daily, metadata, historical] #
 # Where the data is going to be saved. 
 s3_path: s3://iadbprod-public-stata-as-a-service/spd-sdv-omitnik-waze/corona
 
+bucket: iadbprod-public-stata-as-a-service
+prefix: spd-sdv-omitnik-waze/corona
+
 # Where to save all tables to run the pipeline.
 athena_database: spd_sdv_waze_corona
 
@@ -69,6 +72,8 @@ countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
             TD,AV,SC,PO,SG,UY,GY,BH,GP,SX,VC,BF,AA,MB,FG,CJ,TK,SP,MH,ST,BD,CV,
             HA,AC,MF,BQ,GJ,VI,DO,MR]
 
+cv_exception: [country_brazil]
+
 # Metadata 
 metadata:
     regions_metadata:
@@ -81,7 +86,8 @@ metadata:
             population,
             dashboard,
             timezone,
-            region_shapefile_wkt
+            region_shapefile_wkt,
+            rerun
             ]
     country_waze_to_iso:
         columns: [
