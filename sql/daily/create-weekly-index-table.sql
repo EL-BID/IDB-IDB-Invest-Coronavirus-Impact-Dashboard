@@ -65,3 +65,4 @@ from ratios
 join {{ athena_database }}.{{ slug }}_analysis_metadata_variation metadata
 on ratios.region_slug = metadata.region_slug
 where weekly_approved = true
+or metadata.region_slug in ('{{ cv_exception | join(', ') }}')

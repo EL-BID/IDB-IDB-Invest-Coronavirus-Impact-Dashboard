@@ -26,7 +26,7 @@ with daily as (
 		{% if waze_code != 'continent' %}   
 				country = '{{ waze_code }}' and
 			st_intersects(
-			st_polygon('{{ region_shapefile_wkt }}'),
+			st_polygon('{{ region_shapefile_wkt | replace('"', '') }}'),
 			st_line(line))
 		{%endif %}
 			)
