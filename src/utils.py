@@ -13,6 +13,8 @@ from rdp import rdp
 import csv
 import io
 from dateutil import rrule
+import boto3
+from boto3.session import Session
 
 from contextlib import contextmanager
 
@@ -203,9 +205,6 @@ def generate_query(path, config):
     sql = open(path, 'r').read()
 
     query = Template(sql).render(**config)
-    
-    if config['verbose']:
-        print(query)
 
     return query
 
@@ -246,3 +245,37 @@ def add_query_dates(start, end):
     return  [dt.strftime("%Y%m%d") 
                     for dt in rrule.rrule(rrule.DAILY,
                                             dtstart=start, until=end)]
+
+def flatten(l):
+    return [item for sublist in l for item in sublist]
+
+def delete_s3_path(p_path, config):
+
+    session = Session()
+    
+    s3 = boto3.client("s3")
+    paginator = s3.get_paginator("list_objects_v2")
+
+    try:
+        config.pop('p_path')
+    except KeyError:
+        pass
+
+    pag_args = dict(
+            Bucket=config['bucket'], 
+            Prefix='{prefix}/{slug}/{current_millis}/{raw_table}/{name}/{p_path}'.format(**config, p_path=p_path),
+            PaginationConfig={
+            'MaxItems': 1000000,
+            'PageSize': 1000000})
+
+    try:
+        objects = list({'Key': p['Key']} for p in 
+            flatten((page['Contents'] for page in paginator.paginate(**pag_args))))
+        
+        bucket = session.resource('s3').Bucket(pag_args['Bucket'])
+        response = bucket.delete_objects(Delete={'Objects': objects})
+        
+        if config['verbose']:
+            print('Deleted', pag_args['Prefix'])
+    except KeyError: 
+        pass
