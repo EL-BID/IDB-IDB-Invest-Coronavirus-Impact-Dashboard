@@ -1,5 +1,7 @@
 # Coronavirus Traffic Congestion Impact in Latin America with Waze Data
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=EL-BID_Covid-19-Traffic-Impact-Dashboard&metric=alert_status)](https://sonarcloud.io/dashboard?id=EL-BID_Covid-19-Traffic-Impact-Dashboard)
+
 Follow  the impact of Coronavirus outbreak in Latin America in **real time**. 
 
 ![landing_dash](https://github.com/EL-BID/Covid-19-Traffic-Impact-Dashboard/blob/master/imgs/dashboard_landing.png?raw=true)
@@ -23,7 +25,10 @@ But first, make sure you understand the data:
 
 The latest version of the data is easily available through the methods below.
 
+> :warning: The data methodology is going through slight changes and updates. Data sources may be unstable and not match the online dashboard.
+
 ### Mannualy download
+
 
 [Download](https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id)
 
@@ -40,9 +45,8 @@ df = pd.read_csv(url)
 ```
 library(readr)
 
-df<-read.csv('https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id')
+df<-read_csv('https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id')
 ```
-Obs: Not sure if it works. Submit a PR if you find a way to do it.
 
 ### Stata
 
