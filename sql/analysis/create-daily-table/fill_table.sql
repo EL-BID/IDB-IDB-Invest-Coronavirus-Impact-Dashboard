@@ -22,7 +22,12 @@ with daily as (
 											timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') order by from_unixtime(retrievaltime/1000)) n_row
 		from spd_sdv_waze_reprocessed.jams_ready
 		where 
-		year(from_unixtime(retrievaltime/1000)) = 2019 and
+		{% if region_slug in sampled %}
+			regexp_like(datetime, '{{ dates|join("|") }}')
+		{% else %}
+			year(from_unixtime(retrievaltime/1000)) = 2019
+		{% endif %}
+		and
 		{% if waze_code != 'continent' %}   
 				country = '{{ waze_code }}' and
 			st_intersects(
@@ -41,7 +46,11 @@ with daily as (
 	group by  year, month, dow, day)
 select '{{ region_slug }}' region_slug, 
 		b.year, b."month", b.dow,  b."day", 
-		case when a.sum_length is null then 0 else a.sum_length end sum_length
+		{% if region_slug in sampled %}
+			a.sum_length
+		{% else %}
+			case when a.sum_length is null then 0 else a.sum_length end sum_length
+		{% endif %}
 from {{ athena_database }}.{{ slug }}_analysis_dummy_2019 b
 full outer join daily a
 on a.year = b."year"

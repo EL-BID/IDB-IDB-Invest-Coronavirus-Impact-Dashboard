@@ -22,9 +22,7 @@ with coef_var as (
 		d.*,
 		w.weekly_mean,
 		w.weekly_std,
-		w.weekly_coef_var,
-		case when d.daily_coef_var <= {{ variation_coef_thershold }} then true else false end daily_approved,
-		case when w.weekly_coef_var <= {{ variation_coef_thershold }} then true else false end weekly_approved
+		w.weekly_coef_var
 	from (
 		select region_slug,
 			count(*) as n_days,
@@ -35,17 +33,23 @@ with coef_var as (
 		group by region_slug ) d
 	join weekly w
 	on d.region_slug = w.region_slug)
-select m.*,
-	   st_area(m.region_shapefile_binary) area,
-	   c.n_days,
-	   c.daily_mean,
-	   c.daily_std,
-	   c.daily_coef_var,
-	   c.weekly_mean,
-	   c.weekly_std,
-	   c.weekly_coef_var,
-	   c.daily_approved,
-	   c.weekly_approved
+select 	m.*,
+		st_area(m.region_shapefile_binary) area,
+		c.n_days,
+		c.daily_mean,
+		c.daily_std,
+		c.daily_coef_var,
+		c.weekly_mean,
+		c.weekly_std,
+		c.weekly_coef_var,
+		c.daily_mean / m.osm_length as daily_osm_ratio,
+		c.weekly_mean / 7 / m.osm_length as weekly_osm_ratio,
+	    case when (c.daily_coef_var <= {{ variation_coef_threshold }})
+			and  (c.daily_mean / m.osm_length >= {{ osm_length_threshold }})
+			then true else false end daily_approved,
+		case when (c.weekly_coef_var <= {{ variation_coef_threshold }})
+			and (c.weekly_mean / 7 / m.osm_length >= {{ osm_length_threshold }})
+			then true else false end weekly_approved
 from coef_var c
 right join {{ athena_database }}.{{ slug }}_metadata_metadata_ready m
 on m.region_slug = c.region_slug
