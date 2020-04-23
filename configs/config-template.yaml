@@ -53,9 +53,13 @@ feed_frequency: 5
 reference_timestamp: '2015-01-01 00:00:00' # do not change
 
 # Pipeline Intervals 
+full_2019_interval:
+    start: 2019-01-01
+    end: 2019-12-31
+
 historical_2019_interval:
     start: 2019-03-08
-    end: 2019-04-30
+    end: 2019-05-30
 
 historical_2020_interval:
     start: 2020-03-01
@@ -65,7 +69,8 @@ daily_interval:
     start: 2020-03-16
     end: 'today'
 
-variation_coef_thershold: 0.5
+variation_coef_threshold: 0.5
+osm_length_threshold: 0.2
 
 # Countries partitions
 countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
@@ -73,6 +78,16 @@ countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
             HA,AC,MF,BQ,GJ,VI,DO,MR]
 
 cv_exception: [country_brazil]
+
+accepted_osm_keys: [
+    motorway,
+    trunk,
+    primary,
+    secondary,
+    tertiary,
+    unclassified,
+    residential
+]
 
 # Metadata 
 metadata:

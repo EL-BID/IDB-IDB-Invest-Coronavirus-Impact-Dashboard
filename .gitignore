@@ -90,3 +90,4 @@ configs/drive-config.yaml
 configs/teams.yaml
 configs/drive-config.yaml
 configs/drive-config.yaml
+.pytest_cache/v/cache/lastfailed
