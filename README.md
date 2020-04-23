@@ -27,17 +27,23 @@ The latest version of the data is easily available through the methods below.
 
 > :warning: The data methodology is going through slight changes and updates. Data sources may be unstable and not match the online dashboard.
 
-### Mannualy download
+### Download Manually
 
+- [daily](https://bit.ly/idb-traffic-daily)
+- [weekly](https://bit.ly/idb-traffic-weekly)
+- [metadata](https://bit.ly/idb-traffic-metadata)
 
-[Download](https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id)
+Access the [sheets](https://bit.ly/idb-traffic-sheets)
+
 
 ### Python
 
 ```
 import pandas as pd
-url = 'https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id'
-df = pd.read_csv(url)
+
+daily = pd.read_csv('https://bit.ly/idb-traffic-daily')
+weekly = pd.read_csv('https://bit.ly/idb-traffic-weekly')
+metadata = pd.read_csv('https://bit.ly/idb-traffic-metadata')
 ```
 
 ### R
@@ -45,13 +51,17 @@ df = pd.read_csv(url)
 ```
 library(readr)
 
-df<-read_csv('https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id')
+daily<-read_csv('https://bit.ly/idb-traffic-daily')
+weekly<-read_csv('https://bit.ly/idb-traffic-weekly')
+metadata<-read_csv('https://bit.ly/idb-traffic-metadata')
 ```
 
 ### Stata
 
 ```
-import delimited using "https://docs.google.com/spreadsheets/d/16SIYidLScgFZOeqpHmAo_u_rFmuxxpCCWeRAXSDOT3I/export?format=csv&id", clear
+import delimited using "https://bit.ly/idb-traffic-daily", clear
+import delimited using "https://bit.ly/idb-traffic-weekly", clear
+import delimited using "https://bit.ly/idb-traffic-medata", clear
 ```
 
 ## Ask for a specific region
