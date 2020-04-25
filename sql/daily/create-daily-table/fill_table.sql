@@ -14,7 +14,7 @@ with t as (
 										cast(date_diff('minute',
 											timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
 											timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') as time,
-			row_number() over (partition by uuid, 
+			row_number() over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
 									date_parse(format_datetime(date_add('minute', 
 										cast(date_diff('minute',
 											timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},

@@ -16,12 +16,22 @@ with daily as (
 												timestamp '{{ reference_timestamp }}', from_unixtime(retrievaltime/1000)) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
 												timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') as time,
 				row_number() over (partition by uuid, 
+									year(from_unixtime(retrievaltime/1000)), 
+									month(from_unixtime(retrievaltime/1000)), 
+									day(from_unixtime(retrievaltime/1000)),
 										date_parse(format_datetime(date_add('minute', 
 											cast(date_diff('minute',
 												timestamp '{{ reference_timestamp }}', from_unixtime(retrievaltime/1000)) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
 											timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') order by from_unixtime(retrievaltime/1000)) n_row
 		from spd_sdv_waze_reprocessed.jams_ready
 		where 
+		{% for filter in initial_filters %}
+		{%- if loop.last -%}
+			{{ filter }}
+		{%- else -%}
+			{{ filter }} and
+		{%- endif %} 
+		{% endfor %} and
 		{% if region_slug in sampled %}
 			regexp_like(datetime, '{{ dates|join("|") }}')
 		{% else %}

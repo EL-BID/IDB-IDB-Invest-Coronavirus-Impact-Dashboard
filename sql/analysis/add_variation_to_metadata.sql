@@ -25,10 +25,16 @@ with coef_var as (
 		w.weekly_coef_var
 	from (
 		select region_slug,
-			count(*) as n_days,
-			avg(sum_length) as daily_mean,
-			stddev_pop(sum_length) as daily_std,
-			stddev_pop(sum_length) / avg(sum_length) daily_coef_var
+				count(*) as n_days,
+				avg(sum_length) as daily_mean,
+				stddev_pop(sum_length) as daily_std,
+				stddev_pop(sum_length) / avg(sum_length) daily_coef_var,
+				avg(case when dow in (6, 7) then sum_length else null end) daily_mean_weekend,
+				stddev_pop(case when dow in (6, 7) then sum_length else null end) daily_std_weekend,
+				stddev_pop(case when dow in (6, 7) then sum_length else null end) / avg(case when dow in (6, 7) then sum_length else null end)  daily_coef_var_weekend,
+				avg(case when dow not in (6, 7) then sum_length else null end) daily_mean_weekday,
+				stddev_pop(case when dow not in (6, 7) then sum_length else null end) daily_std_weekday,
+				stddev_pop(case when dow not in (6, 7) then sum_length else null end) / avg(case when dow in (6, 7) then sum_length else null end)  daily_coef_var_weekday
 		from {{ athena_database }}.{{ slug }}_analysis_analysis_daily
 		group by region_slug ) d
 	join weekly w
@@ -38,11 +44,18 @@ select 	m.*,
 		c.n_days,
 		c.daily_mean,
 		c.daily_std,
-		c.daily_coef_var,
 		c.weekly_mean,
 		c.weekly_std,
-		c.weekly_coef_var,
+		c.daily_coef_var,
+		c.daily_mean_weekend,
+		c.daily_std_weekend,
+		c.daily_coef_var_weekend,
+		c.daily_mean_weekday,
+		c.daily_std_weekday,
+		c.daily_coef_var_weekday,
 		c.daily_mean / m.osm_length as daily_osm_ratio,
+		c.daily_mean_weekend / m.osm_length as weekend_osm_ratio,
+		c.daily_mean_weekday / m.osm_length as weekday_osm_ratio,
 		c.weekly_mean / 7 / m.osm_length as weekly_osm_ratio,
 	    case when (c.daily_coef_var <= {{ variation_coef_threshold }})
 			and  (c.daily_mean / m.osm_length >= {{ osm_length_threshold }})

@@ -43,7 +43,8 @@ def _region_slug_partition(config):
         try:
             skip = get_data_from_athena(
                 "select distinct region_shapefile_wkt from "
-                f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation ",
+                f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation "
+                "where n_days is not null",
                 config,
             )
         except:
@@ -71,6 +72,8 @@ def _region_slug_partition(config):
         data = data[: config["sample_cities"]]
 
     data = pd.concat([data, rerun]).drop_duplicates()
+
+    print(list(data["region_slug"]))
 
     data = data.to_dict("records")
 

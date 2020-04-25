@@ -54,20 +54,24 @@
   current_millis: 'fixed4'
   sampled: ['country_brazil', 'country_mexico'] 
   year: 2019
+  force: True
 
 - 
   path: 'sql/analysis/add_variation_to_metadata.sql'
   runner: basic_athena_query
   depends_on: [
-    analysis_daily
+    analysis_daily,
+    metadata_ready
   ]
   name: metadata_variation
-  
+  force: True
+
 # Daily Queries
 - 
   path: 'sql/daily/create-daily-raw-table.sql'
   runner: basic_athena_query
   name: daily_raw
+ 
 
 - 
   path: 'sql/daily/create-historical-table'
@@ -145,4 +149,7 @@
       worksheet: metadata
       overall_drop: ['region_shapefile_binary', 'area']
       public_drop: ['daily_mean', 'weekly_mean', 'daily_std', 'weekly_std', 
-                   'daily_osm_ratio', 'weekly_osm_ratio']
+                   'daily_osm_ratio', 'weekly_osm_ratio', 'dashboard', 'rerun',
+                   'waze_code', 'idb_code', 'country_name_idb_eng', 'n_days',
+                   'daily_mean_weekend', 'daily_std_weekend', 'daily_mean_weekday',
+                   'daily_std_weekday']
