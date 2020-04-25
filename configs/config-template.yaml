@@ -10,12 +10,10 @@
 # means something. A resoanable `slug` is the name of the city or 
 # region that you are running the pipeline for.
 
-slug: analysis # prod
-
 # Pipeline Groups
 # Add historical to run full pipeline
 
-tables: [daily, metadata] #, historical] #
+tables: [daily, metadata, analysis] #, historical] #
 
 
 # Athena 
@@ -48,7 +46,7 @@ number_of_athena_jobs: 5
 initial_filters:
     - speed >= 0
     - length > 0
-    # - blockingalertuuid is null # uncomment to filter blocked roads
+    - blockingalertuuid is null # uncomment to filter blocked roads
 
 # Waze Feed
 feed_frequency: 5
@@ -60,26 +58,26 @@ full_2019_interval:
     end: 2019-12-31
 
 historical_2019_interval:
-    start: 2019-03-08
+    start: 2019-03-09
     end: 2019-05-30
 
 historical_2020_interval:
-    start: 2020-03-01
-    end: 2020-03-07
+    start: 2020-03-02
+    end: 2020-03-08
 
 daily_interval:
     start: 2020-03-16
     end: 'today'
 
 variation_coef_threshold: 0.5
-osm_length_threshold: 0.2
+osm_length_threshold: 0.1
 
 # Countries partitions
 countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
             TD,AV,SC,PO,SG,UY,GY,BH,GP,SX,VC,BF,AA,MB,FG,CJ,TK,SP,MH,ST,BD,CV,
             HA,AC,MF,BQ,GJ,VI,DO,MR]
 
-cv_exception: [country_brazil]
+cv_exception: ['country_brazil']
 
 accepted_osm_keys: [
     motorway,
