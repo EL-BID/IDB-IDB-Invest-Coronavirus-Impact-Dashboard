@@ -73,8 +73,6 @@ def _region_slug_partition(config):
 
     data = pd.concat([data, rerun]).drop_duplicates()
 
-    print(list(data["region_slug"]))
-
     data = data.to_dict("records")
 
     for d in data:
