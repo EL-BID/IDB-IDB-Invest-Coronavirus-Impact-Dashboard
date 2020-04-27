@@ -45,8 +45,11 @@ select
 	ratios.expected_2020,
 	ratios.ratio_19,
 	ratios.ratio_20,
+	(ratio_20 - 1) * 100 as tcp,
 	metadata.dashboard,
 	metadata.region_shapefile_wkt
 from ratios
-join {{ athena_database }}.{{ slug }}_metadata_metadata_ready metadata
+join {{ athena_database }}.{{ slug }}_analysis_metadata_variation metadata
 on ratios.region_slug = metadata.region_slug
+where daily_approved = true
+or metadata.region_slug in ('{{ cv_exception | join(', ') }}')

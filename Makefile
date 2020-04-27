@@ -19,6 +19,3 @@ activate-extensions:
 	jupyter nbextension enable toc2/main --user; \
 	jupyter nbextension install --py --user keplergl; \
 	jupyter nbextension enable --py --user keplergl
-
-run-prod:
-	cd /home/joaom/projects/waze_coronavirus; source activate norm_env && python src/entrypoint.py single --config_path=configs/config-production.yaml --force &>> log.log

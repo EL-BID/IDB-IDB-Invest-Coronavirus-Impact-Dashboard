@@ -3,7 +3,6 @@
   path: 'sql/historical/create-historical-raw-table.sql'
   runner: basic_athena_query
   name: historical_2019_raw
-  force: True
   
 - 
   path: 'sql/historical/create-historical-raw-table.sql'
@@ -18,19 +17,61 @@
   name: load_metadata_tables
 
 - 
-  path: 'sql/metadata/create-metadata-ready.sql'
-  runner: basic_athena_query
+  path: 'sql/metadata/'
+  runner: create_local_table_athena
   depends_on: [
     load_metadata_tables
   ]
+  name: metadata_osm_length
+  mode: overwrite_partitions
+
+- 
+  path: 'sql/metadata/create-metadata-ready.sql'
+  runner: basic_athena_query
+  depends_on: [
+    metadata_osm_length
+  ]
   name: metadata_ready
 
+# Analysis
+
+- 
+  path: 'sql/analysis/create_dummy_year.sql'
+  runner: create_local_table_athena
+  name: dummy_2019
+  year: 2019
+
+
+- 
+  path: 'sql/analysis/create-daily-table'
+  runner: partitioned_athena_query
+  depends_on: [
+    metadata_ready
+  ]
+  name: analysis_daily
+  year: 2019
+  if_exists: 'append'
+  current_millis: 'fixed4'
+  sampled: ['country_brazil', 'country_mexico'] 
+  year: 2019
+  force: True
+
+- 
+  path: 'sql/analysis/add_variation_to_metadata.sql'
+  runner: basic_athena_query
+  depends_on: [
+    analysis_daily,
+    metadata_ready
+  ]
+  name: metadata_variation
+  force: True
 
 # Daily Queries
 - 
   path: 'sql/daily/create-daily-raw-table.sql'
   runner: basic_athena_query
   name: daily_raw
+ 
 
 - 
   path: 'sql/daily/create-historical-table'
@@ -38,9 +79,10 @@
   name: historical_2019
   depends_on: [
     historical_2019_raw,
-    metadata_ready
+    metadata_variation, 
   ]
   year: 2019
+  filter_by_coef: True
 
 - 
   path: 'sql/daily/create-historical-table'
@@ -48,9 +90,10 @@
   name: historical_2020
   depends_on: [
     historical_2020_raw,
-    metadata_ready
+    metadata_variation
   ]
   year: 2020
+  filter_by_coef: True
 
 
 - 
@@ -58,27 +101,55 @@
   runner: partitioned_athena_query
   depends_on: [
     daily_raw,
-    metadata_ready
+    metadata_variation
   ]
   name: daily
-
+  filter_by_coef: True
 
 - 
-  path: 'sql/daily/create-index-table.sql'
+  path: 'sql/daily/create-daily-index-table.sql'
   runner: basic_athena_query
   depends_on: [
-    metadata_ready,
+    metadata_variation,
     daily,
     historical_2019,
     historical_2020
   ]
-  name: index
+  name: daily_index
 
+- 
+  path: 'sql/daily/create-weekly-index-table.sql'
+  runner: basic_athena_query
+  depends_on: [
+    metadata_variation,
+    daily,
+    historical_2019,
+    historical_2020
+  ]
+  name: weekly_index
 
 - 
   path: 'sql/daily/'
   runner: create_local_table_athena
   depends_on: [
-    index
+    weekly_index,
+    daily_index
   ]
   name: write_index
+  to_write: 
+    - table: daily_daily_index
+      worksheet: daily
+      overall_drop: [region_shapefile_wkt]
+      public_drop: ['observed', 'expected_2019', 'expected_2020', 'dashboard', 'ratio_19']
+    - table: daily_weekly_index
+      worksheet: weekly
+      overall_drop: [region_shapefile_wkt]
+      public_drop: ['observed', 'expected_2019', 'expected_2020', 'dashboard', 'ratio_19']
+    - table: analysis_metadata_variation
+      worksheet: metadata
+      overall_drop: ['region_shapefile_binary', 'area']
+      public_drop: ['daily_mean', 'weekly_mean', 'daily_std', 'weekly_std', 
+                   'daily_osm_ratio', 'weekly_osm_ratio', 'dashboard', 'rerun',
+                   'waze_code', 'idb_code', 'country_name_idb_eng', 'n_days',
+                   'daily_mean_weekend', 'daily_std_weekend', 'daily_mean_weekday',
+                   'daily_std_weekday']

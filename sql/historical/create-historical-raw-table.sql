@@ -5,8 +5,8 @@ with (
       ) as
 select uuid, country, 
 		city, length, line,
-		arbitrary(from_unixtime(retrievaltime/1000)) retrievaltime
-from "p-waze-parquet-waze"."jams"
+		from_unixtime(retrievaltime/1000) retrievaltime
+from spd_sdv_waze_reprocessed.jams_ready
 where regexp_like(datetime, '{{ dates }}')
 and
 		{% for filter in initial_filters %}
@@ -16,7 +16,3 @@ and
 			{{ filter }} and
 		{%- endif %} 
 		{% endfor %}
-group by uuid, pubmillis, country, 
-		city, street, roadtype, level, length, speed,
-		speedkmh, delay, line,  type,  turntype,
-		blockingalertuuid, startnode, endnode
