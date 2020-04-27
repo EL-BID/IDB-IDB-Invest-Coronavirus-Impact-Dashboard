@@ -10,17 +10,20 @@
 # means something. A resoanable `slug` is the name of the city or 
 # region that you are running the pipeline for.
 
-slug: prod # prod
-
 # Pipeline Groups
 # Add historical to run full pipeline
-tables: [daily, metadata] #, historical] #
+
+tables: [daily, metadata, analysis] #, historical] #
+
 
 # Athena 
 # Those variables are used build Athena queries and locate the working database,
  
 # Where the data is going to be saved. 
 s3_path: s3://iadbprod-public-stata-as-a-service/spd-sdv-omitnik-waze/corona
+
+bucket: iadbprod-public-stata-as-a-service
+prefix: spd-sdv-omitnik-waze/corona
 
 # Where to save all tables to run the pipeline.
 athena_database: spd_sdv_waze_corona
@@ -31,7 +34,7 @@ raw_database: spd_sdv_waze_reprocessed
 
 
 # Athena Configurations
-number_of_athena_jobs: 50
+number_of_athena_jobs: 5
 
 # Initial Filters
 # They are applied at the first step of the pipeline that extracts data
@@ -43,29 +46,48 @@ number_of_athena_jobs: 50
 initial_filters:
     - speed >= 0
     - length > 0
-    # - blockingalertuuid is null # uncomment to filter blocked roads
+    - blockingalertuuid is null # uncomment to filter blocked roads
 
 # Waze Feed
 feed_frequency: 5
 reference_timestamp: '2015-01-01 00:00:00' # do not change
 
 # Pipeline Intervals 
+full_2019_interval:
+    start: 2019-01-01
+    end: 2019-12-31
+
 historical_2019_interval:
-    start: 2019-03-08
-    end: 2019-04-30
+    start: 2019-03-09
+    end: 2019-05-30
 
 historical_2020_interval:
-    start: 2020-03-01
-    end: 2020-03-07
+    start: 2020-03-02
+    end: 2020-03-08
 
 daily_interval:
-    start: 2020-03-08
+    start: 2020-03-16
     end: 'today'
+
+variation_coef_threshold: 0.5
+osm_length_threshold: 0.1
 
 # Countries partitions
 countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
             TD,AV,SC,PO,SG,UY,GY,BH,GP,SX,VC,BF,AA,MB,FG,CJ,TK,SP,MH,ST,BD,CV,
             HA,AC,MF,BQ,GJ,VI,DO,MR]
+
+cv_exception: ['country_brazil']
+
+accepted_osm_keys: [
+    motorway,
+    trunk,
+    primary,
+    secondary,
+    tertiary,
+    unclassified,
+    residential
+]
 
 # Metadata 
 metadata:
@@ -79,7 +101,9 @@ metadata:
             population,
             dashboard,
             timezone,
-            region_shapefile_wkt]
+            region_shapefile_wkt,
+            rerun
+            ]
     country_waze_to_iso:
         columns: [
             waze_code,
