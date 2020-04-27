@@ -25,7 +25,7 @@ But first, make sure you understand the data:
 
 The latest version of the data is easily available through the methods below.
 
-> :warning: The data methodology is going through slight changes and updates. Data sources may be unstable and not match the online dashboard.
+> :warning: The data methodology was recently updated. Historical data may have changed since last version. Please refer to the Methodological Note to understand the new changes.
 
 ### Download Manually
 
