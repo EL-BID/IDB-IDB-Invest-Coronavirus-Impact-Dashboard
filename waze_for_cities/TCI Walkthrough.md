@@ -45,6 +45,8 @@ WHERE ​
     ST_INTERSECTS(geo, ST_GEOGFROMTEXT(“<YOUR POLYGON>”) IS TRUE
 AND​
     ts between DATE <initial_date> and DATE <final_date> 
+AND 
+    level != 5
 GROUP BY​
     date(ts)
 ```
@@ -70,6 +72,8 @@ WHERE ​
     ST_INTERSECTS(geo, ST_GEOGFROMTEXT(“<YOUR POLYGON>”) IS TRUE
 AND​
     ts between DATE <initial_baseline_date> and DATE <initial_baseline_date> 
+AND 
+    level != 5
 GROUP BY​
     EXTRACT(DAYOFWEEK from ts)
 ```
@@ -112,7 +116,9 @@ with tci as (
     WHERE ​
         ST_INTERSECTS(geo, ST_GEOGFROMTEXT(“<YOUR POLYGON>”) IS TRUE
     AND​
-        ts between DATE <initial_date_historical> and DATE <final_date_historical>  
+        ts between DATE <initial_date_historical> and DATE <final_date_historical> 
+    AND 
+        level != 5
     GROUP BY​
         date(ts))
 SELECT
