@@ -41,9 +41,9 @@ Access the [sheets](https://bit.ly/idb-traffic-sheets)
 ```
 import pandas as pd
 
-daily = pd.read_csv('https://bit.ly/idb-traffic-daily')
-weekly = pd.read_csv('https://bit.ly/idb-traffic-weekly')
-metadata = pd.read_csv('https://bit.ly/idb-traffic-metadata')
+daily = pd.read_csv('http://tiny.cc/idb-traffic-daily')
+weekly = pd.read_csv('http://tiny.cc/idb-traffic-weekly')
+metadata = pd.read_csv('http://tiny.cc/idb-traffic-metadata')
 ```
 
 ### R
@@ -51,17 +51,17 @@ metadata = pd.read_csv('https://bit.ly/idb-traffic-metadata')
 ```
 library(readr)
 
-daily<-read_csv('https://bit.ly/idb-traffic-daily')
-weekly<-read_csv('https://bit.ly/idb-traffic-weekly')
-metadata<-read_csv('https://bit.ly/idb-traffic-metadata')
+daily<-read_csv('http://tiny.cc/idb-traffic-daily')
+weekly<-read_csv('http://tiny.cc/idb-traffic-weekly')
+metadata<-read_csv('http://tiny.cc/idb-traffic-metadata')
 ```
 
 ### Stata
 
 ```
-import delimited using "https://bit.ly/idb-traffic-daily", clear
-import delimited using "https://bit.ly/idb-traffic-weekly", clear
-import delimited using "https://bit.ly/idb-traffic-medata", clear
+import delimited using "http://tiny.cc/idb-traffic-daily", clear
+import delimited using "http://tiny.cc/idb-traffic-weekly", clear
+import delimited using "http://tiny.cc/idb-traffic-medata", clear
 ```
 
 ## Ask for a specific region
