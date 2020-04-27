@@ -2,18 +2,23 @@
 
 This is a short tutorial on how to reproduce the TCI Index with BigQuery.
 
-Erros might happen. Please, submit an issue if you have any doubt, suggestion or 
-if have spotted an error.
+> Erros might happen. Please, submit an issue if you have any doubt, suggestion or 
+if you have spotted any error.
 
-Before you start, please select a region. Usually, you already have access for
-Waze data just of your city/region. But, this index works better in more densily
-populated areas. So, if you need to create a polygon, you can use this website
- https://arthur-e.github.io/Wicket/sandbox-gmaps3.html. Remember, it has to be in a WKT format, 
- like:
+Before you start, please select a region. Usually, you just have access of
+Waze data of your city/region. But, this index works better in areas with more traffic. So,
+if you need to create a polygon, you can use this website
+ https://arthur-e.github.io/Wicket/sandbox-gmaps3.html. 
+ 
+Remember, it has to be in a WKT format, like
 
 `POLYGON ((-81.69 40.90,-81.66 40.15,-80.59 40.17,-81.69 40.90))`
 
-The steps are:
+and, dates have to be formated as
+
+`YYYY-MM-DD :: <year>-<month>-<day> :: 2020-05-24`
+
+**Steps**:
 1. Create a table/view for TCI current
 2. Select a resoanable baseline interval
 3. Create a table/view for TCI baseline
@@ -25,13 +30,10 @@ The steps are:
 The date interval here is the one that you are going to analyse. Make sure that
 it does not have any intersection with the baseline date interval.
 
-Your <final_date> can be the most recent day, `CURRENT_DATE()`.
+> TIP: The `<final_date>` can be the most recent day, `CURRENT_DATE()`.
 
-The dates have to be formated as
 
-`YYYY-MM-DD :: <year>-<month>-<day> :: 2020-05-24`
-
-Create table or view as `tci_current`.
+**Create table or view as `tci_current`**.
 
 ```sql
 SELECT​
@@ -57,7 +59,7 @@ The dates have to be formated as
 
 `YYYY-MM-DD :: <year>-<month>-<day> :: 2020-05-24`
 
-Create table or view as `tci_baseline`.
+**Create table or view as `tci_baseline`**.
 
 ```sql
 SELECT​
@@ -78,7 +80,7 @@ The final query just merges both tables creating the TCI Index.
 
 You can optionally add the region name in your final table.
 
-Create table or view as `tci_index`.
+**Create table or view as `tci_index`**.
 
 ```sql
 SELECT​
@@ -133,7 +135,7 @@ We recomend the ratio between the average TCI and OSM length to be higher than 0
 
 You can use the following python code to get the OSM road network length for your region.
 
-`pip install osm-road-length`
+First, install this package `pip install osm-road-length`. Then, run
 
 ```python
 import osm_road_length
