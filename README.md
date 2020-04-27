@@ -29,9 +29,9 @@ The latest version of the data is easily available through the methods below.
 
 ### Download Manually
 
-- [daily](https://bit.ly/idb-traffic-daily)
-- [weekly](https://bit.ly/idb-traffic-weekly)
-- [metadata](https://bit.ly/idb-traffic-metadata)
+- [daily](http://tiny.cc/idb-traffic-daily)
+- [weekly](http://tiny.cc/idb-traffic-weekly)
+- [metadata](http://tiny.cc/idb-traffic-metadata)
 
 Access the [sheets](https://bit.ly/idb-traffic-sheets)
 
