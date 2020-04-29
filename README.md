@@ -25,7 +25,7 @@ But first, make sure you understand the data:
 
 The latest version of the data is easily available through the methods below.
 
-:warning: The data methodology was recently updated. Historical data may have changed since last version. Please refer to the Methodological Note to understand the new changes.
+:warning: The data methodology was recently updated. Historical data may have changed since last version. Please refer to the Methodological Note to understand the changes.
 
 ### Download Manually
 
