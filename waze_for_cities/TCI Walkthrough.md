@@ -1,8 +1,8 @@
 # Calculate TCI Percentage Variation with BigQuery
 
-This is a short tutorial on how to reproduce the TCI Percentage Variation with BigQuery.
-
 :warning: **Unfortunatelly, we couldn't run the queries in BigQuery. The queries are probrably right, but small errors might happen. Please, submit an issue or pull request if you find an error. Or, if you have a suggestion to make this tutorial easier to follow.**
+
+This is a short tutorial on how to reproduce the TCI Percentage Variation with BigQuery.
 
 Before you start, please select a region. Usually, you just have access of
 Waze data of your city/region. But, this index works better in areas with more traffic. 
