@@ -1,22 +1,21 @@
-# Calculate TCI Index with BigQuery
+# Calculate TCI Percentage Variation with BigQuery
 
-This is a short tutorial on how to reproduce the TCI Index with BigQuery.
+This is a short tutorial on how to reproduce the TCI Percentage Variation with BigQuery.
 
-> Erros might happen. Please, submit an issue if you have any doubt, suggestion or 
-if you have spotted any error.
+:warning: **Unfortunatelly, we couldn't run the queries in BigQuery. The queries are probrably right, but small errors might happen. Please, submit an issue or pull request if you find an error. Or, if you have a suggestion to make this tutorial easier to follow.**
 
 Before you start, please select a region. Usually, you just have access of
-Waze data of your city/region. But, this index works better in areas with more traffic. So,
-if you need to create a polygon, you can use this website
- https://arthur-e.github.io/Wicket/sandbox-gmaps3.html. 
+Waze data of your city/region. But, this index works better in areas with more traffic. 
+
+If you need to create a polygon, you can use [this website](https://arthur-e.github.io/Wicket/sandbox-gmaps3.html).
  
-Remember, it has to be in a WKT format, like
-
-`POLYGON ((-81.69 40.90,-81.66 40.15,-80.59 40.17,-81.69 40.90))`
-
-and, dates have to be formated as
-
-`YYYY-MM-DD :: <year>-<month>-<day> :: 2020-05-24`
+> Remember, it has to be in a WKT format, like
+>
+> `POLYGON ((-81.69 40.90,-81.66 40.15,-80.59 40.17,-81.69 40.90))`
+>
+> and, dates have to be formated as
+> 
+> `YYYY-MM-DD :: <year>-<month>-<day> :: 2020-05-24`
 
 **Steps**:
 1. Create a table/view for TCI current
