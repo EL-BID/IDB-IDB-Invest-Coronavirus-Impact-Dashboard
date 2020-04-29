@@ -25,7 +25,7 @@ But first, make sure you understand the data:
 
 The latest version of the data is easily available through the methods below.
 
-> :warning: The data methodology was recently updated. Historical data may have changed since last version. Please refer to the Methodological Note to understand the new changes.
+:warning: The data methodology was recently updated. Historical data may have changed since last version. Please refer to the Methodological Note to understand the new changes.
 
 ### Download Manually
 
@@ -63,6 +63,12 @@ import delimited using "http://tiny.cc/idb-traffic-daily", clear
 import delimited using "http://tiny.cc/idb-traffic-weekly", clear
 import delimited using "http://tiny.cc/idb-traffic-medata", clear
 ```
+
+## Waze for Cities Partners
+
+You can find materials prepared for Waze for Cities Partnership Partners [here](https://github.com/EL-BID/IDB-IDB-Invest-Coronavirus-Impact-Dashboard/tree/master/waze_for_cities).
+
+- [TCI Percentage Variation Tutorial](https://github.com/EL-BID/IDB-IDB-Invest-Coronavirus-Impact-Dashboard/blob/master/waze_for_cities/TCI%20Walkthrough.md)
 
 ## Ask for a specific region
 
