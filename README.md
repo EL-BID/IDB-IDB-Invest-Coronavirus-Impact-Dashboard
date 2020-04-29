@@ -33,7 +33,7 @@ The latest version of the data is easily available through the methods below.
 - [weekly](http://tiny.cc/idb-traffic-weekly)
 - [metadata](http://tiny.cc/idb-traffic-metadata)
 
-Access the [sheets](https://bit.ly/idb-traffic-sheets)
+Access the [sheets](http://tiny.cc/idb-traffic-sheets)
 
 
 ### Python
