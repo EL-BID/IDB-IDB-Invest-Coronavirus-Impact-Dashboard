@@ -9,11 +9,11 @@ with ratios as (
 		d."month",
 		d.dow,
 		d."day",
-		d.sum_length as observed,
-		h.expected_2019,
-		h.expected_2020,
-		d.sum_length / h.expected_2019 as ratio_19,
-		d.sum_length / h.expected_2020 as ratio_20
+		sum(tci) as observed,
+		arbitrary(h.expected_2019),
+		arbitrary(h.expected_2020),
+		sum(tci) / arbitrary(h.expected_2019) as ratio_19,
+		sum(tci) / arbitrary(h.expected_2020) as ratio_20
 	from (
 		select
 			h20.region_slug,
@@ -24,9 +24,15 @@ with ratios as (
 		join {{ athena_database }}.{{ slug }}_daily_historical_2020 h20
 		on h19.region_slug = h20.region_slug
 		and h19.dow = h20.dow) h
-	join {{ athena_database }}.{{ slug }}_daily_daily d
+	join {{ athena_database }}.{{ slug }}_daily_daily_filtered d
 	on d.region_slug = h.region_slug
-	and d.dow = h.dow)
+	and d.dow = h.dow
+	group by
+		d.region_slug,
+		d."month",
+		d.dow,
+		d."day"
+	)
 select
 	localtimestamp last_updated_utc,
 	metadata.region_slug,

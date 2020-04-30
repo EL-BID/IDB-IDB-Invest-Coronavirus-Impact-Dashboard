@@ -35,43 +35,53 @@ def _region_slug_partition(config):
         config,
     )
 
-    rerun = data[data["rerun"] == "TRUE"]
+    print(config.get("selected_regions"))
 
-    if config.get("if_exists") == "append":
+    if config.get("selected_regions"):
 
-        # check if table exists
-        try:
+        data = data[data["region_slug"].isin(config.get("selected_regions"))]
+
+    else:
+
+        rerun = data[data["rerun"] == "TRUE"]
+
+        if config.get("if_exists") == "append":
+
+            # check if table exists
+            try:
+                skip = get_data_from_athena(
+                    "select distinct region_shapefile_wkt from "
+                    f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation "
+                    "where n_days is not null",
+                    config,
+                )
+            except:
+                skip = pd.DataFrame([], columns=["region_shapefile_wkt"])
+
+            data = data[
+                ~data["region_shapefile_wkt"].isin(skip["region_shapefile_wkt"])
+            ]
+
+            if config["name"] == "analysis_daily":
+                data = data[~data["region_slug"].isin(config["cv_exception"])]
+
+        if config.get("filter_by_coef"):
+
             skip = get_data_from_athena(
-                "select distinct region_shapefile_wkt from "
+                "select region_slug from "
                 f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation "
-                "where n_days is not null",
+                "where (weekly_approved = true or daily_approved = true) "
+                f"""or (region_slug in ('{"','".join(config['cv_exception'])}')) """,
                 config,
             )
-        except:
-            skip = pd.DataFrame([], columns=["region_shapefile_wkt"])
 
-        data = data[~data["region_shapefile_wkt"].isin(skip["region_shapefile_wkt"])]
+            data = data[data["region_slug"].isin(skip["region_slug"])]
 
-        if config["name"] == "analysis_daily":
-            data = data[~data["region_slug"].isin(config["cv_exception"])]
+        if config.get("sample_cities"):
 
-    if config.get("filter_by_coef"):
+            data = data[: config["sample_cities"]]
 
-        skip = get_data_from_athena(
-            "select region_slug from "
-            f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation "
-            "where (weekly_approved = true or daily_approved = true) "
-            f"""or (region_slug in ('{"','".join(config['cv_exception'])}')) """,
-            config,
-        )
-
-        data = data[data["region_slug"].isin(skip["region_slug"])]
-
-    if config.get("sample_cities"):
-
-        data = data[: config["sample_cities"]]
-
-    data = pd.concat([data, rerun]).drop_duplicates()
+        data = pd.concat([data, rerun]).drop_duplicates()
 
     data = data.to_dict("records")
 
@@ -98,6 +108,11 @@ def historical_2019(config):
 
 
 def historical_2020(config):
+
+    return _region_slug_partition(config)
+
+
+def daily_filtered(config):
 
     return _region_slug_partition(config)
 
