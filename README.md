@@ -68,7 +68,7 @@ import delimited using "http://tiny.cc/idb-traffic-medata", clear
 
 You can find materials prepared for Waze for Cities Partnership Partners [here](https://github.com/EL-BID/IDB-IDB-Invest-Coronavirus-Impact-Dashboard/tree/master/waze_for_cities).
 
-- [TCI Percentage Variation Tutorial](https://github.com/EL-BID/IDB-IDB-Invest-Coronavirus-Impact-Dashboard/blob/master/waze_for_cities/TCI%20Walkthrough.md)
+- [TCI Percentage Variation Tutorial](http://tiny.cc/idb-tci-bigquery-tutorial)
 
 ## Ask for a specific region
 
