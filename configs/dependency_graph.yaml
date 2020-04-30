@@ -54,7 +54,7 @@
   current_millis: 'fixed4'
   sampled: ['country_brazil', 'country_mexico'] 
   year: 2019
-  force: True
+  
 
 - 
   path: 'sql/analysis/add_variation_to_metadata.sql'
@@ -64,14 +64,21 @@
     metadata_ready
   ]
   name: metadata_variation
-  force: True
 
 # Daily Queries
 - 
   path: 'sql/daily/create-daily-raw-table.sql'
   runner: basic_athena_query
   name: daily_raw
- 
+  
+- 
+  path: 'sql/daily/create-filtered-table'
+  runner: partitioned_athena_query
+  name: daily_filtered
+  depends_on: [
+    daily_raw, 
+  ]
+  from_table: daily_daily_raw
 
 - 
   path: 'sql/daily/create-historical-table'
@@ -94,7 +101,7 @@
   ]
   year: 2020
   filter_by_coef: True
-
+  
 
 - 
   path: 'sql/daily/create-daily-table'
@@ -105,17 +112,18 @@
   ]
   name: daily
   filter_by_coef: True
-
+  
 - 
   path: 'sql/daily/create-daily-index-table.sql'
   runner: basic_athena_query
   depends_on: [
     metadata_variation,
-    daily,
+    daily_filtered,
     historical_2019,
     historical_2020
   ]
   name: daily_index
+  force: True
 
 - 
   path: 'sql/daily/create-weekly-index-table.sql'

@@ -10,15 +10,15 @@ with t as (
             month(retrievaltime) as month,
             day(retrievaltime) as day,
             day_of_week(retrievaltime) as dow,
-			date_parse(format_datetime(date_add('minute', 
-										cast(date_diff('minute',
-											timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
-											timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') as time,
-			row_number() over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
-									date_parse(format_datetime(date_add('minute', 
-										cast(date_diff('minute',
-											timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
-                                          timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') order by retrievaltime) n_row
+            date_parse(format_datetime(date_add('minute', 
+                                                      cast(date_diff('minute',
+                                                            timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
+                                                            timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') as time,
+            row_number() over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
+                                                date_parse(format_datetime(date_add('minute', 
+                                                      cast(date_diff('minute',
+                                                            timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
+                                    timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') order by retrievaltime) n_row
       from {{ athena_database }}.{{ slug }}_historical_historical_{{ year }}_raw
       where 
       {% if waze_code != 'continent' %}   

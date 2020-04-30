@@ -79,6 +79,8 @@ countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
 
 cv_exception: ['country_brazil']
 
+selected_regions: ['br_states_parana']
+
 accepted_osm_keys: [
     motorway,
     trunk,
