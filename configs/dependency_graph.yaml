@@ -3,14 +3,13 @@
   path: 'sql/historical/create-historical-raw-table.sql'
   runner: basic_athena_query
   name: historical_2019_raw
-  
+
 - 
   path: 'sql/historical/create-historical-raw-table.sql'
   runner: basic_athena_query
   name: historical_2020_raw
 
 # Metadata Queries
-
 - 
   path: 'sql/metadata/load_tables.sql'
   runner: create_local_table_athena
@@ -70,60 +69,44 @@
   path: 'sql/daily/create-daily-raw-table.sql'
   runner: basic_athena_query
   name: daily_raw
-  
+
 - 
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
-  name: daily_filtered
+  name: daily
   depends_on: [
     daily_raw, 
   ]
   from_table: daily_daily_raw
-
+  
 - 
-  path: 'sql/daily/create-historical-table'
+  path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: historical_2019
   depends_on: [
-    historical_2019_raw,
-    metadata_variation, 
+    historical_2019_raw, 
   ]
-  year: 2019
-  filter_by_coef: True
+  from_table: historical_historical_2019_raw
 
 - 
-  path: 'sql/daily/create-historical-table'
+  path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: historical_2020
   depends_on: [
-    historical_2020_raw,
-    metadata_variation
+    historical_2020_raw, 
   ]
-  year: 2020
-  filter_by_coef: True
-  
-
-- 
-  path: 'sql/daily/create-daily-table'
-  runner: partitioned_athena_query
-  depends_on: [
-    daily_raw,
-    metadata_variation
-  ]
-  name: daily
-  filter_by_coef: True
+  from_table: historical_historical_2020_raw
   
 - 
   path: 'sql/daily/create-daily-index-table.sql'
   runner: basic_athena_query
   depends_on: [
     metadata_variation,
-    daily_filtered,
+    daily,
     historical_2019,
     historical_2020
   ]
   name: daily_index
-  force: True
 
 - 
   path: 'sql/daily/create-weekly-index-table.sql'
@@ -135,6 +118,17 @@
     historical_2020
   ]
   name: weekly_index
+
+- 
+  path: 'sql/daily/create-hourly-index-table.sql'
+  runner: basic_athena_query
+  depends_on: [
+    metadata_variation,
+    daily,
+    historical_2019,
+    historical_2020
+  ]
+  name: hourly_index
 
 - 
   path: 'sql/daily/'
