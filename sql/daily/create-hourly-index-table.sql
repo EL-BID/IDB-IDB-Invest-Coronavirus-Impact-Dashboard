@@ -72,25 +72,19 @@ with ratios as (
 select
 	localtimestamp last_updated_utc,
 	metadata.region_slug,
-	metadata.region_name,
-	metadata.country_name_idb_eng as country_name,
-	metadata.country_iso as country_iso_code,
-	metadata.idb_code as country_idb_code,
-	metadata.region_type,
-	metadata.population,
 	metadata.timezone,
-	ratios.dow,
-	ratios.month,
-	ratios.day,
-	ratios.hour,
+	case when metadata.timezone is not null then 
+			rpad(cast(at_timezone(date_parse(
+					concat('2020', '-', cast(month as varchar), '-', cast(day as varchar),
+						   ' ', cast(hour as varchar), ':', '00', ':' ,'00'), 
+					'%Y-%m-%d %k:%i:%s'),
+				metadata.timezone) as varchar), 19, '000') 
+		 else null end timestamp_timezone,
+	date_parse(concat('2020', '-', cast(month as varchar), '-', cast(day as varchar),
+						   ' ', cast(hour as varchar), ':', '00', ':' ,'00'), 
+					'%Y-%m-%d %k:%i:%s') timestamp,
 	ratios.observed,
-	ratios.expected_2019,
-	ratios.expected_2020,
-	ratios.ratio_19,
-	ratios.ratio_20,
-	(ratio_20 - 1) * 100 as tcp,
-	metadata.dashboard,
-	metadata.region_shapefile_wkt
+	(ratio_20 - 1) * 100 as tci
 from ratios
 join {{ athena_database }}.{{ slug }}_analysis_metadata_variation metadata
 on ratios.region_slug = metadata.region_slug
