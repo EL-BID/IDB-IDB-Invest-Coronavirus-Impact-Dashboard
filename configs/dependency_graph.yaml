@@ -15,6 +15,7 @@
   runner: create_local_table_athena
   name: load_metadata_tables
 
+
 - 
   path: 'sql/metadata/'
   runner: create_local_table_athena
@@ -23,6 +24,7 @@
   ]
   name: metadata_osm_length
   mode: overwrite_partitions
+
 
 - 
   path: 'sql/metadata/create-metadata-ready.sql'
@@ -64,11 +66,13 @@
   ]
   name: metadata_variation
 
+
 # Daily Queries
 - 
   path: 'sql/daily/create-daily-raw-table.sql'
   runner: basic_athena_query
   name: daily_raw
+
 
 - 
   path: 'sql/daily/create-filtered-table'
@@ -78,7 +82,7 @@
     daily_raw, 
   ]
   from_table: daily_daily_raw
-  
+
 - 
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
@@ -96,7 +100,7 @@
     historical_2020_raw, 
   ]
   from_table: historical_historical_2020_raw
-  
+
 - 
   path: 'sql/daily/create-daily-index-table.sql'
   runner: basic_athena_query
@@ -135,7 +139,8 @@
   runner: create_local_table_athena
   depends_on: [
     weekly_index,
-    daily_index
+    daily_index,
+    hourly_index
   ]
   name: write_index
   to_write: 
@@ -155,3 +160,8 @@
                    'waze_code', 'idb_code', 'country_name_idb_eng', 'n_days',
                    'daily_mean_weekend', 'daily_std_weekend', 'daily_mean_weekday',
                    'daily_std_weekday']
+    - table: daily_hourly_index
+      worksheet: hourly
+      overall_drop: []
+      public_drop: []
+  force: True
