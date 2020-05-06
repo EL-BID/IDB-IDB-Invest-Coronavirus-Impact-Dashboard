@@ -22,7 +22,8 @@
     load_metadata_tables
   ]
   name: metadata_prepare
-  mode: overwrite_partitions
+  mode: overwrite
+  force: True
 
 
 - 
@@ -33,7 +34,7 @@
   ]
   name: metadata_osm_length
   mode: overwrite_partitions
-  
+
 - 
   path: 'sql/metadata/create-metadata-ready.sql'
   runner: basic_athena_query
@@ -41,7 +42,6 @@
     metadata_osm_length
     ]
   name: metadata_ready
-  force: True
       
 # Analysis
 
@@ -64,7 +64,6 @@
   current_millis: 'fixed4'
   sampled: ['country_brazil', 'country_mexico'] 
   year: 2019
-  
 
 - 
   path: 'sql/analysis/add_variation_to_metadata.sql'
@@ -123,7 +122,7 @@
     historical_2020
   ]
   name: daily_index
-
+  
 - 
   path: 'sql/daily/create-weekly-index-table.sql'
   runner: basic_athena_query
@@ -146,6 +145,17 @@
   ]
   name: hourly_index
 
+- 
+  path: 'sql/daily/create-grouphours-index-table.sql'
+  runner: basic_athena_query
+  depends_on: [
+    metadata_variation,
+    daily,
+    historical_2019,
+    historical_2020
+  ]
+  name: grouphours_index
+  
 - 
   path: 'sql/daily/'
   runner: create_local_table_athena
