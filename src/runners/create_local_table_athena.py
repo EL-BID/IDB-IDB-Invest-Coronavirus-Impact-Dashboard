@@ -157,13 +157,15 @@ def metadata_osm_length(config):
         _save_local(current, config, wrangler=True)
 
 
-def _get_timezone(x):
+def _get_timezone(x, config):
 
     coords = dict(
         zip(["lng", "lat"], [float(c) for c in x.split(",")[2].strip().split(" ")])
     )
 
-    return TimezoneFinder().timezone_at(**coords)
+    timezone = TimezoneFinder().timezone_at(**coords)
+
+    return config["timezone"]["replace"].get(timezone, timezone)
 
 
 def metadata_prepare(config):
@@ -174,7 +176,9 @@ def metadata_prepare(config):
         config,
     )
 
-    metadata["timezone"] = metadata["region_shapefile_wkt"].apply(_get_timezone)
+    metadata["timezone"] = metadata["region_shapefile_wkt"].apply(
+        lambda x: _get_timezone(x, config)
+    )
 
     _save_local(metadata, config, wrangler=True)
 
