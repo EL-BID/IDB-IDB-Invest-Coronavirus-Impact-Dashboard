@@ -15,25 +15,34 @@
   runner: create_local_table_athena
   name: load_metadata_tables
 
-
 - 
   path: 'sql/metadata/'
   runner: create_local_table_athena
   depends_on: [
     load_metadata_tables
   ]
-  name: metadata_osm_length
+  name: metadata_prepare
   mode: overwrite_partitions
 
 
+- 
+  path: 'sql/metadata/'
+  runner: create_local_table_athena
+  depends_on: [
+    metadata_prepare
+  ]
+  name: metadata_osm_length
+  mode: overwrite_partitions
+  
 - 
   path: 'sql/metadata/create-metadata-ready.sql'
   runner: basic_athena_query
   depends_on: [
     metadata_osm_length
-  ]
+    ]
   name: metadata_ready
-
+  force: True
+      
 # Analysis
 
 - 
@@ -80,6 +89,7 @@
   name: daily
   depends_on: [
     daily_raw, 
+    metadata_variation
   ]
   from_table: daily_daily_raw
 
@@ -89,6 +99,7 @@
   name: historical_2019
   depends_on: [
     historical_2019_raw, 
+    metadata_variation
   ]
   from_table: historical_historical_2019_raw
 
@@ -98,6 +109,7 @@
   name: historical_2020
   depends_on: [
     historical_2020_raw, 
+    metadata_variation
   ]
   from_table: historical_historical_2020_raw
 
@@ -164,4 +176,3 @@
       worksheet: hourly
       overall_drop: []
       public_drop: []
-  force: True
