@@ -108,6 +108,12 @@ with ratios as (
 select
 	localtimestamp last_updated_utc,
 	metadata.region_slug,
+	metadata.region_name,
+	metadata.country_name_idb_eng as country_name,
+	metadata.country_iso as country_iso_code,
+	metadata.idb_code as country_idb_code,
+	metadata.region_type,
+	metadata.population,
 	metadata.timezone,
     month, 
     dow,
