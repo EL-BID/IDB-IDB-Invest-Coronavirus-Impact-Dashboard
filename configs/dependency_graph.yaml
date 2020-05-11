@@ -3,7 +3,7 @@
   path: 'sql/historical/create-historical-raw-table.sql'
   runner: basic_athena_query
   name: historical_2019_raw
-
+  
 - 
   path: 'sql/historical/create-historical-raw-table.sql'
   runner: basic_athena_query
@@ -23,7 +23,7 @@
   ]
   name: metadata_prepare
   mode: overwrite
-  force: True
+  
 
 
 - 
@@ -81,16 +81,19 @@
   runner: basic_athena_query
   name: daily_raw
 
-
 - 
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: daily
   depends_on: [
-    daily_raw, 
     metadata_variation
   ]
-  from_table: daily_daily_raw
+  current_millis: v5
+  mode: 'incremental'
+  interval:
+    start: 2020-03-09
+    end: 'today'
+  force: True
 
 - 
   path: 'sql/daily/create-filtered-table'
@@ -100,7 +103,12 @@
     historical_2019_raw, 
     metadata_variation
   ]
-  from_table: historical_historical_2019_raw
+  current_millis: v5
+  mode: 'incremental'
+  interval:
+    start: 2019-03-09
+    end: 2019-03-31
+  force: True
 
 - 
   path: 'sql/daily/create-filtered-table'
@@ -110,7 +118,12 @@
     historical_2020_raw, 
     metadata_variation
   ]
-  from_table: historical_historical_2020_raw
+  current_millis: v5
+  mode: 'incremental'
+  interval:
+    start: 2020-03-01
+    end: 2020-03-08
+  force: True
 
 - 
   path: 'sql/daily/create-daily-index-table.sql'
@@ -122,6 +135,7 @@
     historical_2020
   ]
   name: daily_index
+  force: True
   
 - 
   path: 'sql/daily/create-weekly-index-table.sql'
@@ -133,7 +147,7 @@
     historical_2020
   ]
   name: weekly_index
-
+  force: True
 - 
   path: 'sql/daily/create-hourly-index-table.sql'
   runner: basic_athena_query
@@ -155,7 +169,7 @@
     historical_2020
   ]
   name: grouphours_index
-  
+  force: True
 - 
   path: 'sql/daily/'
   runner: create_local_table_athena
