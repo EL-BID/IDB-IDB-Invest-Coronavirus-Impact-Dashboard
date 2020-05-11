@@ -5,10 +5,10 @@ CREATE EXTERNAL TABLE IF NOT EXISTS {{ athena_database }}.{{ slug }}_{{ raw_tabl
   `hour` int,
   `dow` int , 
   `line` string,
-  `tci` double
+  `tci` bigint
   )
   PARTITIONED BY (
-	region_slug string
+    region_slug string
   )
   STORED AS ORC
   LOCATION '{{ s3_path }}/{{ slug }}/{{ current_millis }}/{{ raw_table }}/{{ name }}'

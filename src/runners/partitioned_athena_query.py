@@ -5,6 +5,8 @@ from pathlib import Path
 from copy import deepcopy
 import pyathena
 import pandas as pd
+import numpy as np
+import pytz
 
 import logging
 
@@ -12,30 +14,85 @@ log = logging.getLogger(__name__)
 
 from utils import (
     break_list_in_chunks,
-    add_query_dates,
     to_wkt,
     query_athena,
     generate_query,
     get_data_from_athena,
     delete_s3_path,
     sample_query_weeks,
+    get_query_dates,
 )
 
 
-def _load_cities(path="data/raw/cities_metadata.csv"):
+def _all_dates(config):
 
-    return pd.read_csv(path)
+    return pd.Series(
+        get_query_dates(config["interval"]["start"], config["interval"]["end"]),
+        name="timestamp",
+    ).to_frame()
+
+
+def _get_hours(_df, metadata):
+
+    return pd.DataFrame(
+        [
+            {
+                "date_filter": "|".join(
+                    [
+                        d.tz_localize(
+                            timezone, ambiguous=False, nonexistent="shift_backward"
+                        )
+                        .astimezone("UTC")
+                        .strftime("%Y%m%d%H")
+                        for d in list(_df["timestamp"])
+                    ]
+                ),
+                "from_table": _df["from_table"].unique()[0],
+                "timezone": timezone,
+            }
+            for timezone in metadata["timezone"].unique()
+        ]
+    )
+
+
+def _add_date_slug(metadata, config):
+
+    dates = _all_dates(config)
+
+    dates["from_table"] = np.where(
+        dates["timestamp"] < pd.to_datetime(config["daily_table"]["break_date"]),
+        config["daily_table"]["before"],
+        config["daily_table"]["after"],
+    )
+
+    dates["date_slug"] = dates["timestamp"].apply(
+        lambda x: x.strftime(config["daily_aggregation"])
+    )
+
+    dates = (
+        dates.groupby("date_slug")
+        .apply(lambda x: _get_hours(x, metadata))
+        .reset_index()
+        .drop("level_1", 1)
+    )
+
+    return pd.merge(metadata, dates, on="timezone")
+
+
+def _get_remaining_dates(d, dates):
+
+    return dates[~dates["date"].isin(d["date"].apply(lambda x: x.date()))][
+        ["date"]
+    ].drop_duplicates()
 
 
 def _region_slug_partition(config):
 
     data = get_data_from_athena(
         "select * from "
-        f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready ",
+        f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation ",
         config,
     )
-
-    print(config.get("selected_regions"))
 
     if config.get("selected_regions"):
 
@@ -83,6 +140,60 @@ def _region_slug_partition(config):
 
         data = pd.concat([data, rerun]).drop_duplicates()
 
+    if config["name"] != "analysis_daily"
+
+        data = _add_date_slug(data, config)
+
+        if config.get("mode") == "incremental":
+
+            existing_dates = get_data_from_athena(
+                "select distinct region_slug, "
+                "date_parse(concat(cast(year as varchar), '-', cast(month as varchar), '-', cast(day as varchar)), '%Y-%m-%d') date "
+                f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}",
+                config,
+            )
+
+            # Just run all regions if there is no existing dates
+            if len(existing_dates):
+
+                dates = _all_dates(config)
+                dates["date"] = dates["timestamp"].apply(lambda x: x.date())
+                dates = dates.groupby("date").filter(
+                    lambda x: len(x) == 24
+                )  # Only complete days
+
+                remaining_dates = existing_dates.groupby("region_slug").apply(
+                    lambda x: _get_remaining_dates(x, dates)
+                )
+
+                remaining_dates["date_slug"] = remaining_dates["date"].apply(
+                    lambda x: x.strftime(config["daily_aggregation"])
+                )
+
+                remaining_dates = remaining_dates.reset_index()[
+                    ["region_slug", "date_slug"]
+                ].drop_duplicates()
+
+                data = pd.concat(
+                    [
+                        data.merge(
+                            remaining_dates, on=["region_slug", "date_slug"]
+                        ),  # Get remaining dates from existing regions
+                        data[
+                            ~data["region_slug"].isin(existing_dates["region_slug"])
+                        ],  # Add all dates for new regions
+                    ]
+                )
+
+        elif config.get("mode") == "batch":
+
+            pass
+
+        # print(len(data))
+        # print(data)
+
+        # raise Exception
+
     data = data.to_dict("records")
 
     for d in data:
@@ -94,10 +205,11 @@ def _region_slug_partition(config):
                     config["full_2019_interval"]["start"],
                     config["full_2019_interval"]["end"],
                 )
-
             d["p_path"] = deepcopy("country_iso={country_iso}/{partition}".format(**d))
+
         else:
-            d["p_path"] = deepcopy("region_slug={partition}".format(**d))
+            d["p_path"] = deepcopy("region_slug={region_slug}/{date_slug}".format(**d))
+            d["p_name"] = "{partition}_{date_slug}".format(**d)
 
     return data
 
@@ -205,7 +317,7 @@ def partition_query(query_path, config):
         queries.append(
             dict(
                 make=generate_query(query_path, config),
-                drop=f"drop table {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}_{config['partition']}",
+                drop=f"drop table {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}_{config['p_name']}",
                 config=config,
                 p_path=deepcopy(partition["p_path"]),
                 partition=config["partition"],
@@ -216,16 +328,28 @@ def partition_query(query_path, config):
         p.map(partial(perform_query), queries)
 
 
+def should_create_table(config):
+
+    current_millis = get_data_from_athena(
+        f"""
+            select split("$path", '/')[7] current_millis 
+            from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']} 
+            limit 1""",
+    )
+
+    if len(current_millis):
+        return current_millis["current_millis"][0] != config.get("current_millis")
+    else:
+        return True
+
+
 def start(config):
 
     sql_path = Path(__file__).cwd() / config["path"]
 
     # create table
-    sql = generate_query(sql_path / "create_table.sql", config)
-
-    if not ((config.get("if_exists") == "append") and check_existence(config)):
-        print("replacing")
-        query_athena(sql, config)
+    if should_create_table(config):
+        query_athena(generate_query(sql_path / "create_table.sql", config), config)
 
     config["force"] = False
 

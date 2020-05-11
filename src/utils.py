@@ -250,16 +250,18 @@ except IndexError:
 def break_list_in_chunks(data, chunk):
     return [data[x : x + chunk] for x in range(0, len(data), chunk)]
 
+
 def simplify(s, delta=0.005):
-    
+
     while not _check_length(s):
         s = s.simplify(delta, False)
         delta = delta + 0.005
 
     return s
 
+
 def _check_length(s, threshold=5000):
-    
+
     return len(str(s)) < threshold
 
 
@@ -286,15 +288,12 @@ def sample_query_weeks(start, end):
     ]
 
 
-def add_query_dates(start, end):
+def get_query_dates(start, end):
 
     if end == "today":
         end = datetime.now()
 
-    return [
-        dt.strftime("%Y%m%d")
-        for dt in rrule.rrule(rrule.DAILY, dtstart=start, until=end)
-    ]
+    return list(rrule.rrule(rrule.HOURLY, dtstart=start, until=end))
 
 
 def flatten(l):
