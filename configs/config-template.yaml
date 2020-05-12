@@ -68,7 +68,7 @@ daily_table:
     before: spd_sdv_waze_reprocessed.jams_ready
     after: '"p-waze-parquet-waze"."jams"'
 
-daily_aggregation:  'year%Yweek%W' # year%Yday%m%d
+daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
 
 variation_coef_threshold: 0.5
 osm_length_threshold: 0.1
@@ -80,7 +80,7 @@ countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
 
 cv_exception: ['country_brazil']
 
-selected_regions: [campinas] #, saopaulo, buenosaires, lima, bogota, riodejaneiro]
+# selected_regions: [campinas] #, saopaulo, buenosaires, lima, bogota, riodejaneiro]
 
 accepted_osm_keys: [
     motorway,

@@ -140,7 +140,7 @@ def _region_slug_partition(config):
 
         data = pd.concat([data, rerun]).drop_duplicates()
 
-    if config["name"] != "analysis_daily"
+    if config["name"] != "analysis_daily":
 
         data = _add_date_slug(data, config)
 
