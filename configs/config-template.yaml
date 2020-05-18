@@ -17,6 +17,7 @@ tables: [
     daily, 
     metadata, 
     analysis, 
+    grid,
     # historical,
     ] #
 
@@ -105,7 +106,8 @@ metadata:
             dashboard,
             timezone,
             region_shapefile_wkt,
-            rerun
+            rerun,
+            grid    
             ]
     country_waze_to_iso:
         columns: [

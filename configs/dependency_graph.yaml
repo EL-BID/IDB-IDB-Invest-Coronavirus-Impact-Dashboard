@@ -12,7 +12,6 @@
   ]
   name: metadata_prepare
   mode: overwrite
-  
 
 - 
   path: 'sql/metadata/'
@@ -30,9 +29,8 @@
     metadata_osm_length
     ]
   name: metadata_ready
-      
-# Analysis
 
+# Analysis
 - 
   path: 'sql/analysis/create_dummy_year.sql'
   runner: create_local_table_athena
@@ -177,4 +175,67 @@
       worksheet: grouphours
       overall_drop: []
       public_drop: []
+
+# GRID
+- 
+  path: 'sql/grid/'
+  runner: region_grid
+  depends_on: [
+    metadata_variation
+  ]
+  mode: overwrite
+  name: resolutions
+  coarse_resolutions: 7
+  granular_resolution: 10
+
+  
+- 
+  path: 'sql/grid/create-coarse-grid/'
+  runner: region_grid
+  depends_on: [
+    resolutions,
+    daily
+  ]
+  name: coarse
+  from_table: daily_daily
+
+- 
+  path: 'sql/grid/create-grid'
+  runner: partitioned_athena_query
+  depends_on: [
+    resolutions,
+    coarse
+  ]
+  name: grid
+
+
+- 
+  path: 'sql/grid/create-coarse-grid/'
+  runner: region_grid
+  depends_on: [
+    resolutions,
+    daily_historical_2020
+  ]
+  name: coarse_2020
+  from_table: daily_historical_2020
+
+- 
+  path: 'sql/grid/create-grid'
+  runner: partitioned_athena_query
+  depends_on: [
+    resolutions,
+    coarse_2020
+  ]
+  name: grid_2020
+
+- 
+  path: 'sql/grid/create-hourly-index.sql'
+  runner: basic_athena_query
+  depends_on: [
+    grid,
+    grid_2020,
+    metadata_variation
+  ]
+  name: grid_hourly_index
   force: True
+

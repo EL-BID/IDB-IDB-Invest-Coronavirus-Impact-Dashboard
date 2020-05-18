@@ -239,6 +239,24 @@ def analysis_daily(config):
     return _region_slug_partition(config)
 
 
+def grid(config):
+
+    regions = list(
+        get_data_from_athena(
+            "select distinct region_slug from "
+            f"{config['athena_database']}.{config['slug']}_metadata_metadata_prepare "
+            "where grid = 'TRUE'",
+            config,
+        )["region_slug"]
+    )
+
+    return [{"p_name": r, "p_path": f'region_slug={r}', 'partition': r, 'region_slug': r} for r in regions]
+
+def grid_2020(config):
+
+    return grid(config)
+
+
 def perform_query(query):
     """Simply calls Athena and logs the exceptions.
     
@@ -319,7 +337,7 @@ def partition_query(query_path, config):
                 make=generate_query(query_path, config),
                 drop=f"drop table {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}_{config['p_name']}",
                 config=config,
-                p_path=deepcopy(partition["p_path"]),
+                p_path=deepcopy(config["p_path"]),
                 partition=config["partition"],
             )
         )
@@ -330,12 +348,15 @@ def partition_query(query_path, config):
 
 def should_create_table(config):
 
-    current_millis = get_data_from_athena(
-        f"""
-            select split("$path", '/')[7] current_millis 
-            from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']} 
-            limit 1""",
-    )
+    try:
+        current_millis = get_data_from_athena(
+            f"""
+                select split("$path", '/')[7] current_millis 
+                from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']} 
+                limit 1""",
+        )
+    except:
+        current_millis = []
 
     if len(current_millis):
         return current_millis["current_millis"][0] != config.get("current_millis")
