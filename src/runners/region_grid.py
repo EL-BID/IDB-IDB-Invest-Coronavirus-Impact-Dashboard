@@ -8,6 +8,7 @@ from copy import deepcopy
 
 from runners.create_local_table_athena import _save_local
 from runners import basic_athena_query
+from operators.athena import insert_into, create_table
 from utils import get_data_from_athena
 
 
@@ -66,28 +67,20 @@ def resolutions(config):
         .drop("level_1", 1)
     )
 
-    _save_local(grid, config, wrangler=True)
+    create_table.from_local(grid, config, wrangler=True)
 
 
 def coarse(config):
 
-    groups = get_data_from_athena(
+    insert_groups = get_data_from_athena(
             'select distinct region_slug, "group" from '
             f"{config['athena_database']}.{config['slug']}_grid_resolutions "
             "where resolution = 7",
             config,
         ).to_dict('records')
+    
+    insert_into.start(config, insert_groups)
 
-    original_path = deepcopy(config['path'])
-    config['path'] =original_path + '/create_table.sql'
-    basic_athena_query.start(config)
-
-    config['path'] = original_path + '/insert_into.sql'
-    config['force'] = False
-    for g in groups:
-
-        config.update(g)
-        basic_athena_query.start(config)
 
 def coarse_2020(config):
 
