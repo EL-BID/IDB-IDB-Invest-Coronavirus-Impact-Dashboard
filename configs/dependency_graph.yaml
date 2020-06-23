@@ -69,11 +69,13 @@
   depends_on: [
     metadata_variation
   ]
-  current_millis: v6
+  current_millis: v7
+  daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
   mode: 'incremental'
   interval:
     start: 2020-03-09
     end: 'today'
+ 
 
 - 
   path: 'sql/daily/create-filtered-table'
@@ -84,10 +86,12 @@
     metadata_variation
   ]
   current_millis: v6
+  daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
   mode: 'incremental'
   interval:
     start: 2019-03-09
     end: 2019-03-31
+
 
 - 
   path: 'sql/daily/create-filtered-table'
@@ -98,10 +102,12 @@
     metadata_variation
   ]
   current_millis: v6
+  daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
   mode: 'incremental'
   interval:
     start: 2020-03-01
     end: 2020-03-08
+
 
 - 
   path: 'sql/daily/create-daily-index-table.sql'
@@ -113,6 +119,7 @@
     historical_2020
   ]
   name: daily_index
+  force: True
   
 - 
   path: 'sql/daily/create-weekly-index-table.sql'
@@ -124,6 +131,7 @@
     historical_2020
   ]
   name: weekly_index
+
 - 
   path: 'sql/daily/create-hourly-index-table.sql'
   runner: basic_athena_query
@@ -188,7 +196,7 @@
   coarse_resolutions: 7
   granular_resolution: 10
 
-  
+
 - 
   path: 'sql/grid/create-coarse-grid/'
   runner: region_grid
@@ -198,6 +206,7 @@
   ]
   name: coarse
   from_table: daily_daily
+
 
 - 
   path: 'sql/grid/create-grid'
@@ -219,6 +228,7 @@
   name: coarse_2020
   from_table: daily_historical_2020
 
+
 - 
   path: 'sql/grid/create-grid'
   runner: partitioned_athena_query
@@ -227,6 +237,7 @@
     coarse_2020
   ]
   name: grid_2020
+
 
 - 
   path: 'sql/grid/create-hourly-index.sql'
@@ -239,3 +250,126 @@
   name: grid_hourly_index
   force: True
 
+# Cities
+- 
+  path: 'sql/cities/'
+  runner: all_cities
+  depends_on: [
+    metadata_variation
+  ]
+  mode: overwrite
+  name: country_resolutions
+  coarse_resolutions: 3
+  jobs:
+    - region_slug: country_chile
+      file: chile_comunas.csv
+
+    # - region_slug: country_brazil
+    #   file: brazil_cities.csv
+
+- 
+  path: 'sql/cities/create-coarse-grid'
+  runner: all_cities
+  depends_on: [
+    daily_daily
+    country_resolutions
+  ]
+  name: country_coarse
+  from_table: daily_daily
+
+- 
+  path: 'sql/cities/create-grid'
+  runner: partitioned_athena_query
+  depends_on: [
+    country_resolutions,
+    country_coarse
+  ]
+  from_table: country_coarse
+  name: country_cities
+  
+
+- 
+  path: 'sql/cities/create-coarse-grid'
+  runner: all_cities
+  depends_on: [
+    daily_historical_2020,
+    country_resolutions
+  ]
+  name: country_coarse_2020
+  from_table: daily_historical_2020
+  
+- 
+  path: 'sql/cities/create-grid'
+  runner: partitioned_athena_query
+  depends_on: [
+    country_resolutions,
+    country_coarse_2020
+  ]
+  from_table: country_coarse_2020
+  name: country_cities_2020
+  
+
+- 
+  path: 'sql/cities/create-hourly-index.sql'
+  runner: basic_athena_query
+  depends_on: [
+    country_cities,
+    country_cities_2020,
+  ]
+  name: country_cities_hourly_index
+  
+- 
+  path: 'sql/cities/create-daily-index.sql'
+  runner: basic_athena_query
+  depends_on: [
+    country_cities,
+    country_cities_2020,
+  ]
+  name: country_cities_daily_index
+
+- 
+  path: 'sql/cities/create-weekly-index.sql'
+  runner: basic_athena_query
+  depends_on: [
+    country_cities,
+    country_cities_2020,
+  ]
+  name: country_cities_weekly_index
+  
+- 
+  path: 'sql/daily/create-filtered-table'
+  runner: partitioned_athena_query
+  name: sample_2019
+  depends_on: [
+    metadata_variation
+  ]
+  current_millis: v2
+  daily_aggregation:  year%Y # 'year%Yweek%W' # year%Yday%m%d
+  mode: 'incremental'
+  selected_regions: [country_chile]
+  interval:
+    start: 2019-01-01
+    end: 2019-12-31
+
+  
+
+- 
+  path: 'sql/cities/create-coarse-grid'
+  runner: all_cities
+  depends_on: [
+    sample_2019
+    country_resolutions
+  ]
+  name: country_coarse_2019
+  from_table: daily_sample_2019
+
+  
+- 
+  path: 'sql/cities/create-grid'
+  runner: partitioned_athena_query
+  depends_on: [
+    country_resolutions,
+    country_coarse_2019
+  ]
+  name: country_cities_2019
+  from_table: country_coarse_2019
