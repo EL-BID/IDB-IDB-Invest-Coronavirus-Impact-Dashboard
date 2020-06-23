@@ -21,10 +21,10 @@ with ratios as (
 			hour,
 			dow,
 			avg(tci) expected_2020
-		from {{ athena_database }}.{{ slug }}_{{ raw_table }}_grid_2020
+		from {{ athena_database }}.{{ slug }}_{{ raw_table }}_country_cities_2020
 		group by region_slug, grid_id, hour, dow
 		) h
-	join {{ athena_database }}.{{ slug }}_{{ raw_table }}_grid d
+	join {{ athena_database }}.{{ slug }}_{{ raw_table }}_country_cities d
 	on d.region_slug = h.region_slug
 	and d.grid_id = h.grid_id
 	and h.dow = d.dow
