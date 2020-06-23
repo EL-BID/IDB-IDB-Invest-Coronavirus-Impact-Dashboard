@@ -9,7 +9,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from utils import (
+from src.utils import (
     query_athena,
     generate_query,
 )
@@ -43,23 +43,22 @@ def perform_query(query):
 def insert_into(query_path, config, insert_groups):
 
     config["force"] = False
-    
+
     if not isinstance(insert_groups, list):
         insert_groups = globals()[config["name"]](config)
-    
+
     queries = []
     for insert_group in insert_groups:
 
         config.update(deepcopy(insert_group))
 
         queries.append(
-            dict(
-                make=generate_query(query_path, config),
-                config=deepcopy(config)
-            ))
+            dict(make=generate_query(query_path, config), config=deepcopy(config))
+        )
 
     with Pool(config["number_of_athena_jobs"]) as p:
         p.map(partial(perform_query), queries)
+
 
 def check_existence(config):
 
@@ -69,6 +68,7 @@ def check_existence(config):
     )
 
     return len(res) > 0
+
 
 def should_create_table(config):
 
@@ -99,4 +99,3 @@ def start(config, insert_groups=None):
 
     # fill table
     insert_into(sql_path / "insert_into.sql", config, insert_groups)
-

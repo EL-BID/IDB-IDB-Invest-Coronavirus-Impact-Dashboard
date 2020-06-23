@@ -16,7 +16,7 @@ import boto3
 from timezonefinder import TimezoneFinder
 
 tf = TimezoneFinder()
-from utils import (
+from src.utils import (
     simplify,
     safe_create_path,
     get_data_from_athena,
