@@ -2,7 +2,7 @@ from pathlib import Path
 import awswrangler as wr
 import boto3
 
-from utils import safe_create_path
+from src.utils import safe_create_path
 
 def from_local(df, config, columns=None, replace=True, wrangler=False):
 
