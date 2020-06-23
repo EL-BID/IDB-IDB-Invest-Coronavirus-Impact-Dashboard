@@ -265,7 +265,7 @@ def _check_length(s, threshold=5000):
     return len(str(s)) < threshold
 
 
-def sample_query_weeks(start, end):
+def sample_query_weeks(start, end, as_string=True):
 
     dates = pd.DataFrame(
         [
@@ -278,14 +278,19 @@ def sample_query_weeks(start, end):
         dates["week"].isin(dates.groupby("week").count().query("dt == 7").index)
     ]
 
-    return [
-        dt.strftime("%Y%m%d")
+    dates = [
+        dt
         for dt in dates[
             dates["week"].isin(
                 dates.groupby("month").apply(lambda x: x.sample())["week"].values
             )
         ]["dt"]
     ]
+
+    if as_string:
+        return [d.strftime("%Y%m%d") for d in dates]
+    else:
+        return dates
 
 
 def get_query_dates(start, end):

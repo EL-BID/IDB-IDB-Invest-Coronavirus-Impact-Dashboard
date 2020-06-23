@@ -1,15 +1,20 @@
-import awswrangler as wr
 import pandas as pd
 import boto3
 from h3 import h3
 from shapely import wkt
 import geojson
 from copy import deepcopy
+from shapely import affinity
 
 from runners.create_local_table_athena import _save_local
 from runners import basic_athena_query
 from operators.athena import insert_into, create_table
 from utils import get_data_from_athena
+
+
+def _reescale(s, factor=1.1):
+
+    return affinity.scale(wkt.loads(s), factor, factor).to_wkt()
 
 
 def _wkt_to_geojson(s):
@@ -33,7 +38,7 @@ def _get_cell(gjson, resolution, parent_resolution=1):
     temp["id_parent"] = temp["id"].apply(
         lambda x: h3.h3_to_parent(x, res=parent_resolution)
     )
-    temp['group'] = (temp.index / 100).astype(int)
+    temp["group"] = (temp.index / 100).astype(int)
     return temp
 
 
@@ -42,9 +47,13 @@ def get_cells(gjson, config):
     return pd.concat(
         [
             _get_cell(
-                gjson, config["granular_resolution"], parent_resolution=config["coarse_resolutions"]
+                gjson,
+                config["granular_resolution"],
+                parent_resolution=config["coarse_resolutions"],
             ),  # granular grid
-            _get_cell(gjson, config["coarse_resolutions"], config["coarse_resolutions"]),
+            _get_cell(
+                gjson, config["coarse_resolutions"], config["coarse_resolutions"]
+            ),
         ]
     )
 
@@ -58,13 +67,13 @@ def resolutions(config):
         config,
     )
 
-    metadata["geojson"] = metadata["region_shapefile_wkt"].apply(_wkt_to_geojson)
+    metadata["wkt_reescaled"] = metadata["region_shapefile_wkt"].apply(_reescale)
+    metadata["geojson"] = metadata["wkt_reescaled"].apply(_wkt_to_geojson)
 
     grid = (
         metadata.groupby("region_slug")["geojson"]
         .apply(lambda x: get_cells(x, config))  # Get h3 ids and wkts
         .reset_index()
-        .drop("level_1", 1)
     )
 
     create_table.from_local(grid, config, wrangler=True)
@@ -73,12 +82,12 @@ def resolutions(config):
 def coarse(config):
 
     insert_groups = get_data_from_athena(
-            'select distinct region_slug, "group" from '
-            f"{config['athena_database']}.{config['slug']}_grid_resolutions "
-            "where resolution = 7",
-            config,
-        ).to_dict('records')
-    
+        'select distinct region_slug, "group" from '
+        f"{config['athena_database']}.{config['slug']}_grid_resolutions "
+        "where resolution = 7",
+        config,
+    ).to_dict("records")
+
     insert_into.start(config, insert_groups)
 
 
