@@ -12,7 +12,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-from utils import (
+from src.utils import (
     break_list_in_chunks,
     to_wkt,
     query_athena,
@@ -24,15 +24,24 @@ from utils import (
 )
 
 
-def _all_dates(config):
+def _all_dates(config, weekly_sample=False):
 
-    return pd.Series(
-        get_query_dates(config["interval"]["start"], config["interval"]["end"]),
-        name="timestamp",
-    ).to_frame()
+    if weekly_sample:
+        dates = sample_query_weeks(
+            config["interval"]["start"], config["interval"]["end"], False,
+        )
+    else:
+        dates = get_query_dates(config["interval"]["start"], config["interval"]["end"])
+
+    return pd.Series(dates, name="timestamp",).to_frame()
 
 
-def _get_hours(_df, metadata):
+def _get_hours(_df, metadata, weekly_sample):
+
+    if weekly_sample:
+        date_format = "%Y%m%d"
+    else:
+        date_format = "%Y%m%d%H"
 
     return pd.DataFrame(
         [
@@ -43,11 +52,10 @@ def _get_hours(_df, metadata):
                             timezone, ambiguous=False, nonexistent="shift_backward"
                         )
                         .astimezone("UTC")
-                        .strftime("%Y%m%d%H")
+                        .strftime(date_format)
                         for d in list(_df["timestamp"])
                     ]
                 ),
-                "from_table": _df["from_table"].unique()[0],
                 "timezone": timezone,
             }
             for timezone in metadata["timezone"].unique()
@@ -55,9 +63,9 @@ def _get_hours(_df, metadata):
     )
 
 
-def _add_date_slug(metadata, config):
+def _add_date_slug(metadata, config, weekly_sample=False):
 
-    dates = _all_dates(config)
+    dates = _all_dates(config, weekly_sample)
 
     dates["from_table"] = np.where(
         dates["timestamp"] < pd.to_datetime(config["daily_table"]["break_date"]),
@@ -65,15 +73,17 @@ def _add_date_slug(metadata, config):
         config["daily_table"]["after"],
     )
 
-    dates["date_slug"] = dates["timestamp"].apply(
-        lambda x: x.strftime(config["daily_aggregation"])
+    dates["date_slug"] = dates.apply(
+        lambda x: x["timestamp"].strftime(config["daily_aggregation"])
+        + x["from_table"][-4:-1],
+        1,
     )
 
     dates = (
-        dates.groupby("date_slug")
-        .apply(lambda x: _get_hours(x, metadata))
+        dates.groupby(["date_slug", "from_table"])
+        .apply(lambda x: _get_hours(x, metadata, weekly_sample))
         .reset_index()
-        .drop("level_1", 1)
+        .drop("level_2", 1)
     )
 
     return pd.merge(metadata, dates, on="timezone")
@@ -140,7 +150,7 @@ def _region_slug_partition(config):
 
         data = pd.concat([data, rerun]).drop_duplicates()
 
-    if config["name"] != "analysis_daily":
+    if config["name"] == "daily":
 
         data = _add_date_slug(data, config)
 
@@ -152,7 +162,7 @@ def _region_slug_partition(config):
                 f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}",
                 config,
             )
-
+            print(existing_dates)
             # Just run all regions if there is no existing dates
             if len(existing_dates):
 
@@ -161,7 +171,7 @@ def _region_slug_partition(config):
                 dates = dates.groupby("date").filter(
                     lambda x: len(x) == 24
                 )  # Only complete days
-
+                print(dates)
                 remaining_dates = existing_dates.groupby("region_slug").apply(
                     lambda x: _get_remaining_dates(x, dates)
                 )
@@ -185,14 +195,45 @@ def _region_slug_partition(config):
                     ]
                 )
 
+                print(data)
+
         elif config.get("mode") == "batch":
 
             pass
 
-        # print(len(data))
-        # print(data)
+    elif config["name"] == "sample_2019":
 
-        # raise Exception
+        data = _add_date_slug(data, config, weekly_sample=True)
+
+        try:
+            existing_regions = get_data_from_athena(
+                "select distinct region_shapefile_wkt "
+                f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}",
+                config,
+            )
+        except:
+            existing_regions = pd.DataFrame([], columns=["region_shapefile_wkt"])
+
+        data = data[
+            ~data["region_shapefile_wkt"].isin(existing_regions["region_shapefile_wkt"])
+        ]
+
+    else:
+
+        data = _add_date_slug(data, config)
+
+        try:
+            existing_regions = get_data_from_athena(
+                "select distinct region_shapefile_wkt "
+                f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}",
+                config,
+            )
+        except:
+            existing_regions = pd.DataFrame([], columns=["region_shapefile_wkt"])
+
+        data = data[
+            ~data["region_shapefile_wkt"].isin(existing_regions["region_shapefile_wkt"])
+        ]
 
     data = data.to_dict("records")
 
@@ -224,12 +265,12 @@ def historical_2020(config):
     return _region_slug_partition(config)
 
 
-def daily_filtered(config):
+def daily(config):
 
     return _region_slug_partition(config)
 
 
-def daily(config):
+def sample_2019(config):
 
     return _region_slug_partition(config)
 
@@ -237,6 +278,30 @@ def daily(config):
 def analysis_daily(config):
 
     return _region_slug_partition(config)
+
+
+def country_cities(config):
+
+    regions = get_data_from_athena(
+        "select distinct region_slug "
+        f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['from_table']}",
+        config,
+    )["region_slug"].tolist()
+
+    return [
+        {"p_name": r, "p_path": f"region_slug={r}", "partition": r, "region_slug": r}
+        for r in regions
+    ]
+
+
+def country_cities_2020(config):
+
+    return country_cities(config)
+
+
+def country_cities_2019(config):
+
+    return country_cities(config)
 
 
 def grid(config):
@@ -250,7 +315,11 @@ def grid(config):
         )["region_slug"]
     )
 
-    return [{"p_name": r, "p_path": f'region_slug={r}', 'partition': r, 'region_slug': r} for r in regions]
+    return [
+        {"p_name": r, "p_path": f"region_slug={r}", "partition": r, "region_slug": r}
+        for r in regions
+    ]
+
 
 def grid_2020(config):
 
