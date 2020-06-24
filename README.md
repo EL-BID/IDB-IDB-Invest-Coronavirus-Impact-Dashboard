@@ -26,7 +26,7 @@ But first, make sure you understand the data:
 
 The latest version of the data is easily available through the methods below.
 
-:warning: The data methodology was recently updated. Historical data may have changed since last version. Please refer to the Methodological Note to understand the changes.
+:warning: By mistake, traffic congestion information for Fortaleza (Brazil) was being reported as Natal (Brazil). This has been solved, and now "Natal" reflects the traffic congestion for that metropolitan area, and Fortaleza data is reported under "Fortaleza".
 
 ### Download Manually
 
