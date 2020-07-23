@@ -63,7 +63,8 @@ def resolutions(config):
     metadata = get_data_from_athena(
         "select region_slug, region_shapefile_wkt from "
         f"{config['athena_database']}.{config['slug']}_metadata_metadata_prepare "
-        "where grid = 'TRUE'",
+        "where grid = 'TRUE' "
+        f"""or region_slug in ('{"','".join(config['selected_regions'])}')""",
         config,
     )
 

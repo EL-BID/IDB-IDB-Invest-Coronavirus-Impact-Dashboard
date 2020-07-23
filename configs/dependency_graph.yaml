@@ -30,6 +30,7 @@
     ]
   name: metadata_ready
 
+
 # Analysis
 - 
   path: 'sql/analysis/create_dummy_year.sql'
@@ -73,9 +74,9 @@
   daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
   mode: 'incremental'
   interval:
-    start: 2020-03-09
+    start: 2019-01-01
     end: 'today'
- 
+  force: True
 
 - 
   path: 'sql/daily/create-filtered-table'
@@ -91,7 +92,7 @@
   interval:
     start: 2019-03-09
     end: 2019-03-31
-
+  pass: True
 
 - 
   path: 'sql/daily/create-filtered-table'
@@ -107,7 +108,7 @@
   interval:
     start: 2020-03-01
     end: 2020-03-08
-
+  pass: True
 
 - 
   path: 'sql/daily/create-daily-index-table.sql'
@@ -119,7 +120,7 @@
     historical_2020
   ]
   name: daily_index
-  force: True
+  pass: True
   
 - 
   path: 'sql/daily/create-weekly-index-table.sql'
@@ -131,6 +132,7 @@
     historical_2020
   ]
   name: weekly_index
+  pass: True
 
 - 
   path: 'sql/daily/create-hourly-index-table.sql'
@@ -142,7 +144,7 @@
     historical_2020
   ]
   name: hourly_index
-
+  pass: True
 - 
   path: 'sql/daily/create-grouphours-index-table.sql'
   runner: basic_athena_query
@@ -153,6 +155,8 @@
     historical_2020
   ]
   name: grouphours_index
+  skip: True 
+  pass: True
 - 
   path: 'sql/daily/'
   runner: create_local_table_athena
@@ -183,7 +187,7 @@
       worksheet: grouphours
       overall_drop: []
       public_drop: []
-
+  pass: True
 # GRID
 - 
   path: 'sql/grid/'
@@ -195,7 +199,7 @@
   name: resolutions
   coarse_resolutions: 7
   granular_resolution: 10
-
+  skip: True
 
 - 
   path: 'sql/grid/create-coarse-grid/'
@@ -206,7 +210,7 @@
   ]
   name: coarse
   from_table: daily_daily
-
+  force: True
 
 - 
   path: 'sql/grid/create-grid'
@@ -216,7 +220,7 @@
     coarse
   ]
   name: grid
-
+  force: True
 
 - 
   path: 'sql/grid/create-coarse-grid/'
@@ -227,7 +231,7 @@
   ]
   name: coarse_2020
   from_table: daily_historical_2020
-
+  skip: True
 
 - 
   path: 'sql/grid/create-grid'
@@ -237,7 +241,7 @@
     coarse_2020
   ]
   name: grid_2020
-
+  skip: True
 
 - 
   path: 'sql/grid/create-hourly-index.sql'
@@ -248,7 +252,7 @@
     metadata_variation
   ]
   name: grid_hourly_index
-  force: True
+  skip: True
 
 # Cities
 - 

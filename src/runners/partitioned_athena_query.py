@@ -98,11 +98,18 @@ def _get_remaining_dates(d, dates):
 
 def _region_slug_partition(config):
 
-    data = get_data_from_athena(
-        "select * from "
-        f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation ",
-        config,
-    )
+    try:
+        data = get_data_from_athena(
+            "select * from "
+            f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation ",
+            config,
+        )
+    except:
+        data = get_data_from_athena(
+            "select * from "
+            f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready ",
+            config,
+        )
 
     if config.get("selected_regions"):
 
@@ -162,8 +169,7 @@ def _region_slug_partition(config):
                 f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}",
                 config,
             )
-            print(existing_dates)
-            # Just run all regions if there is no existing dates
+
             if len(existing_dates):
 
                 dates = _all_dates(config)
@@ -171,7 +177,7 @@ def _region_slug_partition(config):
                 dates = dates.groupby("date").filter(
                     lambda x: len(x) == 24
                 )  # Only complete days
-                print(dates)
+
                 remaining_dates = existing_dates.groupby("region_slug").apply(
                     lambda x: _get_remaining_dates(x, dates)
                 )
@@ -186,9 +192,17 @@ def _region_slug_partition(config):
 
                 data = pd.concat(
                     [
-                        data.merge(
-                            remaining_dates, on=["region_slug", "date_slug"]
-                        ),  # Get remaining dates from existing regions
+                        # data.assign(merge=lambda x: x["date_slug"].apply(lambda y: y[:-3])).merge(
+                        #     remaining_dates.assign(merge=lambda x: x["date_slug"])[['region_slug', ]],
+                        #     on=["region_slug", "merge"],
+                        # ),  # Get remaining dates from existing regions
+                        data[
+                            data["date_slug"].apply(
+                                lambda x: any(
+                                    [i in x for i in list(remaining_dates["date_slug"])]
+                                )
+                            )
+                        ],
                         data[
                             ~data["region_slug"].isin(existing_dates["region_slug"])
                         ],  # Add all dates for new regions
@@ -235,6 +249,7 @@ def _region_slug_partition(config):
             ~data["region_shapefile_wkt"].isin(existing_regions["region_shapefile_wkt"])
         ]
 
+    print(data["region_slug"].unique())
     data = data.to_dict("records")
 
     for d in data:
@@ -310,7 +325,8 @@ def grid(config):
         get_data_from_athena(
             "select distinct region_slug from "
             f"{config['athena_database']}.{config['slug']}_metadata_metadata_prepare "
-            "where grid = 'TRUE'",
+            "where grid = 'TRUE'"
+            f"""or region_slug in ('{"','".join(config['selected_regions'])}')""",
             config,
         )["region_slug"]
     )
