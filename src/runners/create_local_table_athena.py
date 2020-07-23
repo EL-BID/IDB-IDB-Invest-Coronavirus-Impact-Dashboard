@@ -114,6 +114,7 @@ def _get_length(x, config):
 
 def metadata_osm_length(config):
 
+    # Fetch regions configuration
     metadata = get_data_from_athena(
         "select region_slug, region_shapefile_wkt, rerun from "
         f"{config['athena_database']}.{config['slug']}_metadata_metadata_prepare "
@@ -121,13 +122,30 @@ def metadata_osm_length(config):
         config,
     )
 
-    current = get_data_from_athena(
-        "select region_slug, region_shapefile_wkt, osm_length from "
-        f"{config['athena_database']}.{config['slug']}_metadata_metadata_osm_length "
-        "order by region_slug",
-        config,
-    )
+    # Force rerun
+    rerun = metadata[metadata["rerun"] == "TRUE"]
 
+    # Select regions to be update if that is the case, else update all
+    if config.get("selected_regions"):
+
+        metadata = metadata[
+            metadata["region_slug"].isin(config.get("selected_regions"))
+        ]
+
+    # Get current state of table
+    try:
+        current = get_data_from_athena(
+            "select region_slug, region_shapefile_wkt, osm_length from "
+            f"{config['athena_database']}.{config['slug']}_metadata_metadata_osm_length "
+            "order by region_slug",
+            config,
+        )
+    except:
+        current = pd.DataFrame(
+            [], columns=["region_slug", "region_shapefile_wkt", "osm_length"]
+        )
+
+    # Update just regions that changed their shapes or do not exist yet
     if config["mode"] == "overwrite_partitions":
 
         try:
@@ -139,18 +157,23 @@ def metadata_osm_length(config):
             ~metadata["region_shapefile_wkt"].isin(skip["region_shapefile_wkt"])
         ][["region_slug", "region_shapefile_wkt"]]
 
-    rerun = metadata[metadata["rerun"] == "TRUE"]
     selected = pd.concat([selected, rerun]).drop_duplicates()
 
-    if config["verbose"]:
-        print(list(selected["region_slug"]))
-
+    # Calculate OSM length for selected regions
     selected["osm_length"] = selected["region_shapefile_wkt"].apply(
         lambda x: _get_length(x, config)
     )
     selected = selected.sort_values(by="region_slug")
 
-    current.update(selected[["region_slug", "region_shapefile_wkt", "osm_length"]])
+    # If current table is empty, initilize
+    if len(current):
+        current.update(selected[["region_slug", "region_shapefile_wkt", "osm_length"]])
+    else:
+        current = selected[["region_slug", "region_shapefile_wkt", "osm_length"]]
+
+    if config["verbose"]:
+        print(current)
+        print(list(current["region_slug"]))
 
     if len(metadata):
 

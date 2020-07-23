@@ -14,10 +14,10 @@
 # Add historical to run full pipeline
 
 tables: [
-    # daily, 
+    daily, 
     # metadata, 
     # analysis, 
-    grid,
+    # grid,
     # cities,
     # historical,
     ] #
@@ -78,7 +78,7 @@ countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
 
 cv_exception: ['country_brazil']
 
-selected_regions: ['country_brazil']
+selected_regions: ['santiago']
 
 accepted_osm_keys: [
     motorway,
