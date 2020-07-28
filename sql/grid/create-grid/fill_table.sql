@@ -20,7 +20,7 @@ from (
 join (
       select * 
       from {{ athena_database }}.{{ slug }}_{{ raw_table }}_resolutions
-      where resolution = 10
+      where resolution = {{ granular_resolution }}
       and region_slug = '{{ region_slug }}'
 	) g
 on t.id_parent = g.id_parent
