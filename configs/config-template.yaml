@@ -14,10 +14,10 @@
 # Add historical to run full pipeline
 
 tables: [
-    daily, 
+    # daily, 
     # metadata, 
     # analysis, 
-    # grid,
+    grid,
     # cities,
     # historical,
     ] #
@@ -137,3 +137,7 @@ tests:
 timezone:
     replace:
         America/Punta_Arenas: America/Santiago
+
+# Grid
+coarse_resolutions: 7
+granular_resolution: 8
