@@ -1,12 +1,12 @@
 from multiprocessing.pool import Pool
 from functools import partial
-from h3 import h3
 from pathlib import Path
 from copy import deepcopy
 import pyathena
 import pandas as pd
 import numpy as np
 import pytz
+from datetime import datetime
 
 import logging
 
@@ -33,83 +33,112 @@ def _all_dates(config, weekly_sample=False):
     else:
         dates = get_query_dates(config["interval"]["start"], config["interval"]["end"])
 
-    return pd.Series(dates, name="timestamp",).to_frame()
+    return pd.Series(dates, name="date",).apply(lambda x: x.date()).to_frame()
 
 
-def _get_hours(_df, metadata, weekly_sample):
+def _get_remaining_dates(data, existing_dates, config):
 
-    if weekly_sample:
-        date_format = "%Y%m%d"
-    else:
-        date_format = "%Y%m%d%H"
+    dates = _all_dates(config)
+
+    allpossibilities = (
+        data.groupby(["region_slug"])
+        .apply(lambda x: dates[["date"]])
+        .reset_index()
+        .drop("level_1", 1)
+    )
+
+    return allpossibilities.merge(
+        existing_dates, on=["region_slug", "date"], how="left", indicator=True
+    ).query('_merge == "left_only"')[["region_slug", "date"]]
+
+
+def _get_hours(_df, date_format="%Y%m%d"):
 
     return pd.DataFrame(
         [
             {
                 "date_filter": "|".join(
-                    [
-                        d.tz_localize(
-                            timezone, ambiguous=False, nonexistent="shift_backward"
-                        )
-                        .astimezone("UTC")
-                        .strftime(date_format)
-                        for d in list(_df["timestamp"])
-                    ]
-                ),
-                "timezone": timezone,
+                    [d.strftime(date_format) for d in list(_df["date"])]
+                )
             }
-            for timezone in metadata["timezone"].unique()
         ]
     )
 
 
-def _add_date_slug(metadata, config, weekly_sample=False):
+def _choose_time_aggregation(r_dates):
 
-    dates = _all_dates(config, weekly_sample)
+    if len(r_dates) > 30:
+        time_aggregation = "year%Ymonth%m"
+    elif len(r_dates) > 7:
+        time_aggregation = "year%Yweek%W"
+    else:
+        time_aggregation = "year%Ymonth%mday%d"
 
-    dates["from_table"] = np.where(
-        dates["timestamp"] < pd.to_datetime(config["daily_table"]["break_date"]),
-        config["daily_table"]["before"],
-        config["daily_table"]["after"],
+    r_dates["date_slug"] = r_dates["date"].apply(lambda x: x.strftime(time_aggregation))
+
+    return r_dates
+
+
+def _add_date_slug(data, remaining_dates, config):
+
+    remaining_dates = (
+        remaining_dates.groupby("region_slug")
+        .apply(_choose_time_aggregation)
+        .reset_index()
+        .drop("index", 1)
     )
 
-    dates["date_slug"] = dates.apply(
-        lambda x: x["timestamp"].strftime(config["daily_aggregation"])
-        + x["from_table"][-4:-1],
-        1,
-    )
-
-    dates = (
-        dates.groupby(["date_slug", "from_table"])
-        .apply(lambda x: _get_hours(x, metadata, weekly_sample))
+    remaining_dates = (
+        remaining_dates.groupby(["region_slug", "date_slug"])
+        .apply(_get_hours)
         .reset_index()
         .drop("level_2", 1)
     )
 
-    return pd.merge(metadata, dates, on="timezone")
+    return data.merge(remaining_dates, on="region_slug")
 
 
-def _get_remaining_dates(d, dates):
-
-    return dates[~dates["date"].isin(d["date"].apply(lambda x: x.date()))][
-        ["date"]
-    ].drop_duplicates()
-
-
-def _region_slug_partition(config):
+def _get_metadata_table(config):
 
     try:
-        data = get_data_from_athena(
+        return get_data_from_athena(
             "select * from "
             f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation ",
             config,
         )
     except:
-        data = get_data_from_athena(
+        return get_data_from_athena(
             "select * from "
             f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready ",
             config,
         )
+
+
+def _prepare_to_partition(data, config):
+
+    data = data.to_dict("records")
+
+    for d in data:
+        d["partition"] = d["region_slug"]
+
+        if config["name"] == "analysis_daily":
+            if d["region_slug"] in config["sampled"]:
+                d["dates"] = sample_query_weeks(
+                    config["full_2019_interval"]["start"],
+                    config["full_2019_interval"]["end"],
+                )
+            d["p_path"] = deepcopy("country_iso={country_iso}/{partition}".format(**d))
+
+        else:
+            d["p_path"] = deepcopy("region_slug={region_slug}/{date_slug}".format(**d))
+            d["p_name"] = "{partition}_{date_slug}".format(**d)
+
+    return data
+
+
+def _region_slug_partition(config):
+
+    data = _get_metadata_table(config)
 
     if config.get("selected_regions"):
 
@@ -159,57 +188,18 @@ def _region_slug_partition(config):
 
     if config["name"] == "daily":
 
-        data = _add_date_slug(data, config)
-
         if config.get("mode") == "incremental":
 
             existing_dates = get_data_from_athena(
                 "select distinct region_slug, "
                 "date_parse(concat(cast(year as varchar), '-', cast(month as varchar), '-', cast(day as varchar)), '%Y-%m-%d') date "
-                f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}",
+                f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']} ",
                 config,
-            )
+            ).assign(date=lambda df: df["date"].apply(lambda x: x.date()))
 
-            if len(existing_dates):
+            remaining_dates = _get_remaining_dates(data, existing_dates, config)
 
-                dates = _all_dates(config)
-                dates["date"] = dates["timestamp"].apply(lambda x: x.date())
-                dates = dates.groupby("date").filter(
-                    lambda x: len(x) == 24
-                )  # Only complete days
-
-                remaining_dates = existing_dates.groupby("region_slug").apply(
-                    lambda x: _get_remaining_dates(x, dates)
-                )
-
-                remaining_dates["date_slug"] = remaining_dates["date"].apply(
-                    lambda x: x.strftime(config["daily_aggregation"])
-                )
-
-                remaining_dates = remaining_dates.reset_index()[
-                    ["region_slug", "date_slug"]
-                ].drop_duplicates()
-
-                data = pd.concat(
-                    [
-                        # data.assign(merge=lambda x: x["date_slug"].apply(lambda y: y[:-3])).merge(
-                        #     remaining_dates.assign(merge=lambda x: x["date_slug"])[['region_slug', ]],
-                        #     on=["region_slug", "merge"],
-                        # ),  # Get remaining dates from existing regions
-                        data[
-                            data["date_slug"].apply(
-                                lambda x: any(
-                                    [i in x for i in list(remaining_dates["date_slug"])]
-                                )
-                            )
-                        ],
-                        data[
-                            ~data["region_slug"].isin(existing_dates["region_slug"])
-                        ],  # Add all dates for new regions
-                    ]
-                )
-
-                print(data)
+            data = _add_date_slug(data, remaining_dates, config)
 
         elif config.get("mode") == "batch":
 
@@ -249,25 +239,7 @@ def _region_slug_partition(config):
             ~data["region_shapefile_wkt"].isin(existing_regions["region_shapefile_wkt"])
         ]
 
-    print(data["region_slug"].unique())
-    data = data.to_dict("records")
-
-    for d in data:
-        d["partition"] = d["region_slug"]
-
-        if config["name"] == "analysis_daily":
-            if d["region_slug"] in config["sampled"]:
-                d["dates"] = sample_query_weeks(
-                    config["full_2019_interval"]["start"],
-                    config["full_2019_interval"]["end"],
-                )
-            d["p_path"] = deepcopy("country_iso={country_iso}/{partition}".format(**d))
-
-        else:
-            d["p_path"] = deepcopy("region_slug={region_slug}/{date_slug}".format(**d))
-            d["p_name"] = "{partition}_{date_slug}".format(**d)
-
-    return data
+    return _prepare_to_partition(data, config)
 
 
 def historical_2019(config):
