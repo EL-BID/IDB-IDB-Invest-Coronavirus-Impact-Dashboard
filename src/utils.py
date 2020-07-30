@@ -298,7 +298,7 @@ def get_query_dates(start, end):
     if end == "today":
         end = datetime.now()
 
-    return list(rrule.rrule(rrule.HOURLY, dtstart=start, until=end))
+    return list(rrule.rrule(rrule.DAILY, dtstart=start, until=end))
 
 
 def flatten(l):
