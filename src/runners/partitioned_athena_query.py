@@ -36,7 +36,14 @@ def _all_dates(config, weekly_sample=False):
     return pd.Series(dates, name="date",).apply(lambda x: x.date()).to_frame()
 
 
-def _get_remaining_dates(data, existing_dates, config):
+def _get_remaining_dates(data, config):
+
+    existing_dates = get_data_from_athena(
+        "select distinct region_slug, "
+        "date_parse(concat(cast(year as varchar), '-', cast(month as varchar), '-', cast(day as varchar)), '%Y-%m-%d') date "
+        f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']} ",
+        config,
+    ).assign(date=lambda df: df["date"].apply(lambda x: x.date()))
 
     dates = _all_dates(config)
 
@@ -67,9 +74,9 @@ def _get_hours(_df, date_format="%Y%m%d"):
 
 def _choose_time_aggregation(r_dates):
 
-    if len(r_dates) > 30:
+    if len(r_dates) >= 30:
         time_aggregation = "year%Ymonth%m"
-    elif len(r_dates) > 7:
+    elif len(r_dates) >= 7:
         time_aggregation = "year%Yweek%W"
     else:
         time_aggregation = "year%Ymonth%mday%d"
@@ -186,26 +193,7 @@ def _region_slug_partition(config):
 
         data = pd.concat([data, rerun]).drop_duplicates()
 
-    if config["name"] == "daily":
-
-        if config.get("mode") == "incremental":
-
-            existing_dates = get_data_from_athena(
-                "select distinct region_slug, "
-                "date_parse(concat(cast(year as varchar), '-', cast(month as varchar), '-', cast(day as varchar)), '%Y-%m-%d') date "
-                f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']} ",
-                config,
-            ).assign(date=lambda df: df["date"].apply(lambda x: x.date()))
-
-            remaining_dates = _get_remaining_dates(data, existing_dates, config)
-
-            data = _add_date_slug(data, remaining_dates, config)
-
-        elif config.get("mode") == "batch":
-
-            pass
-
-    elif config["name"] == "sample_2019":
+    if config["name"] == "sample_2019":
 
         data = _add_date_slug(data, config, weekly_sample=True)
 
@@ -224,20 +212,18 @@ def _region_slug_partition(config):
 
     else:
 
-        data = _add_date_slug(data, config)
+        if config.get("mode") == "incremental":
 
-        try:
-            existing_regions = get_data_from_athena(
-                "select distinct region_shapefile_wkt "
-                f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}",
-                config,
-            )
-        except:
-            existing_regions = pd.DataFrame([], columns=["region_shapefile_wkt"])
+            remaining_dates = _get_remaining_dates(data, config)
 
-        data = data[
-            ~data["region_shapefile_wkt"].isin(existing_regions["region_shapefile_wkt"])
-        ]
+            if len(remaining_dates) == 0:
+                return None
+
+            data = _add_date_slug(data, remaining_dates, config)
+
+        elif config.get("mode") == "batch":
+
+            pass
 
     return _prepare_to_partition(data, config)
 
@@ -384,6 +370,9 @@ def partition_query(query_path, config):
     queries = []
 
     partitions = globals()[config["name"]](config)
+
+    if partitions is None:
+        return
 
     for partition in partitions:
 
