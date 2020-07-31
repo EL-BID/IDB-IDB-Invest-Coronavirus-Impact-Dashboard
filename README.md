@@ -16,6 +16,10 @@ policymakers, epidemiologists, and the general public in the region with measure
 that “social distancing” restrictions and recommendations due to the coronavirus outbreak are
 having on the population and on economic activity.
 
+
+
+:warning: We are facing internal technical issues which caused the data to stop updating on July 15th. We are working to get back with up-to-date data as soon as possible.
+
 ## Use the data
 
 The data was also though to be used by the broad community of researchers, journalists and developers. If you have any ideas or doubts about using the data, do not hesitate to submit an [issue](https://github.com/EL-BID/IDB-IDB-Invest-Coronavirus-Impacto-Dashboard/issues/new).
