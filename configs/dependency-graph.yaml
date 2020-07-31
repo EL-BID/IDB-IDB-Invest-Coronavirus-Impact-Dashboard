@@ -70,45 +70,40 @@
   depends_on: [
     metadata_variation
   ]
-  current_millis: v8
+  current_millis: v9
   daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
   mode: 'incremental'
   interval:
-    start: 2020-03-02
+    start: 2020-03-09
     end: 'today'
-  force: True
 
 - 
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: historical_2019
   depends_on: [
-    historical_2019_raw, 
     metadata_variation
   ]
-  current_millis: v6
+  current_millis: v8
   daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
   mode: 'incremental'
   interval:
-    start: 2019-03-09
-    end: 2019-03-31
-  pass: True
+    start: 2019-04-01
+    end: 2019-04-30
 
 - 
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: historical_2020
   depends_on: [
-    historical_2020_raw, 
     metadata_variation
   ]
-  current_millis: v6
+  current_millis: v8
   daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
   mode: 'incremental'
   interval:
-    start: 2020-03-01
+    start: 2020-03-02
     end: 2020-03-08
-  pass: True
 
 - 
   path: 'sql/daily/create-daily-index-table.sql'
@@ -120,7 +115,6 @@
     historical_2020
   ]
   name: daily_index
-  pass: True
   
 - 
   path: 'sql/daily/create-weekly-index-table.sql'
@@ -132,7 +126,6 @@
     historical_2020
   ]
   name: weekly_index
-  pass: True
 
 - 
   path: 'sql/daily/create-hourly-index-table.sql'
@@ -144,7 +137,7 @@
     historical_2020
   ]
   name: hourly_index
-  pass: True
+
 - 
   path: 'sql/daily/create-grouphours-index-table.sql'
   runner: basic_athena_query
@@ -155,8 +148,7 @@
     historical_2020
   ]
   name: grouphours_index
-  skip: True 
-  pass: True
+
 - 
   path: 'sql/daily/'
   runner: create_local_table_athena
@@ -188,190 +180,3 @@
       overall_drop: []
       public_drop: []
   pass: True
-# GRID
-- 
-  path: 'sql/grid/'
-  runner: region_grid
-  depends_on: [
-    metadata_variation
-  ]
-  mode: overwrite
-  name: resolutions
-  force: True
-
-- 
-  path: 'sql/grid/create-coarse-grid/'
-  runner: region_grid
-  depends_on: [
-    resolutions,
-    daily
-  ]
-  name: coarse
-  from_table: daily_daily
-  force: True
-
-- 
-  path: 'sql/grid/create-grid'
-  runner: partitioned_athena_query
-  depends_on: [
-    resolutions,
-    coarse
-  ]
-  name: grid
-  force: True
-
-- 
-  path: 'sql/grid/create-coarse-grid/'
-  runner: region_grid
-  depends_on: [
-    resolutions,
-    daily_historical_2020
-  ]
-  name: coarse_2020
-  from_table: daily_historical_2020
-  skip: True
-
-- 
-  path: 'sql/grid/create-grid'
-  runner: partitioned_athena_query
-  depends_on: [
-    resolutions,
-    coarse_2020
-  ]
-  name: grid_2020
-  skip: True
-
-- 
-  path: 'sql/grid/create-hourly-index.sql'
-  runner: basic_athena_query
-  depends_on: [
-    grid,
-    grid_2020,
-    metadata_variation
-  ]
-  name: grid_hourly_index
-  skip: True
-
-# Cities
-- 
-  path: 'sql/cities/'
-  runner: all_cities
-  depends_on: [
-    metadata_variation
-  ]
-  mode: overwrite
-  name: country_resolutions
-  coarse_resolutions: 3
-  jobs:
-    - region_slug: country_chile
-      file: chile_comunas.csv
-
-    # - region_slug: country_brazil
-    #   file: brazil_cities.csv
-
-- 
-  path: 'sql/cities/create-coarse-grid'
-  runner: all_cities
-  depends_on: [
-    daily_daily
-    country_resolutions
-  ]
-  name: country_coarse
-  from_table: daily_daily
-
-- 
-  path: 'sql/cities/create-grid'
-  runner: partitioned_athena_query
-  depends_on: [
-    country_resolutions,
-    country_coarse
-  ]
-  from_table: country_coarse
-  name: country_cities
-  
-
-- 
-  path: 'sql/cities/create-coarse-grid'
-  runner: all_cities
-  depends_on: [
-    daily_historical_2020,
-    country_resolutions
-  ]
-  name: country_coarse_2020
-  from_table: daily_historical_2020
-  
-- 
-  path: 'sql/cities/create-grid'
-  runner: partitioned_athena_query
-  depends_on: [
-    country_resolutions,
-    country_coarse_2020
-  ]
-  from_table: country_coarse_2020
-  name: country_cities_2020
-  
-
-- 
-  path: 'sql/cities/create-hourly-index.sql'
-  runner: basic_athena_query
-  depends_on: [
-    country_cities,
-    country_cities_2020,
-  ]
-  name: country_cities_hourly_index
-  
-- 
-  path: 'sql/cities/create-daily-index.sql'
-  runner: basic_athena_query
-  depends_on: [
-    country_cities,
-    country_cities_2020,
-  ]
-  name: country_cities_daily_index
-
-- 
-  path: 'sql/cities/create-weekly-index.sql'
-  runner: basic_athena_query
-  depends_on: [
-    country_cities,
-    country_cities_2020,
-  ]
-  name: country_cities_weekly_index
-  
-- 
-  path: 'sql/daily/create-filtered-table'
-  runner: partitioned_athena_query
-  name: sample_2019
-  depends_on: [
-    metadata_variation
-  ]
-  current_millis: v2
-  daily_aggregation:  year%Y # 'year%Yweek%W' # year%Yday%m%d
-  mode: 'incremental'
-  selected_regions: [country_chile]
-  interval:
-    start: 2019-01-01
-    end: 2019-12-31
-
-  
-
-- 
-  path: 'sql/cities/create-coarse-grid'
-  runner: all_cities
-  depends_on: [
-    sample_2019
-    country_resolutions
-  ]
-  name: country_coarse_2019
-  from_table: daily_sample_2019
-
-  
-- 
-  path: 'sql/cities/create-grid'
-  runner: partitioned_athena_query
-  depends_on: [
-    country_resolutions,
-    country_coarse_2019
-  ]
-  name: country_cities_2019
-  from_table: country_coarse_2019
