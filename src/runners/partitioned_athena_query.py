@@ -153,8 +153,6 @@ def _region_slug_partition(config):
 
     else:
 
-        rerun = data[data["rerun"] == "TRUE"]
-
         if config.get("if_exists") == "append":
 
             # check if table exists
@@ -175,55 +173,14 @@ def _region_slug_partition(config):
             if config["name"] == "analysis_daily":
                 data = data[~data["region_slug"].isin(config["cv_exception"])]
 
-        if config.get("filter_by_coef"):
+    if config.get("mode") == "incremental":
 
-            skip = get_data_from_athena(
-                "select region_slug from "
-                f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation "
-                "where (weekly_approved = true or daily_approved = true) "
-                f"""or (region_slug in ('{"','".join(config['cv_exception'])}')) """,
-                config,
-            )
+        remaining_dates = _get_remaining_dates(data, config)
 
-            data = data[data["region_slug"].isin(skip["region_slug"])]
+        if len(remaining_dates) == 0:
+            return None
 
-        if config.get("sample_cities"):
-
-            data = data[: config["sample_cities"]]
-
-        data = pd.concat([data, rerun]).drop_duplicates()
-
-    if config["name"] == "sample_2019":
-
-        data = _add_date_slug(data, config, weekly_sample=True)
-
-        try:
-            existing_regions = get_data_from_athena(
-                "select distinct region_shapefile_wkt "
-                f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}",
-                config,
-            )
-        except:
-            existing_regions = pd.DataFrame([], columns=["region_shapefile_wkt"])
-
-        data = data[
-            ~data["region_shapefile_wkt"].isin(existing_regions["region_shapefile_wkt"])
-        ]
-
-    else:
-
-        if config.get("mode") == "incremental":
-
-            remaining_dates = _get_remaining_dates(data, config)
-
-            if len(remaining_dates) == 0:
-                return None
-
-            data = _add_date_slug(data, remaining_dates, config)
-
-        elif config.get("mode") == "batch":
-
-            pass
+        data = _add_date_slug(data, remaining_dates, config)
 
     return _prepare_to_partition(data, config)
 
