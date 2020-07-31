@@ -127,18 +127,18 @@ def get_config(path="configs/config.yaml"):
     return config
 
 
-def get_dependency_graph(path="configs/dependency_graph.yaml"):
+def get_dependency_graph(path="configs/dependency-graph.yaml"):
     """Load dependency_graph file
     
     Parameters
     ----------
     path : str, optional
-        dependency_graph.yaml path, by default 'configs/dependency_graph.yaml'
+        dependency-graph.yaml path, by default 'configs/dependency-graph.yaml'
     
     Returns
     -------
     dict
-        variables from dependency_graph.yaml
+        variables from dependency-graph.yaml
     """
 
     config = yaml.load(open(path))
