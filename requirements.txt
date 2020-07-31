@@ -1,10 +1,12 @@
-pandas>1.0.0
+pandas==1.0.5
 pyaml
 ipykernel
 pyathena
 fire
-networkx
+networkx<=2.0.0
 rdp
 jinja2
 jupyter
 jupyter_contrib_nbextensions
+pymsteams
+loguru
