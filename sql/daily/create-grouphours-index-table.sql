@@ -11,77 +11,35 @@ with ratios as (
             d.hour_chunk,
             d.dow,
             observed,
-            expected_2019,
             expected_2020,
-            observed / expected_2019 as ratio_19,
             observed / expected_2020 as ratio_20
-    from (
+    from (		
         select 
-            a.region_slug,
-            a.hour_chunk,
-            a.dow,
-            expected_2019,
-            expected_2020
+            region_slug,
+            hour_chunk,
+            dow,
+            avg(expected_2020) expected_2020
         from (
-        select 
+            select
                 region_slug,
                 hour_chunk,
                 dow,
-                avg(expected_2019) expected_2019
-            from (
-                select
+                sum(tci) as expected_2020
+            from ( 
+                select 
                     region_slug,
-                    hour_chunk,
+                    year, month, day,
+                    case 
+                        when hour between 5 and 9 then '5-9' 
+                        when hour between 10 and 15 then '10-15'
+                        when hour between 16 and 21 then '16-21'
+                        else 'rest'
+                    end hour_chunk,
                     dow,
-                    sum(tci) as expected_2019
-                from ( 
-                    select 
-                        region_slug,
-                        year, month, day,
-                        case 
-                            when hour between 5 and 9 then '5-9' 
-                            when hour between 10 and 15 then '10-15'
-                            when hour between 16 and 21 then '16-21'
-                            else 'rest'
-                        end hour_chunk,
-                        dow,
-                        tci
-                    from {{ athena_database }}.{{ slug }}_daily_historical_2019)
-                group by region_slug, year, month, day, hour_chunk, dow)
-                group by region_slug, hour_chunk, dow
-        ) a
-        join (		
-            select 
-                region_slug,
-                hour_chunk,
-                dow,
-                avg(expected_2020) expected_2020
-            from (
-                select
-                    region_slug,
-                    hour_chunk,
-                    dow,
-                    sum(tci) as expected_2020
-                from ( 
-                    select 
-                        region_slug,
-                        year, month, day,
-                        case 
-                            when hour between 5 and 9 then '5-9' 
-                            when hour between 10 and 15 then '10-15'
-                            when hour between 16 and 21 then '16-21'
-                            else 'rest'
-                        end hour_chunk,
-                        dow,
-                        tci
-                    from {{ athena_database }}.{{ slug }}_daily_historical_2020)
-                group by region_slug, year, month, day, hour_chunk, dow)
-                group by region_slug, hour_chunk, dow
-        ) b
-        on a.region_slug = b.region_slug
-        and a.hour_chunk = b.hour_chunk
-        and a.dow = b.dow
-    ) h
+                    tci
+                from {{ athena_database }}.{{ slug }}_daily_historical_2020)
+            group by region_slug, year, month, day, hour_chunk, dow)
+        group by region_slug, hour_chunk, dow) h
     join (
         select
         region_slug,
@@ -119,9 +77,7 @@ select
     dow,
     day, 
     hour_chunk,
-    expected_2019,
     expected_2020,
-    ratio_19,
     ratio_20,
 	ratios.observed,
 	(ratio_20 - 1) * 100 as tci
