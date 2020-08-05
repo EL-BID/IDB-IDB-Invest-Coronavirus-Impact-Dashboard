@@ -10,31 +10,10 @@ with ratios as (
         d.dow,
         d."day",
         observed,
-        expected_2019,
         expected_2020,
-        observed / expected_2019 as ratio_19,
         observed / expected_2020 as ratio_20
 	from 
-		(select 
-			a.region_slug,
-			a.dow,
-			expected_2019,
-			expected_2020
-        from (		
-	        select
-				region_slug,
-				dow,
-				avg(expected_2019) expected_2019
-			from (
-				select
-					region_slug,
-					dow,
-					sum(tci) as expected_2019
-				from {{ athena_database }}.{{ slug }}_daily_historical_2019
-				group by region_slug, month, day, dow)
-			group by region_slug,  dow) a
-		join (		
-	        select
+		(select
 				region_slug,
 				dow,
 				avg(expected_2020) expected_2020
@@ -45,9 +24,7 @@ with ratios as (
 					sum(tci) as expected_2020
 				from {{ athena_database }}.{{ slug }}_daily_historical_2020
 				group by region_slug, month, day, dow)
-			group by region_slug,  dow) b
-		on a.region_slug = b.region_slug
-		and a.dow = b.dow) h
+			group by region_slug,  dow) h
     join 
 		(select 
 			region_slug,
@@ -78,9 +55,7 @@ select
 	ratios.day,
 	ratios.dow,
 	ratios.observed,
-	ratios.expected_2019,
 	ratios.expected_2020,
-	ratios.ratio_19,
 	ratios.ratio_20,
 	(ratio_20 - 1) * 100 as tcp,
 	metadata.dashboard,
