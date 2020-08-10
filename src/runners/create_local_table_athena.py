@@ -13,8 +13,10 @@ import osm_road_length
 from shapely import wkt
 import awswrangler as wr
 import boto3
+from timezonefinder import TimezoneFinder
 
-from utils import (
+tf = TimezoneFinder()
+from src.utils import (
     simplify,
     safe_create_path,
     get_data_from_athena,
@@ -25,23 +27,37 @@ from utils import (
 log = logging.getLogger(__name__)
 
 
-def _save_local(df, config, columns, replace=True):
+def _save_local(df, config, columns=None, replace=True, wrangler=False):
 
-    path = (
-        Path.home()
-        / "shared"
-        / "/".join(config["s3_path"].split("/")[3:])
-        / config["slug"]
-        / config["current_millis"]
-        / config["raw_table"]
-        / config["name"]
-    )
+    if wrangler:
 
-    safe_create_path(path, replace)
+        res = wr.s3.to_parquet(
+            df=df,
+            path="s3://{bucket}/{prefix}/{slug}/{raw_table}/{name}".format(**config),
+            dataset=True,
+            database=config["athena_database"],
+            table="{slug}_{raw_table}_{name}".format(**config),
+            mode=config["mode"],
+            partition_cols=["region_slug"],
+            boto3_session=boto3.Session(region_name="us-east-1"),
+        )
 
-    df[columns].to_csv(
-        path / (config["name"] + ".csv"), index=False, header=False, sep="|"
-    )
+    else:
+        path = (
+            Path.home()
+            / "shared"
+            / "/".join(config["s3_path"].split("/")[3:])
+            / config["slug"]
+            / config["current_millis"]
+            / config["raw_table"]
+            / config["name"]
+        )
+
+        safe_create_path(path, replace)
+
+        df[columns].to_csv(
+            path / (config["name"] + ".csv"), index=False, header=False, sep="|"
+        )
 
 
 def _get_credentials():
@@ -89,7 +105,93 @@ def _read_sheets_tables():
     return datasets
 
 
+def _get_length(x, config):
+
+    lengths = osm_road_length.get(wkt.loads(x))
+    lengths = lengths[lengths.index.isin(config["accepted_osm_keys"])]
+    return lengths["length"].sum()
+
+
 def metadata_osm_length(config):
+
+    # Fetch regions configuration
+    metadata = get_data_from_athena(
+        "select region_slug, region_shapefile_wkt, rerun from "
+        f"{config['athena_database']}.{config['slug']}_metadata_metadata_prepare "
+        "order by region_slug",
+        config,
+    )
+
+    # Force rerun
+    rerun = metadata[metadata["rerun"] == "TRUE"]
+
+    # Select regions to be update if that is the case, else update all
+    if config.get("selected_regions"):
+
+        metadata = metadata[
+            metadata["region_slug"].isin(config.get("selected_regions"))
+        ]
+
+    # Get current state of table
+    try:
+        current = get_data_from_athena(
+            "select region_slug, region_shapefile_wkt, osm_length from "
+            f"{config['athena_database']}.{config['slug']}_metadata_metadata_osm_length "
+            "order by region_slug",
+            config,
+        )
+    except:
+        current = pd.DataFrame(
+            [], columns=["region_slug", "region_shapefile_wkt", "osm_length"]
+        )
+
+    # Update just regions that changed their shapes or do not exist yet
+    if config["mode"] == "overwrite_partitions":
+
+        try:
+            skip = current[current["osm_length"] != ""][["region_shapefile_wkt"]]
+        except:
+            skip = pd.DataFrame([], columns=["region_shapefile_wkt"])
+
+        selected = metadata[
+            ~metadata["region_shapefile_wkt"].isin(skip["region_shapefile_wkt"])
+        ][["region_slug", "region_shapefile_wkt"]]
+
+    selected = pd.concat([selected, rerun]).drop_duplicates()
+
+    # Calculate OSM length for selected regions
+    selected["osm_length"] = selected["region_shapefile_wkt"].apply(
+        lambda x: _get_length(x, config)
+    )
+    selected = selected.sort_values(by="region_slug")
+
+    # If current table is empty, initilize
+    if len(current):
+        current.update(selected[["region_slug", "region_shapefile_wkt", "osm_length"]])
+    else:
+        current = selected[["region_slug", "region_shapefile_wkt", "osm_length"]]
+
+    if config["verbose"]:
+        print(current)
+        print(list(current["region_slug"]))
+
+    if len(metadata):
+
+        _save_local(current, config, wrangler=True)
+
+
+def _get_timezone(x, config):
+
+    coords = dict(
+        zip(["lng", "lat"], [float(c) for c in x.split(",")[2].strip().split(" ")])
+    )
+
+    timezone = TimezoneFinder().timezone_at(**coords)
+
+    return config["timezone"]["replace"].get(timezone, timezone)
+
+
+def metadata_prepare(config):
 
     metadata = get_data_from_athena(
         "select * from "
@@ -97,49 +199,11 @@ def metadata_osm_length(config):
         config,
     )
 
-    rerun = metadata[metadata["rerun"] == "TRUE"]
+    metadata["timezone"] = metadata["region_shapefile_wkt"].apply(
+        lambda x: _get_timezone(x, config)
+    )
 
-    if config["mode"] == "overwrite_partitions":
-
-        try:
-            skip = get_data_from_athena(
-                "select distinct region_shapefile_wkt from "
-                f"{config['athena_database']}.{config['slug']}_metadata_metadata_osm_length "
-                "where osm_length is not null",
-                config,
-            )
-        except:
-            skip = pd.DataFrame([], columns=["region_shapefile_wkt"])
-
-        metadata = metadata[
-            ~metadata["region_shapefile_wkt"].isin(skip["region_shapefile_wkt"])
-        ]
-
-    def _get_length(x):
-
-        lengths = osm_road_length.get(wkt.loads(x))
-        lengths = lengths[lengths.index.isin(config["accepted_osm_keys"])]
-        return lengths["length"].sum()
-
-    metadata = pd.concat([metadata, rerun]).drop_duplicates()
-
-    if config["verbose"]:
-        print(list(metadata["region_slug"]))
-
-    metadata["osm_length"] = metadata["region_shapefile_wkt"].apply(_get_length)
-
-    if len(metadata):
-
-        res = wr.s3.to_parquet(
-            df=metadata,
-            path="s3://{bucket}/{prefix}/{slug}/{raw_table}/{name}".format(**config),
-            dataset=True,
-            database=config["athena_database"],
-            table="{slug}_{raw_table}_{name}".format(**config),
-            mode=config["mode"],
-            partition_cols=["region_slug"],
-            boto3_session=boto3.Session(region_name="us-east-1"),
-        )
+    _save_local(metadata, config, wrangler=True)
 
 
 def _add_table(config):

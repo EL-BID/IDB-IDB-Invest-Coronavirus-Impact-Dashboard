@@ -1,77 +1,127 @@
 from multiprocessing.pool import Pool
 from functools import partial
-from h3 import h3
 from pathlib import Path
 from copy import deepcopy
 import pyathena
 import pandas as pd
+import numpy as np
+import pytz
+from datetime import datetime
 
 import logging
 
 log = logging.getLogger(__name__)
 
-from utils import (
+from src.utils import (
     break_list_in_chunks,
-    add_query_dates,
     to_wkt,
     query_athena,
     generate_query,
     get_data_from_athena,
     delete_s3_path,
     sample_query_weeks,
+    get_query_dates,
 )
 
 
-def _load_cities(path="data/raw/cities_metadata.csv"):
+def _all_dates(config, weekly_sample=False):
 
-    return pd.read_csv(path)
+    if weekly_sample:
+        dates = sample_query_weeks(
+            config["interval"]["start"], config["interval"]["end"], False,
+        )
+    else:
+        dates = get_query_dates(config["interval"]["start"], config["interval"]["end"])
+
+    return pd.Series(dates, name="date",).apply(lambda x: x.date()).to_frame()
 
 
-def _region_slug_partition(config):
+def _get_remaining_dates(data, config):
 
-    data = get_data_from_athena(
-        "select * from "
-        f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready ",
+    existing_dates = get_data_from_athena(
+        "select distinct region_slug, "
+        "date_parse(concat(cast(year as varchar), '-', cast(month as varchar), '-', cast(day as varchar)), '%Y-%m-%d') date "
+        f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']} ",
         config,
+    ).assign(date=lambda df: df["date"].apply(lambda x: x.date()))
+
+    dates = _all_dates(config)
+
+    allpossibilities = (
+        data.groupby(["region_slug"])
+        .apply(lambda x: dates[["date"]])
+        .reset_index()
+        .drop("level_1", 1)
     )
 
-    rerun = data[data["rerun"] == "TRUE"]
+    return allpossibilities.merge(
+        existing_dates, on=["region_slug", "date"], how="left", indicator=True
+    ).query('_merge == "left_only"')[["region_slug", "date"]]
 
-    if config.get("if_exists") == "append":
 
-        # check if table exists
-        try:
-            skip = get_data_from_athena(
-                "select distinct region_shapefile_wkt from "
-                f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation "
-                "where n_days is not null",
-                config,
-            )
-        except:
-            skip = pd.DataFrame([], columns=["region_shapefile_wkt"])
+def _get_hours(_df, date_format="%Y%m%d"):
 
-        data = data[~data["region_shapefile_wkt"].isin(skip["region_shapefile_wkt"])]
+    return pd.DataFrame(
+        [
+            {
+                "date_filter": "|".join(
+                    [d.strftime(date_format) for d in list(_df["date"])]
+                )
+            }
+        ]
+    )
 
-        if config["name"] == "analysis_daily":
-            data = data[~data["region_slug"].isin(config["cv_exception"])]
 
-    if config.get("filter_by_coef"):
+def _choose_time_aggregation(r_dates):
 
-        skip = get_data_from_athena(
-            "select region_slug from "
-            f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation "
-            "where (weekly_approved = true or daily_approved = true) "
-            f"""or (region_slug in ('{"','".join(config['cv_exception'])}')) """,
+    if len(r_dates) >= 30:
+        time_aggregation = "year%Ymonth%m"
+    elif len(r_dates) >= 7:
+        time_aggregation = "year%Yweek%W"
+    else:
+        time_aggregation = "year%Ymonth%mday%d"
+
+    r_dates["date_slug"] = r_dates["date"].apply(lambda x: x.strftime(time_aggregation))
+
+    return r_dates
+
+
+def _add_date_slug(data, remaining_dates, config):
+
+    remaining_dates = (
+        remaining_dates.groupby("region_slug")
+        .apply(_choose_time_aggregation)
+        .reset_index()
+        .drop("index", 1)
+    )
+
+    remaining_dates = (
+        remaining_dates.groupby(["region_slug", "date_slug"])
+        .apply(_get_hours)
+        .reset_index()
+        .drop("level_2", 1)
+    )
+
+    return data.merge(remaining_dates, on="region_slug")
+
+
+def _get_metadata_table(config):
+
+    try:
+        return get_data_from_athena(
+            "select * from "
+            f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation ",
+            config,
+        )
+    except:
+        return get_data_from_athena(
+            "select * from "
+            f"{config['athena_database']}.{config['slug']}_metadata_metadata_ready ",
             config,
         )
 
-        data = data[data["region_slug"].isin(skip["region_slug"])]
 
-    if config.get("sample_cities"):
-
-        data = data[: config["sample_cities"]]
-
-    data = pd.concat([data, rerun]).drop_duplicates()
+def _prepare_to_partition(data, config):
 
     data = data.to_dict("records")
 
@@ -84,12 +134,55 @@ def _region_slug_partition(config):
                     config["full_2019_interval"]["start"],
                     config["full_2019_interval"]["end"],
                 )
-
             d["p_path"] = deepcopy("country_iso={country_iso}/{partition}".format(**d))
+
         else:
-            d["p_path"] = deepcopy("region_slug={partition}".format(**d))
+            d["p_path"] = deepcopy("region_slug={region_slug}/{date_slug}".format(**d))
+            d["p_name"] = "{partition}_{date_slug}".format(**d)
 
     return data
+
+
+def _region_slug_partition(config):
+
+    data = _get_metadata_table(config)
+
+    if config.get("selected_regions"):
+
+        data = data[data["region_slug"].isin(config.get("selected_regions"))]
+
+    else:
+
+        if config.get("if_exists") == "append":
+
+            # check if table exists
+            try:
+                skip = get_data_from_athena(
+                    "select distinct region_shapefile_wkt from "
+                    f"{config['athena_database']}.{config['slug']}_analysis_metadata_variation "
+                    "where n_days is not null",
+                    config,
+                )
+            except:
+                skip = pd.DataFrame([], columns=["region_shapefile_wkt"])
+
+            data = data[
+                ~data["region_shapefile_wkt"].isin(skip["region_shapefile_wkt"])
+            ]
+
+            if config["name"] == "analysis_daily":
+                data = data[~data["region_slug"].isin(config["cv_exception"])]
+
+    if config.get("mode") == "incremental":
+
+        remaining_dates = _get_remaining_dates(data, config)
+
+        if len(remaining_dates) == 0:
+            return None
+
+        data = _add_date_slug(data, remaining_dates, config)
+
+    return _prepare_to_partition(data, config)
 
 
 def historical_2019(config):
@@ -107,9 +200,61 @@ def daily(config):
     return _region_slug_partition(config)
 
 
+def sample_2019(config):
+
+    return _region_slug_partition(config)
+
+
 def analysis_daily(config):
 
     return _region_slug_partition(config)
+
+
+def country_cities(config):
+
+    regions = get_data_from_athena(
+        "select distinct region_slug "
+        f"from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['from_table']}",
+        config,
+    )["region_slug"].tolist()
+
+    return [
+        {"p_name": r, "p_path": f"region_slug={r}", "partition": r, "region_slug": r}
+        for r in regions
+    ]
+
+
+def country_cities_2020(config):
+
+    return country_cities(config)
+
+
+def country_cities_2019(config):
+
+    return country_cities(config)
+
+
+def grid(config):
+
+    regions = list(
+        get_data_from_athena(
+            "select distinct region_slug from "
+            f"{config['athena_database']}.{config['slug']}_metadata_metadata_prepare "
+            "where grid = 'TRUE'"
+            f"""or region_slug in ('{"','".join(config['selected_regions'])}')""",
+            config,
+        )["region_slug"]
+    )
+
+    return [
+        {"p_name": r, "p_path": f"region_slug={r}", "partition": r, "region_slug": r}
+        for r in regions
+    ]
+
+
+def grid_2020(config):
+
+    return grid(config)
 
 
 def perform_query(query):
@@ -183,6 +328,9 @@ def partition_query(query_path, config):
 
     partitions = globals()[config["name"]](config)
 
+    if partitions is None:
+        return
+
     for partition in partitions:
 
         config.update(deepcopy(partition))
@@ -190,9 +338,9 @@ def partition_query(query_path, config):
         queries.append(
             dict(
                 make=generate_query(query_path, config),
-                drop=f"drop table {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}_{config['partition']}",
+                drop=f"drop table {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}_{config['p_name']}",
                 config=config,
-                p_path=deepcopy(partition["p_path"]),
+                p_path=deepcopy(config["p_path"]),
                 partition=config["partition"],
             )
         )
@@ -201,16 +349,31 @@ def partition_query(query_path, config):
         p.map(partial(perform_query), queries)
 
 
+def should_create_table(config):
+
+    try:
+        current_millis = get_data_from_athena(
+            f"""
+                select split("$path", '/')[7] current_millis 
+                from {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']} 
+                limit 1""",
+        )
+    except:
+        current_millis = []
+
+    if len(current_millis):
+        return current_millis["current_millis"][0] != config.get("current_millis")
+    else:
+        return True
+
+
 def start(config):
 
     sql_path = Path(__file__).cwd() / config["path"]
 
     # create table
-    sql = generate_query(sql_path / "create_table.sql", config)
-
-    if not ((config.get("if_exists") == "append") and check_existence(config)):
-        print("replacing")
-        query_athena(sql, config)
+    if should_create_table(config):
+        query_athena(generate_query(sql_path / "create_table.sql", config), config)
 
     config["force"] = False
 

@@ -1,16 +1,4 @@
-# Historical Queries
-- 
-  path: 'sql/historical/create-historical-raw-table.sql'
-  runner: basic_athena_query
-  name: historical_2019_raw
-  
-- 
-  path: 'sql/historical/create-historical-raw-table.sql'
-  runner: basic_athena_query
-  name: historical_2020_raw
-
 # Metadata Queries
-
 - 
   path: 'sql/metadata/load_tables.sql'
   runner: create_local_table_athena
@@ -22,6 +10,15 @@
   depends_on: [
     load_metadata_tables
   ]
+  name: metadata_prepare
+  mode: overwrite
+
+- 
+  path: 'sql/metadata/'
+  runner: create_local_table_athena
+  depends_on: [
+    metadata_prepare
+  ]
   name: metadata_osm_length
   mode: overwrite_partitions
 
@@ -30,11 +27,11 @@
   runner: basic_athena_query
   depends_on: [
     metadata_osm_length
-  ]
+    ]
   name: metadata_ready
 
-# Analysis
 
+# Analysis
 - 
   path: 'sql/analysis/create_dummy_year.sql'
   runner: create_local_table_athena
@@ -54,7 +51,6 @@
   current_millis: 'fixed4'
   sampled: ['country_brazil', 'country_mexico'] 
   year: 2019
-  force: True
 
 - 
   path: 'sql/analysis/add_variation_to_metadata.sql'
@@ -64,47 +60,34 @@
     metadata_ready
   ]
   name: metadata_variation
-  force: True
+
 
 # Daily Queries
 - 
-  path: 'sql/daily/create-daily-raw-table.sql'
-  runner: basic_athena_query
-  name: daily_raw
- 
-
-- 
-  path: 'sql/daily/create-historical-table'
+  path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
-  name: historical_2019
+  name: daily
   depends_on: [
-    historical_2019_raw,
-    metadata_variation, 
+    metadata_variation
   ]
-  year: 2019
-  filter_by_coef: True
+  current_millis: v12
+  mode: 'incremental'
+  interval:
+    start: 2020-03-09
+    end: 'today'
 
 - 
-  path: 'sql/daily/create-historical-table'
+  path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: historical_2020
   depends_on: [
-    historical_2020_raw,
     metadata_variation
   ]
-  year: 2020
-  filter_by_coef: True
-
-
-- 
-  path: 'sql/daily/create-daily-table'
-  runner: partitioned_athena_query
-  depends_on: [
-    daily_raw,
-    metadata_variation
-  ]
-  name: daily
-  filter_by_coef: True
+  current_millis: v13
+  mode: 'incremental'
+  interval:
+    start: 2020-03-01
+    end: 2020-03-07
 
 - 
   path: 'sql/daily/create-daily-index-table.sql'
@@ -112,39 +95,60 @@
   depends_on: [
     metadata_variation,
     daily,
-    historical_2019,
     historical_2020
   ]
   name: daily_index
-
+  
 - 
   path: 'sql/daily/create-weekly-index-table.sql'
   runner: basic_athena_query
   depends_on: [
     metadata_variation,
     daily,
-    historical_2019,
     historical_2020
   ]
   name: weekly_index
+
+- 
+  path: 'sql/daily/create-hourly-index-table.sql'
+  runner: basic_athena_query
+  depends_on: [
+    metadata_variation,
+    daily,
+    historical_2020
+  ]
+  name: hourly_index
+  pass: True
+
+- 
+  path: 'sql/daily/create-grouphours-index-table.sql'
+  runner: basic_athena_query
+  depends_on: [
+    metadata_variation,
+    daily,
+    historical_2020
+  ]
+  name: grouphours_index
+  pass: True
 
 - 
   path: 'sql/daily/'
   runner: create_local_table_athena
   depends_on: [
     weekly_index,
-    daily_index
+    daily_index,
+    hourly_index
   ]
   name: write_index
   to_write: 
     - table: daily_daily_index
       worksheet: daily
       overall_drop: [region_shapefile_wkt]
-      public_drop: ['observed', 'expected_2019', 'expected_2020', 'dashboard', 'ratio_19']
+      public_drop: ['observed', 'expected_2020', 'dashboard']
     - table: daily_weekly_index
       worksheet: weekly
       overall_drop: [region_shapefile_wkt]
-      public_drop: ['observed', 'expected_2019', 'expected_2020', 'dashboard', 'ratio_19']
+      public_drop: ['observed', 'expected_2020', 'dashboard']
     - table: analysis_metadata_variation
       worksheet: metadata
       overall_drop: ['region_shapefile_binary', 'area']
@@ -153,3 +157,8 @@
                    'waze_code', 'idb_code', 'country_name_idb_eng', 'n_days',
                    'daily_mean_weekend', 'daily_std_weekend', 'daily_mean_weekday',
                    'daily_std_weekday']
+    # - table: daily_grouphours_index
+    #   worksheet: grouphours
+    #   overall_drop: []
+    #   public_drop: []
+

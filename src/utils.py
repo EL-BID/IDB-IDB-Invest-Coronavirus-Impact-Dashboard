@@ -127,18 +127,18 @@ def get_config(path="configs/config.yaml"):
     return config
 
 
-def get_dependency_graph(path="configs/dependency_graph.yaml"):
+def get_dependency_graph(path="configs/dependency-graph.yaml"):
     """Load dependency_graph file
     
     Parameters
     ----------
     path : str, optional
-        dependency_graph.yaml path, by default 'configs/dependency_graph.yaml'
+        dependency-graph.yaml path, by default 'configs/dependency-graph.yaml'
     
     Returns
     -------
     dict
-        variables from dependency_graph.yaml
+        variables from dependency-graph.yaml
     """
 
     config = yaml.load(open(path))
@@ -250,20 +250,22 @@ except IndexError:
 def break_list_in_chunks(data, chunk):
     return [data[x : x + chunk] for x in range(0, len(data), chunk)]
 
+
 def simplify(s, delta=0.005):
-    
+
     while not _check_length(s):
         s = s.simplify(delta, False)
         delta = delta + 0.005
 
     return s
 
+
 def _check_length(s, threshold=5000):
-    
+
     return len(str(s)) < threshold
 
 
-def sample_query_weeks(start, end):
+def sample_query_weeks(start, end, as_string=True):
 
     dates = pd.DataFrame(
         [
@@ -276,8 +278,8 @@ def sample_query_weeks(start, end):
         dates["week"].isin(dates.groupby("week").count().query("dt == 7").index)
     ]
 
-    return [
-        dt.strftime("%Y%m%d")
+    dates = [
+        dt
         for dt in dates[
             dates["week"].isin(
                 dates.groupby("month").apply(lambda x: x.sample())["week"].values
@@ -285,16 +287,18 @@ def sample_query_weeks(start, end):
         ]["dt"]
     ]
 
+    if as_string:
+        return [d.strftime("%Y%m%d") for d in dates]
+    else:
+        return dates
 
-def add_query_dates(start, end):
+
+def get_query_dates(start, end):
 
     if end == "today":
         end = datetime.now()
 
-    return [
-        dt.strftime("%Y%m%d")
-        for dt in rrule.rrule(rrule.DAILY, dtstart=start, until=end)
-    ]
+    return list(rrule.rrule(rrule.DAILY, dtstart=start, until=end))
 
 
 def flatten(l):
