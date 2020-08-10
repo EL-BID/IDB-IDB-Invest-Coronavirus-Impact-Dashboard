@@ -19,7 +19,7 @@ class Run(object):
         n_tries=5,
         run_queries=True,
         post_log=True,
-        dependency_graph_path="configs/dependency_graph.yaml",
+        dependency_graph_path="configs/dependency-graph.yaml",
     ):
         """Entrypoint function. 
         """

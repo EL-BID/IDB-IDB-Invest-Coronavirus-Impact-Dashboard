@@ -5,7 +5,7 @@ with (
       ) as
 with meta as (
 	select m.*, l.osm_length
-	from {{ athena_database }}.{{ slug }}_metadata_regions_metadata m
+	from {{ athena_database }}.{{ slug }}_metadata_metadata_prepare m
 	join {{ athena_database }}.{{ slug }}_metadata_metadata_osm_length l
 	on m.region_slug = l.region_slug
 )

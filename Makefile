@@ -1,21 +1,19 @@
+.PHONY = create-env update-env aws-c activate-extensions
+
 SHELL := /bin/bash
 
-start:
-	chmod +x start_env.sh
-	./start_env.sh
-	make activate-extensions
+REPO=$(shell basename $(CURDIR))
 
 aws-c:
 	@source activate norm_env; python ~/private/configs/generate_aws_credentials.py;
 	cat ~/private/configs/credentials	
 
-update-env:
-	@pip freeze > requirements.txt
+create-env:
+	conda create --name $(REPO) -c conda-forge h3-py -y;
+	source activate $(REPO); \
+			pip3 install --upgrade -r requirements.txt; \
+			python -m ipykernel install --user --name=$(REPO);
 
-activate-extensions:
-	@source activate condaenv;  \
-	jupyter contrib nbextension install --user; \
-	jupyter nbextension install toc2/main --user; \
-	jupyter nbextension enable toc2/main --user; \
-	jupyter nbextension install --py --user keplergl; \
-	jupyter nbextension enable --py --user keplergl
+update-env:
+	source activate $(REPO); \
+	pip3 install --upgrade -r requirements.txt;

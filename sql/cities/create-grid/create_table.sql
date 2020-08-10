@@ -1,12 +1,14 @@
 CREATE EXTERNAL TABLE IF NOT EXISTS {{ athena_database }}.{{ slug }}_{{ raw_table }}_{{ name }} (
+  `grid_id` string,
   `year` int,
   `month` int,
-  `dow` int , 
   `day` int,
-  `sum_length` double
+  `hour` int,
+  `dow` int , 
+  `tci` double
   )
   PARTITIONED BY (
-	region_slug string
+    region_slug string
   )
   STORED AS ORC
   LOCATION '{{ s3_path }}/{{ slug }}/{{ current_millis }}/{{ raw_table }}/{{ name }}'
