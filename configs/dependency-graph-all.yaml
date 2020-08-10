@@ -70,45 +70,40 @@
   depends_on: [
     metadata_variation
   ]
-  current_millis: v7
+  current_millis: v9
   daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
   mode: 'incremental'
   interval:
-    start: 2019-01-01
+    start: 2020-03-09
     end: 'today'
-  force: True
 
 - 
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: historical_2019
   depends_on: [
-    historical_2019_raw, 
     metadata_variation
   ]
-  current_millis: v6
+  current_millis: v8
   daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
   mode: 'incremental'
   interval:
-    start: 2019-03-09
-    end: 2019-03-31
-  pass: True
+    start: 2019-04-01
+    end: 2019-04-30
 
 - 
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: historical_2020
   depends_on: [
-    historical_2020_raw, 
     metadata_variation
   ]
-  current_millis: v6
+  current_millis: v8
   daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
   mode: 'incremental'
   interval:
-    start: 2020-03-01
+    start: 2020-03-02
     end: 2020-03-08
-  pass: True
 
 - 
   path: 'sql/daily/create-daily-index-table.sql'
@@ -120,7 +115,6 @@
     historical_2020
   ]
   name: daily_index
-  pass: True
   
 - 
   path: 'sql/daily/create-weekly-index-table.sql'
@@ -132,7 +126,6 @@
     historical_2020
   ]
   name: weekly_index
-  pass: True
 
 - 
   path: 'sql/daily/create-hourly-index-table.sql'
@@ -144,7 +137,7 @@
     historical_2020
   ]
   name: hourly_index
-  pass: True
+
 - 
   path: 'sql/daily/create-grouphours-index-table.sql'
   runner: basic_athena_query
@@ -155,8 +148,7 @@
     historical_2020
   ]
   name: grouphours_index
-  skip: True 
-  pass: True
+
 - 
   path: 'sql/daily/'
   runner: create_local_table_athena
@@ -197,9 +189,7 @@
   ]
   mode: overwrite
   name: resolutions
-  coarse_resolutions: 7
-  granular_resolution: 10
-  skip: True
+  force: True
 
 - 
   path: 'sql/grid/create-coarse-grid/'
@@ -340,20 +330,20 @@
   ]
   name: country_cities_weekly_index
   
-- 
-  path: 'sql/daily/create-filtered-table'
-  runner: partitioned_athena_query
-  name: sample_2019
-  depends_on: [
-    metadata_variation
-  ]
-  current_millis: v2
-  daily_aggregation:  year%Y # 'year%Yweek%W' # year%Yday%m%d
-  mode: 'incremental'
-  selected_regions: [country_chile]
-  interval:
-    start: 2019-01-01
-    end: 2019-12-31
+# - 
+#   path: 'sql/daily/create-filtered-table'
+#   runner: partitioned_athena_query
+#   name: sample_2019
+#   depends_on: [
+#     metadata_variation
+#   ]
+#   current_millis: v2
+#   daily_aggregation:  year%Y # 'year%Yweek%W' # year%Yday%m%d
+#   mode: 'incremental'
+#   selected_regions: [country_chile]
+#   interval:
+#     start: 2019-01-01
+#     end: 2019-12-31
 
   
 

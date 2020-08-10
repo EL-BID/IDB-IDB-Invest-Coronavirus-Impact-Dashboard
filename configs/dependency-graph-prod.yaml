@@ -70,8 +70,7 @@
   depends_on: [
     metadata_variation
   ]
-  current_millis: v9
-  daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
+  current_millis: v12
   mode: 'incremental'
   interval:
     start: 2020-03-09
@@ -80,30 +79,15 @@
 - 
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
-  name: historical_2019
-  depends_on: [
-    metadata_variation
-  ]
-  current_millis: v8
-  daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
-  mode: 'incremental'
-  interval:
-    start: 2019-04-01
-    end: 2019-04-30
-
-- 
-  path: 'sql/daily/create-filtered-table'
-  runner: partitioned_athena_query
   name: historical_2020
   depends_on: [
     metadata_variation
   ]
-  current_millis: v8
-  daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
+  current_millis: v13
   mode: 'incremental'
   interval:
-    start: 2020-03-02
-    end: 2020-03-08
+    start: 2020-03-01
+    end: 2020-03-07
 
 - 
   path: 'sql/daily/create-daily-index-table.sql'
@@ -111,7 +95,6 @@
   depends_on: [
     metadata_variation,
     daily,
-    historical_2019,
     historical_2020
   ]
   name: daily_index
@@ -122,7 +105,6 @@
   depends_on: [
     metadata_variation,
     daily,
-    historical_2019,
     historical_2020
   ]
   name: weekly_index
@@ -133,10 +115,10 @@
   depends_on: [
     metadata_variation,
     daily,
-    historical_2019,
     historical_2020
   ]
   name: hourly_index
+  pass: True
 
 - 
   path: 'sql/daily/create-grouphours-index-table.sql'
@@ -144,10 +126,10 @@
   depends_on: [
     metadata_variation,
     daily,
-    historical_2019,
     historical_2020
   ]
   name: grouphours_index
+  pass: True
 
 - 
   path: 'sql/daily/'
@@ -162,11 +144,11 @@
     - table: daily_daily_index
       worksheet: daily
       overall_drop: [region_shapefile_wkt]
-      public_drop: ['observed', 'expected_2019', 'expected_2020', 'dashboard', 'ratio_19']
+      public_drop: ['observed', 'expected_2020', 'dashboard']
     - table: daily_weekly_index
       worksheet: weekly
       overall_drop: [region_shapefile_wkt]
-      public_drop: ['observed', 'expected_2019', 'expected_2020', 'dashboard', 'ratio_19']
+      public_drop: ['observed', 'expected_2020', 'dashboard']
     - table: analysis_metadata_variation
       worksheet: metadata
       overall_drop: ['region_shapefile_binary', 'area']
@@ -175,8 +157,8 @@
                    'waze_code', 'idb_code', 'country_name_idb_eng', 'n_days',
                    'daily_mean_weekend', 'daily_std_weekend', 'daily_mean_weekday',
                    'daily_std_weekday']
-    - table: daily_grouphours_index
-      worksheet: grouphours
-      overall_drop: []
-      public_drop: []
-  pass: True
+    # - table: daily_grouphours_index
+    #   worksheet: grouphours
+    #   overall_drop: []
+    #   public_drop: []
+
