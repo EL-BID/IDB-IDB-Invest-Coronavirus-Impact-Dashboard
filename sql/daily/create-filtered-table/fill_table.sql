@@ -8,8 +8,13 @@ with t as (
 		select 
 			cast(uuid as varchar) uuid,
 			 country, 
-			city, length, line_wkt as line,
+			city, length, line_wkt as line, 
 			from_unixtime(retrievaltime/1000) retrievaltime,
+		-- 	date_parse(rpad(cast(at_timezone(
+		-- 	from_unixtime(retrievaltime/1000), (select timezone 
+		-- 					from {{ athena_database }}.{{ slug }}_analysis_metadata_variation 
+		-- 					where region_slug = '{{ partition }}')
+		-- ) as varchar), 19, '000'), '%Y-%m-%d %k:%i:%s') retrievaltime,
 			datetime
 		from pwazetransformeddb.jams
 		where regexp_like(datetime, '{{ date_filter }}')
@@ -27,11 +32,7 @@ with t as (
 	select 
 		length,
 		line,
-		date_parse(rpad(cast(at_timezone(
-			retrievaltime, (select timezone 
-							from {{ athena_database }}.{{ slug }}_analysis_metadata_variation 
-							where region_slug = '{{ partition }}')
-		) as varchar), 19, '000'), '%Y-%m-%d %k:%i:%s') retrievaltime,
+ 		retrievaltime,
 		row_number() over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
 								date_parse(format_datetime(date_add('minute', 
 									cast(date_diff('minute',
