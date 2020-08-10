@@ -57,7 +57,7 @@ select
 	ratios.observed,
 	ratios.expected_2020,
 	ratios.ratio_20,
-	(ratio_20 - 1) * 100 as tcp,
+	(ratio_20 - 1) * 100 as tci,
 	metadata.dashboard,
 	metadata.region_shapefile_wkt
 from ratios
