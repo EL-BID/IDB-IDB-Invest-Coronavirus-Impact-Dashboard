@@ -1,15 +1,17 @@
 import pandas as pd
 import boto3
-from h3 import h3
 from shapely import wkt
 import geojson
 from copy import deepcopy
 from shapely import affinity
+from babelgrid import Babel
 
 from runners.create_local_table_athena import _save_local
 from runners import basic_athena_query
 from operators.athena import insert_into, create_table
 from utils import get_data_from_athena
+
+from loguru import logger
 
 
 def _reescale(s, factor=1.1):
@@ -17,28 +19,31 @@ def _reescale(s, factor=1.1):
     return affinity.scale(wkt.loads(s), factor, factor).to_wkt()
 
 
-def _wkt_to_geojson(s):
-    return geojson.Feature(geometry=wkt.loads(s), properties={}).geometry
+def _parent(tile, resolution):
+
+    while tile.resolution > resolution:
+        tile = tile.to_parent()
+
+    return tile.tile_id
 
 
-def _to_wkt(x):
-    x = x + [x[0]]
-    return "polygon" + str(x).replace("], [", ",").replace(", ", " ").replace(
-        "[", "("
-    ).replace("]", ")")
+def _get_cell(wkt, resolution, parent_resolution=1):
 
-
-def _get_cell(gjson, resolution, parent_resolution=1):
-
-    temp = pd.Series(
-        list(h3.polyfill(gjson.values[0], resolution, True)), name="id"
-    ).to_frame()
-    temp["resolution"] = resolution
-    temp["wkt"] = temp["id"].apply(lambda x: _to_wkt(h3.h3_to_geo_boundary(x, True)))
-    temp["id_parent"] = temp["id"].apply(
-        lambda x: h3.h3_to_parent(x, res=parent_resolution)
+    temp = pd.DataFrame(
+        [
+            {
+                "tile": t,
+                "id": t.tile_id,
+                "resolution": t.resolution,
+                "wkt": t.geometry.wkt,
+            }
+            for t in Babel("h3").polyfill(wkt.values[0], resolution)
+        ]
     )
+
+    temp["id_parent"] = temp["tile"].apply(lambda x: _parent(x, parent_resolution))
     temp["group"] = (temp.index / 100).astype(int)
+    temp = temp.drop("tile", 1)
     return temp
 
 
@@ -68,11 +73,11 @@ def resolutions(config):
         config,
     )
 
-    metadata["wkt_reescaled"] = metadata["region_shapefile_wkt"].apply(_reescale)
-    metadata["geojson"] = metadata["wkt_reescaled"].apply(_wkt_to_geojson)
+    metadata["wkt"] = metadata["region_shapefile_wkt"].apply(_reescale)
+    # metadata["geojson"] = metadata["wkt_reescaled"].apply(_wkt_to_geojson)
 
     grid = (
-        metadata.groupby("region_slug")["geojson"]
+        metadata.groupby("region_slug")["wkt"]
         .apply(lambda x: get_cells(x, config))  # Get h3 ids and wkts
         .reset_index()
     )
