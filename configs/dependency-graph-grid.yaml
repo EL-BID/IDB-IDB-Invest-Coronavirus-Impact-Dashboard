@@ -1,0 +1,92 @@
+# Metadata Queries
+- 
+  path: 'sql/metadata/load_tables.sql'
+  runner: create_local_table_athena
+  name: load_metadata_tables
+
+- 
+  path: 'sql/metadata/'
+  runner: create_local_table_athena
+  depends_on: [
+    load_metadata_tables
+  ]
+  name: metadata_prepare
+  mode: overwrite
+
+- 
+  path: 'sql/metadata/'
+  runner: create_local_table_athena
+  depends_on: [
+    metadata_prepare
+  ]
+  name: metadata_osm_length
+  mode: overwrite_partitions
+
+- 
+  path: 'sql/metadata/create-metadata-ready.sql'
+  runner: basic_athena_query
+  depends_on: [
+    metadata_osm_length
+    ]
+  name: metadata_ready
+
+
+# Daily Queries
+- 
+  path: 'sql/daily/create-filtered-table'
+  runner: partitioned_athena_query
+  name: daily
+  depends_on: [
+    metadata_ready
+  ]
+  current_millis: v9
+  daily_aggregation:  year%Ymonth%m # 'year%Yweek%W' # year%Yday%m%d
+  mode: 'incremental'
+  interval:
+    start: 2019-04-01
+    end: 2020-08-17
+
+
+# GRID
+- 
+  path: 'sql/grid/'
+  runner: region_grid
+  depends_on: [
+    metadata_ready
+  ]
+  mode: overwrite
+  name: resolutions
+
+
+- 
+  path: 'sql/grid/create-coarse-grid/'
+  runner: region_grid
+  depends_on: [
+    resolutions,
+    daily
+  ]
+  name: coarse
+  from_table: daily_daily
+
+
+- 
+  path: 'sql/grid/create-grid'
+  runner: partitioned_athena_query
+  depends_on: [
+    resolutions,
+    coarse
+  ]
+  name: grid
+
+
+- 
+  path: 'sql/grid/create-hourly-index.sql'
+  runner: basic_athena_query
+  depends_on: [
+    grid,
+    grid_2020,
+    metadata_variation
+  ]
+  name: grid_hourly_index
+  force: True
+
