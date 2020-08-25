@@ -3,18 +3,18 @@ with (
       external_location = '{{ s3_path }}/{{ slug }}/{{ current_millis }}/{{ raw_table }}/{{ name }}/',
 	  format = 'textfile', 
       field_delimiter='|',
-	  partitioned_by  = ARRAY['region_slug', 'yearmonth']
+	  partitioned_by  = ARRAY['region_slug', 'year']
       ) as
 with ratios as (
 	select 
 		grid_id,
-		cast(year as varchar) year,
 		cast(month as varchar) month, 
 		cast(day as varchar) day, 
 		cast(hour as varchar) hour,
 		dow,
 		tci,
-		region_slug
+		region_slug,
+		cast(year as varchar) year
 	from {{ athena_database }}.{{ slug }}_{{ raw_table }}_grid
 	)
 select
@@ -30,8 +30,7 @@ select
 	date_parse(concat(year, '-', month, '-', day,
 						   ' ', hour , ':', '00', ':' ,'00'), 
 					'%Y-%m-%d %k:%i:%s') timestamp,
-	ratios.*,
-	concat(year, month) as yearmonth
+	ratios.*
 from ratios
 join {{ athena_database }}.{{ slug }}_analysis_metadata_variation metadata
 on ratios.region_slug = metadata.region_slug
