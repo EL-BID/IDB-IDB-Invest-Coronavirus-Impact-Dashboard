@@ -56,6 +56,7 @@
   ]
   mode: overwrite
   name: resolutions
+  force: True
 
 
 - 
@@ -67,6 +68,7 @@
   ]
   name: coarse
   from_table: daily_daily
+  force: True
 
 
 - 

@@ -20,14 +20,14 @@ tables: [
     ] 
 
 selected_regions: [
+    'buenosaires',
+    'bogota',
+    'mexicocity'
+    'santiago', 
+    'saopaulo',
     'lima',
     ]
-    
-#'buenosaires',
-#'bogota',
-#'mexicocity'
-#'santiago', 
-#'saopaulo', 
+     
 
 # Athena 
 # Those variables are used build Athena queries and locate the working database,
