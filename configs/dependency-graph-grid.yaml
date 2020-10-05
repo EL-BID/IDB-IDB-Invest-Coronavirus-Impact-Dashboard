@@ -45,6 +45,7 @@
   interval:
     start: 2019-01-01
     end: 2020-09-30
+  force: True
 
 
 # GRID

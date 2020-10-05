@@ -20,11 +20,11 @@ tables: [
     ] 
 
 selected_regions: [
-    'buenosaires',
-    'bogota',
-    'mexicocity'
-    'santiago', 
-    'saopaulo',
+    #'buenosaires',
+    #'bogota',
+    #'mexicocity'
+    #'santiago', 
+    #'saopaulo',
     'lima',
     ]
      
