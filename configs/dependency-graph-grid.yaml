@@ -45,7 +45,7 @@
   interval:
     start: 2019-01-01
     end: 2020-09-30
-  force: True
+  #force: True
 
 
 # GRID
@@ -57,7 +57,7 @@
   ]
   mode: overwrite
   name: resolutions
-  force: True
+  #force: True
 
 
 - 
@@ -69,7 +69,7 @@
   ]
   name: coarse
   from_table: daily_daily
-  force: True
+  #force: True
 
 
 - 
@@ -92,5 +92,5 @@
     metadata_variation
   ]
   name: grid_hourly_index
-  force: True
+  #force: True
 

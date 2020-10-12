@@ -11,7 +11,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS {{ athena_database }}.{{ slug }}_{{ raw_tabl
     region_slug string
   )
   STORED AS ORC
-  LOCATION '{{ s3_path }}/{{ slug }}/{{ current_millis }}/{{ raw_table }}/{{ name }}'
+  LOCATION '{{ s3_path }}/{{ slug }}/{{ region_slug }}/{{ raw_table }}/{{ current_millis }}_{{ name }}'
 	 TBLPROPERTIES (
 	  'classification'='orc', 
 	  'compressionType'='zlib');

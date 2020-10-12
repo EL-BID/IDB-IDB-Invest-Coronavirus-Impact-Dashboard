@@ -1,6 +1,6 @@
 create table {{ athena_database }}.{{ slug }}_{{ raw_table }}_{{ name }}_{{ p_name }}
 with (
-      external_location = '{{ s3_path }}/{{ slug }}/{{ current_millis }}/{{ raw_table }}/{{ name }}/{{ p_path }}',
+      external_location = '{{ s3_path }}/{{ slug }}/{{ region_slug }}/{{ raw_table }}/{{ current_millis }}_{{ name }}/{{ p_path }}',
 	  format='orc', orc_compression = 'ZLIB'
       ) as
 select
