@@ -146,8 +146,12 @@ def _prepare_to_partition(data, config):
 def _region_slug_partition(config):
 
     data = _get_metadata_table(config)
+    
+    if config.get('region_def'):
+        
+        data = data[data["region_slug"].isin(config.get("region_def"))]
 
-    if config.get("selected_regions"):
+    elif config.get("selected_regions"):
 
         data = data[data["region_slug"].isin(config.get("selected_regions"))]
 

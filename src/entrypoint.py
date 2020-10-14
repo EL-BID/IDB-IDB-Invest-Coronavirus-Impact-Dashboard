@@ -19,6 +19,7 @@ class Run(object):
         n_tries=5,
         run_queries=True,
         post_log=True,
+        region_def = None,
         dependency_graph_path="configs/dependency-graph.yaml",
     ):
         """Entrypoint function. 
@@ -33,6 +34,7 @@ class Run(object):
         self.n_tries = n_tries
         self.post_log = post_log
         self.slug = slug
+        self.region_def = region_def
 
         self.args = vars(self)
 
