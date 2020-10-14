@@ -149,7 +149,7 @@ def _region_slug_partition(config):
     
     if config.get('region_def'):
         
-        data = data[data["region_slug"].isin(config.get("region_def"))]
+        data = data[data["region_slug"].isin([config.get("region_def")])]
 
     elif config.get("selected_regions"):
 
@@ -239,7 +239,10 @@ def country_cities_2019(config):
 
 
 def grid(config):
-
+    
+    if config.get('region_def'):
+        config['selected_regions']=[config['region_def']]
+    
     regions = list(
         get_data_from_athena(
             "select distinct region_slug from "

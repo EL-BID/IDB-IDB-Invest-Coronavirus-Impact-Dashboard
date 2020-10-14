@@ -45,7 +45,7 @@
   interval:
     start: 2019-01-01
     end: 2020-09-30
-  #force: True
+  force: True
 
 
 # GRID
@@ -53,7 +53,8 @@
   path: 'sql/grid/'
   runner: region_grid
   depends_on: [
-    metadata_ready
+    metadata_ready,
+    daily
   ]
   mode: overwrite
   name: resolutions
