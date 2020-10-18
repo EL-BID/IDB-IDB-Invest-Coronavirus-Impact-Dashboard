@@ -1,0 +1,11 @@
+# Configuration file to create tci_grid
+
+# Names of cities to be created
+cities_names:
+    Argentina: ['buenosaires', 'mendoza', 'cordoba', 'rosario']
+    Brasil: ['vitoria', 'teresina', 'sorocaba', 'saopaulo', 'saoluis', 'saojosedoscampos', 'santos', 'salvador', 'riodejaneiro', 'recife', 'porto_alergre', 'natal', 'manaus', 'maceio', 'joinville', 'joaopessoa', 'goiania', 'fortaleza', 'florianopolis', 'curitiba', 'campinas', 'brasilia', 'belohorizonte', 'belem']
+    Chile: ['santiago']
+    Colombia: ['santamarta', 'pereira', 'medellin', 'cucuta', 'cartagena', 'cali', 'bucaramanga', 'bogota', 'barranquilla'] 
+    Mexico: ['torreon', 'toluca', 'tijuana', 'sanluispotosi', 'queretaro', 'pueble', 'monterrey', 'mexicocity', 'merida', 'leon', 'juarez', 'guadalajara', 'aguascalientes']
+    Peru: ['lima', 'arequipa']
+    Uruguay: ['montevideo']
