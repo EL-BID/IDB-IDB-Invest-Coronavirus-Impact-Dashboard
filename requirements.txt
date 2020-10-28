@@ -17,3 +17,4 @@ osm_road_length
 awswrangler
 timezonefinder
 babelgrid
+pyarrow>0.13.0
