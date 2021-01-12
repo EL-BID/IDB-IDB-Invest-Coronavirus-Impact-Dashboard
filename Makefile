@@ -2,15 +2,16 @@
 
 SHELL := /bin/bash
 
-REPO=$(shell basename $(CURDIR))
+REPO=waze_coronavirus
 
 aws-c:
 	@source activate norm_env; python ~/private/configs/generate_aws_credentials.py;
 	cat ~/private/configs/credentials	
 
 create-env: setup-secrets
-	conda create --name $(REPO) -c conda-forge h3-py==3.6.4 -y;
+	conda create --name $(REPO) python=3.7 -y;\
 	source activate $(REPO); \
+	conda install -c conda-forge h3-py==3.6.4 -y; \
 			pip3 install --upgrade -r requirements.txt; \
 			python -m ipykernel install --user --name=$(REPO);
 
