@@ -1,1 +1,2 @@
-source activate waze_coronavirus
+make create-env
+
