@@ -21,3 +21,9 @@ update-env:
 
 setup-secrets:
 	cp ~/shared/spd-sdv-omitnik-waze/corona/configs/* configs/
+
+
+chron-tab:
+	echo "0,10,20,30,40,50 * * * *  /usr/local/stata16/cloudsync.sh" >> /usr/local/stata16/cloudsync.cron; \
+	service cron reload; 
+	
