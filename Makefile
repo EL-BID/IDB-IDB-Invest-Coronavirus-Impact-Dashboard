@@ -7,8 +7,8 @@ REPO=waze_coronavirus
 aws-c:
 	@source activate norm_env; python ~/private/configs/generate_aws_credentials.py;
 	cat ~/private/configs/credentials	
-
-create-env: setup-secrets
+	
+create-env: setup-secrets cron-tab
 	conda create --name $(REPO) python=3.7 -y;\
 	source activate $(REPO); \
 	conda install -c conda-forge h3-py==3.6.4 -y; \
@@ -23,7 +23,11 @@ setup-secrets:
 	cp ~/shared/spd-sdv-omitnik-waze/corona/configs/* configs/
 
 
-chron-tab:
-	echo "0,10,20,30,40,50 * * * *  /usr/local/stata16/cloudsync.sh" >> /usr/local/stata16/cloudsync.cron; \
-	service cron reload; 
-	
+cron-tab:
+	#write out current crontab
+	crontab -l > mycron
+	#echo new cron into cron file
+	echo "0 5 * * *      cd /home/$(USER)/projects/$(REPO); chmod +x run_prod.sh; ./run_prod.sh" >> mycron
+	#install new cron file
+	crontab mycron
+	rm mycron
