@@ -84,6 +84,25 @@ def _write_sheets_table(df, freq, config, drive_config):
     wks_name = freq
     d2g.upload(df, spreadsheet_key, wks_name, row_names=False, credentials=credentials)
 
+def _write_csv_table(df, freq, config):
+
+    path = (
+            Path.home()
+            / "shared"
+            / "/".join(config["s3_path"].split("/")[3:])
+            / config["slug"]
+            / config["current_millis"]
+            / config["raw_table"]
+            / config["name"]
+        )
+
+    safe_create_path(path, replace)
+
+    print(path)
+    df[columns].to_csv(
+        path / (config["name"] + '_' + freq + ".csv"), 
+        index=False, header=False, sep="|"
+    )
 
 def _read_sheets_tables():
 
@@ -254,26 +273,31 @@ def write_index(config):
         drive_config = yaml.load(open("configs/drive-config.yaml", "r"))
 
         if config["slug"] == "dev":
-            _write_sheets_table(
-                df,
+            
+            _write_csv_table(
+                df, 
                 table["worksheet"],
-                config,
-                drive_config[config["name"]][config["slug"]],
-            )
+                config)
 
         elif config["slug"] == "prod":
 
-            _write_sheets_table(
-                df,
+            _write_csv_table(
+                df, 
                 table["worksheet"],
-                config,
-                drive_config[config["name"]][config["slug"]],
-            )
+                config)
 
-            df = df.drop(table["public_drop"], 1)
-            _write_sheets_table(
-                df, table["worksheet"], config, drive_config[config["name"]]["public"]
-            )
+            if False:
+                _write_sheets_table(
+                    df,
+                    table["worksheet"],
+                    config,
+                    drive_config[config["name"]][config["slug"]],
+                )
+
+                df = df.drop(table["public_drop"], 1)
+                _write_sheets_table(
+                    df, table["worksheet"], config, drive_config[config["name"]]["public"]
+                )
 
 
 def dummy_2019(config):
