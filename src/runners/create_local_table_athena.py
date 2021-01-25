@@ -48,7 +48,6 @@ def _save_local(df, config, columns=None, replace=True, wrangler=False):
             / "shared"
             / "/".join(config["s3_path"].split("/")[3:])
             / config["slug"]
-            / config["current_millis"]
             / config["raw_table"]
             / config["name"]
         )
