@@ -96,7 +96,7 @@ def _write_csv_table(df, freq, config):
             / config["name"]
         )
 
-    safe_create_path(path, replace)
+    safe_create_path(path)
 
     print(path)
     df[columns].to_csv(
