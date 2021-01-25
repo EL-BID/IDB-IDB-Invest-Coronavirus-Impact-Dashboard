@@ -48,9 +48,11 @@ def _save_local(df, config, columns=None, replace=True, wrangler=False):
             / "shared"
             / "/".join(config["s3_path"].split("/")[3:])
             / config["slug"]
+            / config["current_millis"]
             / config["raw_table"]
             / config["name"]
         )
+
 
         safe_create_path(path, replace)
 
@@ -83,22 +85,24 @@ def _write_sheets_table(df, freq, config, drive_config):
     wks_name = freq
     d2g.upload(df, spreadsheet_key, wks_name, row_names=False, credentials=credentials)
 
-def _write_csv_table(df, freq, config):
+def _write_csv_table(df, freq, config, public=False):
 
+    cm = config["current_millis"]
+    if public == False:
+        cm = 'public'     
     path = (
             Path.home()
             / "shared"
             / "/".join(config["s3_path"].split("/")[3:])
             / config["slug"]
-            / config["current_millis"]
+            /  cm
             / config["raw_table"]
             / config["name"]
         )
 
     safe_create_path(path)
-
-    print(path)
-    df[columns].to_csv(
+    
+    df.to_csv(
         path / (config["name"] + '_' + freq + ".csv"), 
         index=False, header=False, sep="|"
     )
@@ -279,24 +283,19 @@ def write_index(config):
                 config)
 
         elif config["slug"] == "prod":
-
+            
             _write_csv_table(
                 df, 
                 table["worksheet"],
                 config)
-
-            if False:
-                _write_sheets_table(
-                    df,
-                    table["worksheet"],
-                    config,
-                    drive_config[config["name"]][config["slug"]],
-                )
-
-                df = df.drop(table["public_drop"], 1)
-                _write_sheets_table(
-                    df, table["worksheet"], config, drive_config[config["name"]]["public"]
-                )
+            
+            df = df.drop(table["public_drop"], 1)
+            _write_csv_table(
+                df, 
+                table["worksheet"],
+                config, 
+                public=True)
+       
 
 
 def dummy_2019(config):
