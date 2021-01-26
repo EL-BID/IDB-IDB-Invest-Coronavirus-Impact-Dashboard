@@ -53,6 +53,7 @@ def _save_local(df, config, columns=None, replace=True, wrangler=False):
             / config["name"]
         )
 
+
         safe_create_path(path, replace)
 
         df[columns].to_csv(
@@ -84,6 +85,27 @@ def _write_sheets_table(df, freq, config, drive_config):
     wks_name = freq
     d2g.upload(df, spreadsheet_key, wks_name, row_names=False, credentials=credentials)
 
+def _write_csv_table(df, freq, config, public=False):
+
+    cm = config["current_millis"]
+    if public == False:
+        cm = 'public'     
+    path = (
+            Path.home()
+            / "shared"
+            / "/".join(config["s3_path"].split("/")[3:])
+            / config["slug"]
+            /  cm
+            / config["raw_table"]
+            / config["name"]
+        )
+
+    safe_create_path(path)
+    
+    df.to_csv(
+        path / (config["name"] + '_' + freq + ".csv"), 
+        index=False, header=False, sep="|"
+    )
 
 def _read_sheets_tables():
 
@@ -254,26 +276,26 @@ def write_index(config):
         drive_config = yaml.load(open("configs/drive-config.yaml", "r"))
 
         if config["slug"] == "dev":
-            _write_sheets_table(
-                df,
+            
+            _write_csv_table(
+                df, 
                 table["worksheet"],
-                config,
-                drive_config[config["name"]][config["slug"]],
-            )
+                config)
 
         elif config["slug"] == "prod":
-
-            _write_sheets_table(
-                df,
+            
+            _write_csv_table(
+                df, 
                 table["worksheet"],
-                config,
-                drive_config[config["name"]][config["slug"]],
-            )
-
+                config)
+            
             df = df.drop(table["public_drop"], 1)
-            _write_sheets_table(
-                df, table["worksheet"], config, drive_config[config["name"]]["public"]
-            )
+            _write_csv_table(
+                df, 
+                table["worksheet"],
+                config, 
+                public=True)
+       
 
 
 def dummy_2019(config):
