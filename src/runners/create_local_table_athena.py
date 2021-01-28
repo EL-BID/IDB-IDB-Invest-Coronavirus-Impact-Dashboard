@@ -104,7 +104,7 @@ def _write_csv_table(df, freq, config, public=False):
     
     df.to_csv(
         path / (config["name"] + '_' + freq + ".csv"), 
-        index=False, header=False, sep="|"
+        index=False, header=True, sep="|"
     )
 
 def _read_sheets_tables():
