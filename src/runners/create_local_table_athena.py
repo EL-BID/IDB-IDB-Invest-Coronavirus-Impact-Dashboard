@@ -88,7 +88,7 @@ def _write_sheets_table(df, freq, config, drive_config):
 def _write_csv_table(df, freq, config, public=False):
 
     cm = 'private'
-    if public == False:
+    if public == True:
         cm = 'public'     
     path = (
             Path.home()
