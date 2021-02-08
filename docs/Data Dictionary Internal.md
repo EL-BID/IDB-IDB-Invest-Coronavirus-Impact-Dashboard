@@ -1,6 +1,7 @@
 
 
 Database: pwazetransformeddb
+
 Table: jams
 
 | column_name       | Description   | data_type                      |
@@ -39,7 +40,9 @@ Table: jams
 
 
 
+
 Database: spd_sdv_waze_corona
+
 Table: prod_daily_daily_index
 
 | column_name          | Description   | data_type   |
@@ -67,7 +70,9 @@ Table: prod_daily_daily_index
 
 
 
+
 Database: spd_sdv_waze_corona
+
 Table: prod_daily_weekly_index
 
 | column_name          | Description   | data_type   |
@@ -93,5 +98,6 @@ Table: prod_daily_weekly_index
 | tcp                  |               | double      |
 | dashboard            |               | varchar     |
 | region_shapefile_wkt |               | varchar     |
+
 
 
