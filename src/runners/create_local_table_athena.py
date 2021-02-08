@@ -333,31 +333,6 @@ def check_existence(config):
     )
 
     return len(res) > 0
-
-
-def test_drop_tabs(config):
-
-    for table in config["to_write"]:
-
-        df = get_data_from_athena(
-            "select * from "
-            f"{config['athena_database']}.{config['slug']}_{table['table']}"
-        )
-
-        if "region_shapefile_wkt" in df.columns:
-            df["region_shapefile_wkt"] = df["region_shapefile_wkt"].apply(
-                lambda x: str(simplify(wkt.loads(x)))
-            )
-
-        if table.get("overall_drop"):
-            df = df.drop(table["overall_drop"], 1)
-
-        freq = table["worksheet"]
-        df = df.head(10)
-        df.to_csv(f"~/private/tests/{freq}_private.csv")
-
-        df = df.drop(table["public_drop"], 1)
-        df.to_csv(f"~/private/tests/{freq}_public.csv")
            
 
 def start(config):
