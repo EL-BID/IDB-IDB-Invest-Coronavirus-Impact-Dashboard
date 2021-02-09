@@ -1,5 +1,7 @@
 
 
+### jams
+
 Database: pwazetransformeddb
 
 Table: jams
@@ -41,63 +43,22 @@ Table: jams
 
 
 
-Database: spd_sdv_waze_corona
-
-Table: prod_daily_daily_index
-
-| column_name          | Description   | data_type   |
-|:---------------------|:--------------|:------------|
-| last_updated_utc     |               | timestamp   |
-| region_slug          |               | varchar     |
-| region_name          |               | varchar     |
-| country_name         |               | varchar     |
-| country_iso_code     |               | varchar     |
-| country_idb_code     |               | varchar     |
-| region_type          |               | varchar     |
-| population           |               | varchar     |
-| timezone             |               | varchar     |
-| year                 |               | integer     |
-| month                |               | integer     |
-| day                  |               | integer     |
-| dow                  |               | integer     |
-| observed             |               | bigint      |
-| expected_2020        |               | double      |
-| ratio_20             |               | double      |
-| tci                  |               | double      |
-| dashboard            |               | varchar     |
-| region_shapefile_wkt |               | varchar     |
-
-
-
-
+### prod_daily_daily
 
 Database: spd_sdv_waze_corona
 
-Table: prod_daily_weekly_index
+Table: prod_daily_daily
 
-| column_name          | Description   | data_type   |
-|:---------------------|:--------------|:------------|
-| last_updated_utc     |               | timestamp   |
-| region_slug          |               | varchar     |
-| region_name          |               | varchar     |
-| country_name         |               | varchar     |
-| country_iso_code     |               | varchar     |
-| country_idb_code     |               | varchar     |
-| region_type          |               | varchar     |
-| population           |               | varchar     |
-| timezone             |               | varchar     |
-| week_number          |               | bigint      |
-| min_year             |               | integer     |
-| min_month            |               | integer     |
-| min_day              |               | integer     |
-| max_month            |               | integer     |
-| max_day              |               | integer     |
-| observed             |               | bigint      |
-| expected_2020        |               | double      |
-| ratio_20             |               | double      |
-| tcp                  |               | double      |
-| dashboard            |               | varchar     |
-| region_shapefile_wkt |               | varchar     |
+| column_name   | Description   | data_type   |
+|:--------------|:--------------|:------------|
+| year          |               | integer     |
+| month         |               | integer     |
+| day           |               | integer     |
+| hour          |               | integer     |
+| dow           |               | integer     |
+| line          |               | varchar     |
+| tci           |               | bigint      |
+| region_slug   |               | varchar     |
 
 
 

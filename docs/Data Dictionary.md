@@ -10,8 +10,9 @@
 | region_type          | Region type, e.g. city, country                                    | string    |
 | population           | Population of the region                                           | int       |
 | timezone             | Timezone of the region                                             | string    |
-| month                | Month in 2020                                                      | int       |
-| day                  | Day in 2020.                                                       | int       |
+| year                 | Year                                                               | int       |
+| month                | Month                                                              | int       |
+| day                  | Day                                                                | int       |
 | dow                  | Day of the week                                                    | int       |
 | ratio_20             | Percentage change in Traffic Congestion Intensity (TCI) is `change_TCI = (ratio_20 - 1) * 100` | float    |
 | tcp                  | Percentage change in Traffic Congestion Intensity (TCI)            | float    |
@@ -29,6 +30,7 @@
 | population           | Population of the region                                           | int       |
 | timezone             | Timezone of the region                                             | string    |
 | week_number          | Week number in 2020                                                | int       |
+| min_year             | Year of the week                                                   | int       |
 | min_month            | First day of the week month                                        | int       |
 | min_day              | First day of the week day                                          | int       |
 | max_month            | Last day of the week month                                         | int       |
