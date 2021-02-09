@@ -57,7 +57,7 @@ def _save_local(df, config, columns=None, replace=True, wrangler=False):
         safe_create_path(path, replace)
 
         df[columns].to_csv(
-            path / (config["name"] + ".csv"), index=False, header=False, sep="|"
+            path / (config["name"] + "_dev.csv"), index=False, header=False, sep="|"
         )
 
 
@@ -286,13 +286,13 @@ def write_index(config):
             
             _write_csv_table(
                 df, 
-                table["table"],
+                table["worksheet"],
                 config)
             
             df = df.drop(table["public_drop"], 1)
             _write_csv_table(
                 df, 
-                table["table"],
+                table["worksheet"],
                 config, 
                 public=True)
        
