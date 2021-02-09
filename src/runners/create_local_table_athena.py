@@ -96,6 +96,8 @@ def _write_csv_table(df, freq, config, public=False):
             / "/".join(config["s3_path"].split("/")[3:])
             / config["slug"]
             /  cm
+            / config["raw_table"]
+            / config["name"]
         )
 
     safe_create_path(path)
