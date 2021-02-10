@@ -57,7 +57,7 @@ def _save_local(df, config, columns=None, replace=True, wrangler=False):
         safe_create_path(path, replace)
 
         df[columns].to_csv(
-            path / (config["name"] + "_dev.csv"), index=False, header=False, sep="|"
+            path / (config["name"] + ".csv"), index=False, header=False, sep="|"
         )
 
 
