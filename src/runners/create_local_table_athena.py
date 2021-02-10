@@ -103,7 +103,7 @@ def _write_csv_table(df, freq, config, public=False):
     safe_create_path(path)
     
     df.to_csv(
-        path / (config["name"] + '_' + freq + ".csv"), 
+        path / ( freq + ".csv"), 
         index=False, header=True, sep="|"
     )
 
@@ -335,7 +335,7 @@ def check_existence(config):
     )
 
     return len(res) > 0
-
+           
 
 def start(config):
 
