@@ -6,6 +6,7 @@ with (
 with ratios as (
 	select 
 		d.region_slug,
+		d.year, 
 		d.month, 
 		d.day, 
 		d.hour,
@@ -32,10 +33,10 @@ with ratios as (
 	join (
 		select
 			region_slug,
-			month, day, hour, dow,
+			year, month, day, hour, dow,
 			sum(tci) observed
 		from {{ athena_database }}.{{ slug }}_daily_daily
-		group by region_slug, month, day, hour, dow) d
+		group by region_slug, year, month, day, hour, dow) d
 	on d.region_slug = h.region_slug
 	and h.dow = d.dow
 	and h.hour = d.hour
@@ -46,12 +47,12 @@ select
 	metadata.timezone,
 	case when metadata.timezone is not null then 
 			rpad(cast(at_timezone(date_parse(
-					concat('2020', '-', cast(month as varchar), '-', cast(day as varchar),
+					concat(cast(year as varchar), '-', cast(month as varchar), '-', cast(day as varchar),
 						   ' ', cast(hour as varchar), ':', '00', ':' ,'00'), 
 					'%Y-%m-%d %k:%i:%s'),
 				metadata.timezone) as varchar), 19, '000') 
 		 else null end timestamp_timezone,
-	date_parse(concat('2020', '-', cast(month as varchar), '-', cast(day as varchar),
+	date_parse(concat(cast(year as varchar), '-', cast(month as varchar), '-', cast(day as varchar),
 						   ' ', cast(hour as varchar), ':', '00', ':' ,'00'), 
 					'%Y-%m-%d %k:%i:%s') timestamp,
 	ratios.observed,

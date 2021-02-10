@@ -7,6 +7,7 @@ with ratios as (
 	select 
 		d.region_slug,
 		d.week_number,
+		d.min_year,
 		d.min_month,
 		d.min_day,
 		d.max_month,
@@ -31,6 +32,7 @@ with ratios as (
 		select
 			region_slug,
 			WEEK(date_parse(concat(cast(year as varchar), ' ', cast(month as varchar), ' ', cast(day as varchar)), '%Y %m %e')) week_number,
+			min_by(year, dow) min_year,
 			min_by(month, dow) min_month,
 			min_by(day, dow) min_day,
 			max_by(month, dow) max_month,
@@ -51,6 +53,7 @@ select
 	metadata.population,
 	metadata.timezone,
 	ratios.week_number,
+	ratios.min_year,
 	ratios.min_month,
 	ratios.min_day,
 	ratios.max_month,
