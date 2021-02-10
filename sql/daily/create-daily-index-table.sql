@@ -6,7 +6,8 @@ with (
 with ratios as (
     select 
         d.region_slug,
-        d."month",
+        d."year",
+		d."month",
         d.dow,
         d."day",
         observed,
@@ -28,6 +29,7 @@ with ratios as (
     join 
 		(select 
 			region_slug,
+			"year",
 		    "month",
 		    dow,
 		    "day",
@@ -35,6 +37,7 @@ with ratios as (
 		from {{ athena_database }}.{{ slug }}_daily_daily
 		group by
 		        region_slug,
+				"year",
 		        "month",
 		        dow,
 		        "day") d
@@ -51,13 +54,14 @@ select
 	metadata.region_type,
 	metadata.population,
 	metadata.timezone,
+	ratios.year,
 	ratios.month,
 	ratios.day,
 	ratios.dow,
 	ratios.observed,
 	ratios.expected_2020,
 	ratios.ratio_20,
-	(ratio_20 - 1) * 100 as tci,
+	(ratio_20 - 1) * 100 as tcp,
 	metadata.dashboard,
 	metadata.region_shapefile_wkt
 from ratios
