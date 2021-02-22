@@ -22,7 +22,6 @@ update-env:
 setup-secrets:
 	cp ~/shared/spd-sdv-omitnik-waze/corona/configs/* configs/
 
-
 cron-tab:
 	#write out current crontab
 	crontab -l > mycron
@@ -31,3 +30,11 @@ cron-tab:
 	#install new cron file
 	crontab mycron
 	rm mycron
+
+activate-extensions:
+        @source activate $(REPO);  \
+        jupyter contrib nbextension install --user; \
+        jupyter nbextension install toc2/main --user; \
+        jupyter nbextension enable toc2/main --user; \
+        jupyter nbextension install --py --user keplergl; \
+        jupyter nbextension enable --py --user keplergl
