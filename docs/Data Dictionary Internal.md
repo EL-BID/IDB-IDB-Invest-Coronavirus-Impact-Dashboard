@@ -43,6 +43,46 @@ Table: jams
 
 
 
+### alerts
+
+Database: pwazetransformeddb
+
+Table: alerts
+
+| column_name              | Description   | data_type               |
+|:-------------------------|:--------------|:------------------------|
+| city                     |               | varchar                 |
+| confidence               |               | bigint                  |
+| country                  |               | varchar                 |
+| day                      |               | bigint                  |
+| endtime                  |               | varchar                 |
+| endtimemillis            |               | bigint                  |
+| hour                     |               | bigint                  |
+| location                 |               | row(x double, y double) |
+| location_wkt             |               | varchar                 |
+| magvar                   |               | bigint                  |
+| month                    |               | bigint                  |
+| nthumbsup                |               | bigint                  |
+| pubmillis                |               | bigint                  |
+| reliability              |               | bigint                  |
+| reportbymunicipalityuser |               | varchar                 |
+| reportdescription        |               | varchar                 |
+| reportrating             |               | bigint                  |
+| retrievaltime            |               | bigint                  |
+| roadtype                 |               | bigint                  |
+| starttime                |               | varchar                 |
+| starttimemillis          |               | bigint                  |
+| street                   |               | varchar                 |
+| subtype                  |               | varchar                 |
+| type                     |               | varchar                 |
+| uuid                     |               | varchar                 |
+| year                     |               | bigint                  |
+| datetime                 |               | varchar                 |
+
+
+
+
+
 ### prod_daily_daily
 
 Database: spd_sdv_waze_corona
