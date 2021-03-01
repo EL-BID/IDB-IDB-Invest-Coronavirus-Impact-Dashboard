@@ -1,0 +1,68 @@
+country_iso_code__dash,country_name__dash,region_slug__dash,region_name__dash,country__waze,city__waze
+AR,Argentina,buenosaires,Buenos Aires,Argentina,Buenos Aires
+AR,Argentina,cordoba,Córdoba,,
+AR,Argentina,rosario,Rosario,,
+BO,Bolivia,santacruzdelasierra,Santa Cruz de la Sierra,,
+BR,Brazil,belem,Belém,,
+BR,Brazil,belohorizonte,Belo Horizonte,Brazil,Belo Horizonte
+BR,Brazil,brasilia,Brasília,Brazil,Brasilia
+BR,Brazil,campinas,Campinas,,
+BR,Brazil,curitiba,Curitiba,Brazil,Curitiba
+BR,Brazil,fortaleza,Fortaleza,Brazil,Fortaleza
+BR,Brazil,goiania,Goiânia,,
+BR,Brazil,joaopessoa,João Pessoa,,
+BR,Brazil,maceio,Maceió,,
+BR,Brazil,manaus,Manaus,,
+BR,Brazil,natal,Natal,,
+BR,Brazil,porto_alergre,Porto Alegre,Brazil,Porto Alegre
+BR,Brazil,recife,Recife,Brazil,Recife
+BR,Brazil,riodejaneiro,Rio de Janeiro,Brazil,Rio De Janeiro
+BR,Brazil,salvador,Salvador,Brazil,Salvador
+BR,Brazil,santos,Santos,,
+BR,Brazil,saojosedoscampos,São José dos Campos,,
+BR,Brazil,saoluis,São Luís,,
+BR,Brazil,saopaulo,São Paulo,Brazil,Sao Paulo
+BR,Brazil,sorocaba,Sorocaba,,
+BR,Brazil,teresina,Teresina,,
+BR,Brazil,vitoria,Vitória,Brazil,Vitoria
+CL,Chile,santiago,Santiago,Chile,Santiago
+CO,Colombia,barranquilla,Barranquilla,,
+CO,Colombia,bogota,Bogotá,Colombia,Bogota
+CO,Colombia,bucaramanga,Bucaramanga,,
+CO,Colombia,cali,Cali,Colombia,Cali
+CO,Colombia,cartagena,Cartagena de Indias,,
+CO,Colombia,cucuta,Cúcuta,,
+CO,Colombia,medellin,Medellín,Colombia,Medellin
+CO,Colombia,pereira,Pereira,,
+CO,Colombia,santamarta,Santa Marta,,
+CR,Costa Rica,sanjose,San José,Costa Rica,San Jose
+DO,Dominican Republic,santiagocaballeros,Santiago de los Caballeros,,
+DO,Dominican Republic,santodomingo,Santo Domingo,,
+EC,Ecuador,cuenca,Cuenca,,
+EC,Ecuador,guayaquil,Guayaquil,,
+EC,Ecuador,quito,Quito,Ecuador,Quito
+GT,Guatemala,guatemala,Ciudad de Guatemala,,
+HN,Honduras,tegucigalpa,Tegucigalpa,,
+JM,Jamaica,kingston,Kingston,,
+MX,Mexico,aguascalientes,Aguascalientes,,
+MX,Mexico,guadalajara,Guadalajara,Mexico,Guadalajara
+MX,Mexico,leon,León,,
+MX,Mexico,merida,Mérida,,
+MX,Mexico,mexicocity,Ciudad de México,Mexico,Mexico City
+MX,Mexico,monterrey,Monterrey,Mexico,Monterrey
+MX,Mexico,pueble,Puebla,Mexico,Puebla City
+MX,Mexico,queretaro,Querétaro,Mexico,Santiago De Queretaro
+MX,Mexico,sanluispotosi,San Luis Potosí,,
+MX,Mexico,toluca,Toluca,,
+MX,Mexico,torreon,Torreón,,
+NI,Nicaragua,managua,Managua,,
+PA,Panama,panamacity,Ciudad de Panamá,,
+PE,Peru,arequipa,Arequipa,,
+PE,Peru,lima,Lima,Peru,Lima
+SV,El Salvador,sansalvador,San Salvador,,
+UY,Uruguay,montevideo,Montevideo,Uruguay,Montevideo
+,,,,Brazil,Florianopolis
+,,,,Brazil,Guarulhos
+,,,,Mexico,Zapopan
+,,,,Chile,Las Condes
+,,,,Chile,Maipu
