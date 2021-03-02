@@ -24,3 +24,5 @@ seaborn
 # for analysis
 plotnine
 siuba
+adtk
+pyod
