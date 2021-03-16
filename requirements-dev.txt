@@ -21,8 +21,8 @@ matplotlib
 plotly
 cufflinks
 seaborn
-# for analysis
 plotnine
 siuba
 adtk
 pyod
+tsmoothie
