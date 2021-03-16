@@ -18,6 +18,10 @@ create-env: setup-secrets
 update-env:
 	source activate $(REPO); \
 	pip3 install --upgrade -r requirements.txt;
+    
+update-env-dev:
+	source activate $(REPO); \
+	pip3 install --upgrade -r requirements-dev.txt;    
 
 setup-secrets:
 	cp ~/shared/spd-sdv-omitnik-waze/corona/configs/* configs/
