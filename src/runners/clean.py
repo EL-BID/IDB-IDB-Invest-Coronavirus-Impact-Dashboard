@@ -1,3 +1,4 @@
+
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -9,17 +10,18 @@ from siuba import *
 # plots
 import matplotlib.pyplot as plt 
 import plotnine as p9
+p9.theme_set(p9.theme_linedraw()) # default theme
 from mizani.breaks import date_breaks
 from mizani.formatters import date_format
-p9.theme_set(p9.theme_linedraw()) # default theme
+
 
 from adtk.data import validate_series
 from adtk.visualization import plot
 from adtk.detector import LevelShiftAD, PersistAD, GeneralizedESDTestAD, SeasonalAD, AutoregressionAD
 from tsmoothie.smoother import DecomposeSmoother
 
-#from src import utils
-#conn = utils.connect_athena(path='../configs/athena.yaml')
+from src import utils
+conn = utils.connect_athena(path='../configs/athena.yaml')
 
 
 # -------------- #
@@ -33,9 +35,6 @@ from tsmoothie.smoother import DecomposeSmoother
 ### 7. Run functions
 ### 8. Start process
 # -------------- #
-
-
-
 
 
 ### 1. Initialize functions
@@ -61,7 +60,7 @@ def _validate_series(df, column_name):
 
 
 ### 2. Outlier detection functions
-def _outlier_persist_ad(s, target_column_name, c_param = 4, window_param = 14):
+def _outlier_persist_ad(s, target_column_name, c_param = 3.0, window_param = 7):
     
     try :
         persist_ad = PersistAD(c=c_param, side='both', window = window_param)
@@ -77,7 +76,7 @@ def _outlier_persist_ad(s, target_column_name, c_param = 4, window_param = 14):
     
     return anomalies
 
-def _outlier_gesdt_ad(s, target_column_name, alpha_param = 0.3, window_param = 14):
+def _outlier_gesdt_ad(s, target_column_name, alpha_param = 0.3, window_param = 7):
     
     try :
         esd_ad = GeneralizedESDTestAD(alpha=alpha_param)
@@ -93,7 +92,7 @@ def _outlier_gesdt_ad(s, target_column_name, alpha_param = 0.3, window_param = 1
     
     return anomalies
 
-def _outlier_seasonal_ad(s, target_column_name, c_param = 3.0, window_param = 14):
+def _outlier_seasonal_ad(s, target_column_name, c_param = 3.0):
     
     try : 
         seasonal_ad = SeasonalAD(c=c_param, side="both")
@@ -109,7 +108,7 @@ def _outlier_seasonal_ad(s, target_column_name, c_param = 3.0, window_param = 14
         
     return anomalies     
 
-def _outlier_autregr_ad(s, target_column_name, c_param = 3.0, n_steps_param = 4, step_size_param=7):
+def _outlier_autregr_ad(s, target_column_name, c_param = 3.0, n_steps_param = 1, step_size_param=7):
     
     try : 
         autoregression_ad = AutoregressionAD(n_steps=n_steps_param, step_size=step_size_param, c=c_param)
@@ -146,11 +145,16 @@ def _anomalies_detector(s, target_column_name):
         (anomalies['anomaly_persist']) + \
         (anomalies['anomaly_seasonal'] == True) +  \
         (anomalies['anomaly_autor'])
+    
+    anomalies.anomaly_sum[anomalies.date <= '2020-03-31'] = 0
+    anomalies.anomaly_sum[((anomalies.date >= '2020-12-15') & (anomalies.date <= '2021-01-15'))] = 0
+    
     anomalies.head(2)
       
     return(anomalies[anomalies.anomaly_sum > 0])
 
 
+# 2. Find anomalies
 def _find_anomalies(df, anomaly_vote_minimun, target_column_name, print_report=True):
 
     logger.debug("\n... finding outliers ...")
@@ -176,8 +180,9 @@ def _find_anomalies(df, anomaly_vote_minimun, target_column_name, print_report=T
     return(df_anomaly, anomalies_date)
 
 
+
 ### 3. Imputation functions
-def _decompose_lowess(variable_smooth, missing_values, smooth_fraction=0.2):
+def _decompose_lowess(variable_smooth, missing_values, smooth_fraction):
     # operate smoothing
     smoother = DecomposeSmoother(smooth_type='lowess', 
                                  periods=7,
@@ -188,14 +193,17 @@ def _decompose_lowess(variable_smooth, missing_values, smooth_fraction=0.2):
     smooth_result = smoother.smooth_data[0]
     result[missing_values] = smooth_result[missing_values]
     
+    # removing negatives
+    result[result <0] = 0
+    
     return result
 
-# Impute anomalies
+# 3. Impute anomalies
 def _impute_anomalies(observed_column, 
                       date_column,
                       anomaly_sum_column, 
                       anomaly_vote_minimun, 
-                      smooth_fraction = 0.2):
+                      smooth_fraction = 0.4):
     """
     The function runs several algorithms to detect level shifts.
     
@@ -248,9 +256,10 @@ def _impute_anomalies(observed_column,
     return df_impute
 
 
+
 ### 4. Level shift correction functions
 def _c_param(region_slug, 
-             athena_path = '/home/soniame/shared/spd-sdv-omitnik-waze/corona'):
+             athena_path = '~/shared/spd-sdv-omitnik-waze/corona'):
     
     c_region = pd.read_csv(athena_path + '/raw/cities_c_iqr.csv') \
         .rename(columns={'city':'region_slug'})
@@ -264,7 +273,11 @@ def _c_param(region_slug,
     logger.debug('c_param: ' + str(c_param))
     return c_param
 
-def _level_shift_detection(s, c_param = 6.0, window_param = 14, print_plot = False):
+
+def _level_shift_detection(s, 
+                           c_param = 6.0, 
+                           window_param = 14, 
+                           print_plot = False):
     """
     Level shift or change point detection. This function uses the function 
     LevelShiftAD from ADTK library.
@@ -344,6 +357,7 @@ def _shifted_adtk_ts(s, column_name, agg="std", window=(3,3), diff="l2", print_p
 
 
 def _shift_sum(df_shift):
+    
     df_shift_sum = (df_shift.reset_index()
      >> filter(_.date > '2020-03-31',
               ((_.date < '2020-12-15') | (_.date > '2021-01-15')))
@@ -357,18 +371,28 @@ def _shift_sum(df_shift):
 
     return df_shift_sum
 
+
 def _rolling_manual_sum(tab, days_before= 0, days_after = 7):
+    
     rolling_sum = list()
+    
     for dat in tab.date:
+        
         date_init = dat + timedelta(days=days_before)
         date_end  = dat + timedelta(days=days_after)
+        
         #logger.debug( str(dat ) + ' to ' + str(dat + timedelta(days=7)))
+        
         sum_sum = tab[(tab.date >= date_init) & (tab.date < date_end)].suma.sum()
         rolling_sum.append(sum_sum)
 
     return rolling_sum
 
-def _shift_window_sum(df_shift, days_before= 0, days_after = 7):
+
+def _shift_window_sum(df_shift, 
+                      days_before= 0, 
+                      days_after = 7):
+    
     tab = (df_shift.reset_index()
      >> filter(_.date > '2020-03-31', 
               ((_.date < '2020-12-15') | (_.date > '2021-01-15')))
@@ -385,6 +409,8 @@ def _shift_window_sum(df_shift, days_before= 0, days_after = 7):
     
     return tab[['date', 'shift_sum']]
 
+
+
 def _initial_shift_date(df_shift_sum):
 
     shift_init = df_shift_sum[df_shift_sum.shift_sum == df_shift_sum.shift_sum.max()].date.min()
@@ -394,12 +420,17 @@ def _initial_shift_date(df_shift_sum):
     return shift_init
 
 
-def _shift_ts(shift_init, date_column, to_shift_column):
+
+def _shift_ts(shift_init, 
+              date_column, 
+              to_shift_column):
     
     # TODO: step_shift_before, step_shift_after
     # a two weeks both sided window
     shift_wdw_init = shift_init - timedelta(days=7)
     shift_wdw_end  = shift_init + timedelta(days=7)
+    
+    
     # level centered
     center_point = ((to_shift_column[(date_column >  shift_wdw_init) & 
                         (date_column <= shift_init)].mean()) -
@@ -413,11 +444,17 @@ def _shift_ts(shift_init, date_column, to_shift_column):
     shifted_column = to_shift_column
     shifted_column[ (date_column > shift_init) ] = \
         ( (to_shift_column[(date_column > shift_init)]) + center_point )
+    
+    # remove negatives 
+    shifted_column[shifted_column < 0]=0    
         
     return shifted_column   
 
 
-def _shift_level_report(df_shift, df_shift_sum, observed_column, region_slug):
+def _shift_level_report(df_shift, 
+                        df_shift_sum, 
+                        observed_column, 
+                        region_slug):
     
     df_shift=df_shift.reset_index()    
     df_shift['observed_column'] = observed_column
@@ -427,6 +464,7 @@ def _shift_level_report(df_shift, df_shift_sum, observed_column, region_slug):
     tab = (df_gather
          >> mutate(value_rec = _.value.replace( 0, np.nan))
         )
+    
     tab[['shift', 'cparam', 'window']] = tab['variable'].str.split('_',expand=True)
     gg_1 = (p9.ggplot(tab, p9.aes(x ='date', y = 'observed_column'))
      + p9.geom_line(size = 1) 
@@ -471,9 +509,10 @@ def _shift_level(df,
                             upp_grid = upp_grid)
     # grid summary
     df_grid_sum = _shift_sum(df_grid)
-    #df_grid_sum = _shift_window_sum(df_grid, 
-    #                                days_before= grid_days_before, 
-    #                                days_after = grid_days_after)
+    if False:
+        df_grid_sum = _shift_window_sum(df_grid, 
+                                        days_before= grid_days_before, 
+                                        days_after = grid_days_after)
     
     # first date
     shift_init  = _initial_shift_date(df_grid_sum)
@@ -490,6 +529,7 @@ def _shift_level(df,
                             observed_column=s.reset_index()[column_name])
     
     return shifted_column, shift_init
+
 
 
 ### 5. Plot functions
@@ -577,7 +617,7 @@ def _write_missing(df_run_1, df_run_2, region_slug, athena_path):
     Path(write_path).mkdir(parents=True, exist_ok=True)
 
     df_miss.to_csv(write_path + f'/anomalies_{region_slug}.csv')
-        
+    
 
 ### 7. Run functions
 def _run_step(df_run, 
@@ -636,7 +676,10 @@ def _run_step(df_run,
     
     logger.debug('... step done ...') 
     
-    return df_final, gg        
+    return df_final, gg
+
+
+
 
 def _run_single(region_slug, 
                 anomaly_vote_minimun_s1, 
@@ -646,14 +689,14 @@ def _run_single(region_slug,
                 athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona"):
     
     logger.info(f'... here we go {region_slug}...\n')  
-    region_slug = region_slug#df_run.region_slug.unique()
+    region_slug = region_slug #df_run.region_slug.unique()
     
     # 0. download data
     df_run = _reading_data(region_slug)
     
     
     # 00. parameter
-    c_p = _c_param(region_slug)
+    c_p = .7#_c_param(region_slug)
     
     
     # 1. running first step
@@ -717,8 +760,7 @@ def _run_single(region_slug,
     p9.save_as_pdf_pages([_gg_1, _gg_2, _gg], 
                          filename = f'{athena_path}/cleaning/figures/plot_{region_slug}.pdf')
     
-    
-    
+   
     logger.info(f'... {region_slug} done ...\n')  
     
     return df_daily, df_weekly
@@ -732,7 +774,7 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona")
     from spd_sdv_waze_corona.prod_daily_daily_index
     """
     regions_list = pd.read_sql_query(qry, conn).sort_values('region_slug').region_slug.unique()
-    logger.info('Total regions process' + str(len(regions)))
+    logger.info('Total regions process' + str(len(regions_list)))
     daily_l = list()
     weekly_l = list()
     
@@ -751,7 +793,6 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona")
     
     weekly= pd.concat(weekly_l)
     weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index.csv', index= False)
-    
     
 
 
