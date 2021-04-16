@@ -261,12 +261,10 @@ def _impute_anomalies(observed_column,
 def _c_param(region_slug, 
              athena_path = '~/shared/spd-sdv-omitnik-waze/corona'):
     
-    c_region = pd.read_csv(athena_path + '/raw/cities_c_iqr.csv') \
-        .rename(columns={'city':'region_slug'})
+    c_region = pd.read_csv(athena_path + '/cleaning/data/staging/cities_c_iqr.csv') 
     
-    
-    if region_slug in c_region.region_slug:
-        c_param = c_region[c_region.region_slug == region_slug].c_low_p1.to_list()[0]
+    if sum(c_region.region_slug == region_slug) > 0:
+        c_param = c_region[c_region.region_slug == region_slug].c_q_10.to_list()[0]
     else :
         c_param = 3
         
@@ -360,7 +358,7 @@ def _shift_sum(df_shift):
     
     df_shift_sum = (df_shift.reset_index()
      >> filter(_.date > '2020-03-31',
-              ((_.date < '2020-12-15') | (_.date > '2021-01-15')))
+              ((_.date < '2020-12-15') ))
      >> gather('variable', 'value', -_.date)
      >> filter(_.variable.str.startswith('shift'))
      >> group_by('date')
@@ -395,7 +393,7 @@ def _shift_window_sum(df_shift,
     
     tab = (df_shift.reset_index()
      >> filter(_.date > '2020-03-31', 
-              ((_.date < '2020-12-15') | (_.date > '2021-01-15')))
+              ((_.date < '2020-12-15') ))
      >> gather('variable', 'value', -_.date)
      >> filter(_.variable.str.startswith('shift'))
      >> arrange(_.date)
@@ -526,7 +524,8 @@ def _shift_level(df,
     if print_report:
         _shift_level_report(df_grid, 
                             df_grid_sum,
-                            observed_column=s.reset_index()[column_name])
+                            observed_column=s.reset_index()[column_name],
+                            region_slug)
     
     return shifted_column, shift_init
 
@@ -696,7 +695,7 @@ def _run_single(region_slug,
     
     
     # 00. parameter
-    c_p = .7#_c_param(region_slug)
+    c_p = _c_param(region_slug)
     
     
     # 1. running first step
