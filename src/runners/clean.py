@@ -264,7 +264,7 @@ def _c_param(region_slug,
     c_region = pd.read_csv(athena_path + '/cleaning/data/staging/cities_c_iqr.csv') 
     
     if sum(c_region.region_slug == region_slug) > 0:
-        c_param = c_region[c_region.region_slug == region_slug].c_q_10.to_list()[0]
+        c_param = c_region[c_region.region_slug == region_slug].c_min.to_list()[0]
     else :
         c_param = 3
         
@@ -524,8 +524,7 @@ def _shift_level(df,
     if print_report:
         _shift_level_report(df_grid, 
                             df_grid_sum,
-                            observed_column=s.reset_index()[column_name],
-                            region_slug)
+                            observed_column=s.reset_index()[column_name])
     
     return shifted_column, shift_init
 
