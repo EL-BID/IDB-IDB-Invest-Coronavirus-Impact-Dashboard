@@ -183,6 +183,9 @@ def _find_anomalies(df, anomaly_vote_minimun, target_column_name, print_report=T
 
 ### 3. Imputation functions
 def _decompose_lowess(variable_smooth, missing_values, smooth_fraction):
+    
+    variable_smooth= np.log1p(variable_smooth)
+    
     # operate smoothing
     smoother = DecomposeSmoother(smooth_type='lowess', 
                                  periods=7,
@@ -194,7 +197,8 @@ def _decompose_lowess(variable_smooth, missing_values, smooth_fraction):
     result[missing_values] = smooth_result[missing_values]
     
     # removing negatives
-    result[result <0] = 0
+    #result[result <0] = 0
+    result = np.expm1(result)
     
     return result
 
@@ -230,6 +234,7 @@ def _impute_anomalies(observed_column,
         'anomaly_sum': anomaly_sum_column,
         'observed_missing': observed_column
     }) 
+    
     # create missing values
     df_impute.loc[df_impute.anomaly_sum >= anomaly_vote_minimun, 'observed_missing'] = None
     df_impute.loc[df_impute.observed_column < 0, 'observed_missing'] = None
@@ -259,16 +264,17 @@ def _impute_anomalies(observed_column,
 
 ### 4. Level shift correction functions
 def _c_param(region_slug, 
-             athena_path = '~/shared/spd-sdv-omitnik-waze/corona'):
+             athena_path = '~/shared/spd-sdv-omitnik-waze/corona',  
+             c_metric = 'min'):
     
     c_region = pd.read_csv(athena_path + '/cleaning/data/staging/cities_c_iqr.csv') 
     
     if sum(c_region.region_slug == region_slug) > 0:
-        c_param = c_region[c_region.region_slug == region_slug].c_min.to_list()[0]
+        c_param = c_region[c_region.region_slug == region_slug][f"c_{c_metric}"].to_list()[0]
     else :
         c_param = 3
         
-    logger.debug('c_param: ' + str(c_param))
+    logger.debug(f'C {c_metric}: ' + str(c_param))
     return c_param
 
 
@@ -682,6 +688,7 @@ def _run_step(df_run,
 def _run_single(region_slug, 
                 anomaly_vote_minimun_s1, 
                 anomaly_vote_minimun_s2, 
+                c_metric = 'min', 
                 print_report = False, 
                 print_plot = False, 
                 athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona"):
@@ -694,7 +701,7 @@ def _run_single(region_slug,
     
     
     # 00. parameter
-    c_p = _c_param(region_slug)
+    c_p = _c_param(region_slug, athena_path, c_metric)
     
     
     # 1. running first step
@@ -761,35 +768,49 @@ def _run_single(region_slug,
    
     logger.info(f'... {region_slug} done ...\n')  
     
+    
+    
+    
     return df_daily, df_weekly
 
 
-def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona"):
+def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona", 
+               c_metric = 'min'):
 
+    
     qry = """
     select 
         distinct region_slug
     from spd_sdv_waze_corona.prod_daily_daily_index
+    where region_slug not like 'br_states_%'
     """
     regions_list = pd.read_sql_query(qry, conn).sort_values('region_slug').region_slug.unique()
-    logger.info('Total regions process' + str(len(regions_list)))
+    logger.info('TO DO regions  ' + str(len(regions_list)))
+    
     daily_l = list()
     weekly_l = list()
     
     for region in regions_list:
         print(region)
         df_daily, df_weekly = _run_single(region_slug=region, 
-                            anomaly_vote_minimun_s1=1, 
-                            anomaly_vote_minimun_s2=1, 
-                            print_report = False, 
-                            print_plot = False)
+                                          anomaly_vote_minimun_s1=1, 
+                                          anomaly_vote_minimun_s2=1, 
+                                          c_metric = c_metric,
+                                          print_report = False, 
+                                          print_plot = False)
         daily_l.append(df_daily)
         weekly_l.append(df_weekly)
 
     daily= pd.concat(daily_l)
+    daily = daily.rename(columns = {'tcp':'tcp_observed', 
+                                    'observed':'tci_observed', 
+                                    'S2_shift':'tci_clean'}) 
     daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index.csv', index= False)
-    
+       
     weekly= pd.concat(weekly_l)
+    weekly = weekly.rename(columns = {'tcp':'tcp_observed', 
+                                      'observed':'tci_observed', 
+                                      'cleaned':'tci_clean'}) 
     weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index.csv', index= False)
     
 
