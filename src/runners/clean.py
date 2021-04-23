@@ -108,6 +108,7 @@ def _outlier_seasonal_ad(s, target_column_name, c_param = 3.0):
         
     return anomalies     
 
+
 def _outlier_autregr_ad(s, target_column_name, c_param = 3.0, n_steps_param = 1, step_size_param=7):
     
     try : 
@@ -124,28 +125,39 @@ def _outlier_autregr_ad(s, target_column_name, c_param = 3.0, n_steps_param = 1,
         
     return anomalies     
 
+
 def _anomalies_detector(s, target_column_name):
     """
     The function runs three algorithms to detect outliers.
     
     Parameters
         ----------
-        s : data frame 
-            Description
+        s : adtk object
+            Validated serie output of _validate_series()
         target_column_name : str
             Target column name to detect outliers
+            
+            
+    Output
+        ----------
+        s : data frame 
+            Number of times an observation is indentified as an outlier
     """
     
+    # implementation of methodologies
     anomalies = _outlier_persist_ad(s, target_column_name) \
         .merge(_outlier_seasonal_ad(s, target_column_name)) \
         .merge(_outlier_autregr_ad(s, target_column_name)) \
         .fillna(0)
     
+    # sum of identification per observation
     anomalies['anomaly_sum'] = \
         (anomalies['anomaly_persist']) + \
         (anomalies['anomaly_seasonal'] == True) +  \
         (anomalies['anomaly_autor'])
     
+    
+    # excpetions for identification
     anomalies.anomaly_sum[anomalies.date <= '2020-03-31'] = 0
     anomalies.anomaly_sum[((anomalies.date >= '2020-12-15') & (anomalies.date <= '2021-01-15'))] = 0
     
@@ -156,21 +168,48 @@ def _anomalies_detector(s, target_column_name):
 
 # 2. Find anomalies
 def _find_anomalies(df, anomaly_vote_minimun, target_column_name, print_report=True):
-
+     """
+    The function implements the process of identification.
+    
+    Parameters
+        ----------
+        df : data frame
+            Data with tci observations
+        anomaly_vote_minimun : double
+            Minimum value to accept and anomaly
+        target_column_name : str
+            Target column name to detect outliers
+        print_report: bool
+            Flag to print results plots
+            
+            
+    Output
+        ----------
+        df_anomaly : data frame 
+            Observations per date indetify at least once as an outlier by 
+            the method persis, seasonl or autoregressive identification
+        anomalies_date: 
+            Description
+    """
+        
     logger.debug("\n... finding outliers ...")
+    
     
     # validate series
     s = _validate_series(df, target_column_name)
-    #plot(s)
+    # plot(s)
+    
     
     # join anomialies detector
     df_anomaly = df.merge(_anomalies_detector(s, target_column_name), how = 'left')
     anomalies_cnt = sum(df_anomaly.anomaly_sum >= anomaly_vote_minimun)
     anomalies_date = df_anomaly[df_anomaly.anomaly_sum >= anomaly_vote_minimun].date.to_list()
     
-    logger.debug('Number of anomalies found: ' + str(anomalies_cnt))  
+    logger.debug('Number of anomalies found: ' + str(anomalies_cnt) + '\n')  
     logger.debug(anomalies_date)
     
+    
+    # print report flag
     if print_report:
         logger.debug('... printing anomalies report ...\n')
         print(_plot_anomalies(df_anomaly, 
@@ -183,6 +222,25 @@ def _find_anomalies(df, anomaly_vote_minimun, target_column_name, print_report=T
 
 ### 3. Imputation functions
 def _decompose_lowess(variable_smooth, missing_values, smooth_fraction):
+    """
+    The function decompose the serie and smooths using local 
+    regression or lowess curve. 
+    
+    Parameters
+        ----------
+        variable_smooth : serie
+            Data with tci observations
+        missing_values : serie
+            Minimum value to accept and anomaly
+        smooth_fraction : double
+            Target column name to detect outliers            
+            
+    Output
+        ----------
+        result : serie
+            Observations per date indetify at least once as an outlier by 
+            the method persis, seasonl or autoregressive identification
+    """
     
     variable_smooth= np.log1p(variable_smooth)
     
@@ -197,19 +255,18 @@ def _decompose_lowess(variable_smooth, missing_values, smooth_fraction):
     result[missing_values] = smooth_result[missing_values]
     
     # removing negatives
-    #result[result <0] = 0
     result = np.expm1(result)
     
     return result
 
-# 3. Impute anomalies
+
 def _impute_anomalies(observed_column, 
                       date_column,
                       anomaly_sum_column, 
                       anomaly_vote_minimun, 
                       smooth_fraction = 0.4):
     """
-    The function runs several algorithms to detect level shifts.
+    The function runs the process to detect anomalies and impute them.
     
     Parameters
         ----------
@@ -223,6 +280,11 @@ def _impute_anomalies(observed_column,
             Description
         smooth_fraction : str
             Description
+            
+    Output 
+        ----------
+        df_impute: data frame
+            Observations of tci imputed. 
     """
     
     logger.debug("\n... imputing outliers ...")
@@ -235,27 +297,28 @@ def _impute_anomalies(observed_column,
         'observed_missing': observed_column
     }) 
     
+    
     # create missing values
     df_impute.loc[df_impute.anomaly_sum >= anomaly_vote_minimun, 'observed_missing'] = None
     df_impute.loc[df_impute.observed_column < 0, 'observed_missing'] = None
-
     df_impute = df_impute.set_index('date')
+     
     
     # algorithms to impute
     df_impute =  df_impute \
-        .assign(RollingMean=df_impute.observed_missing \
+        .assign(RollingMean  = df_impute.observed_missing \
                     .fillna(df_impute.observed_missing \
                             .rolling(30, min_periods=1,) \
                             .mean()) ) \
-        .assign(RollingMedian=df_impute.observed_missing \
+        .assign(RollingMedian = df_impute.observed_missing \
                     .fillna(df_impute.observed_missing \
                             .rolling(30, min_periods=1,) \
                             .median()) ) \
-        .assign(Polinomial=df_impute.observed_missing \
+        .assign(Polinomial = df_impute.observed_missing \
                     .interpolate(method='polynomial', order = 5)) \
-        .assign(Loess=_decompose_lowess(df_impute.observed_column, 
-                                        df_impute.observed_missing.isna(),
-                                        smooth_fraction = smooth_fraction)) 
+        .assign(Loess = _decompose_lowess(df_impute.observed_column, 
+                                          df_impute.observed_missing.isna(),
+                                          smooth_fraction = smooth_fraction)) 
 
 
     return df_impute
@@ -309,12 +372,12 @@ def _level_shift_detection(s,
 
 def _run_shift_grid(s, observed_variable, c_param, low_grid = .20, upp_grid = .60):
     """
-    Run shift detector grid for several values. 
+    The function runs a grid for several c parameters to detect level shifts. 
     
     Parameters
     ----------
-        s : validated serie object 
-            Description
+        s : serie object 
+            Validated serie object
         observed_variable : validated serie object 
             Description    
         c_param : dbl, default 6.0
@@ -324,9 +387,10 @@ def _run_shift_grid(s, observed_variable, c_param, low_grid = .20, upp_grid = .6
         upp_grid: bool, default True
             Description
     """
-    logger.debug(f"\n... shift level running grid  ...")
+    logger.debug(f"... shift level running grid  ...\n")
     
     shift_l = list()
+    # grid for values list
     for cp in [round(c_param-c_param*(upp_grid), 4), 
                round(c_param-c_param*(low_grid), 4), 
                c_param, 
@@ -337,22 +401,22 @@ def _run_shift_grid(s, observed_variable, c_param, low_grid = .20, upp_grid = .6
                                            window_param=wdw, 
                                            print_plot = False) \
                     .rename(columns={observed_variable:f'shift_c{cp}_w{wdw}'})
-            shift_l.append(shift)
-    len(shift_l)    
+            shift_l.append(shift)        
+    #len(shift_l)    
+    
     df_grid = reduce(lambda df1, df2: df1.merge(df2, on='date'), shift_l)
     df_grid.shape
     
-    logger.debug(f"Total combinations: {len(shift_l)}")
+    logger.debug(f"Total combinations: {len(shift_l)}\n")
     
     return df_grid
 
 def _shifted_adtk_ts(s, column_name, agg="std", window=(3,3), diff="l2", print_plot=True):
     # shift ts level
-    
     s_transformed = DoubleRollingAggregate(
-        agg=agg,
-        window=window,
-        diff=diff).transform(s).rename(columns={column_name:'adtk_shift'})
+                agg=agg,
+                window=window,
+                diff=diff).transform(s).rename(columns={column_name:'adtk_shift'})
     
     if print_plot:
         plot(pd.concat([s, s_transformed], axis=1))
@@ -393,27 +457,6 @@ def _rolling_manual_sum(tab, days_before= 0, days_after = 7):
     return rolling_sum
 
 
-def _shift_window_sum(df_shift, 
-                      days_before= 0, 
-                      days_after = 7):
-    
-    tab = (df_shift.reset_index()
-     >> filter(_.date > '2020-03-31', 
-              ((_.date < '2020-12-15') ))
-     >> gather('variable', 'value', -_.date)
-     >> filter(_.variable.str.startswith('shift'))
-     >> arrange(_.date)
-     >> group_by('date')
-     >> summarize(suma = _.value.sum())
-     >> ungroup()
-    )
-    tab['shift_sum'] = _rolling_manual_sum(tab, 
-                                             days_before= days_before, 
-                                             days_after = days_after)
-    
-    return tab[['date', 'shift_sum']]
-
-
 
 def _initial_shift_date(df_shift_sum):
 
@@ -446,10 +489,13 @@ def _shift_ts(shift_init,
     logger.debug('Center point: ' + str(center_point))
     
     shifted_column = to_shift_column
+    
+    ## TODO: Only shift 
     shifted_column[ (date_column > shift_init) ] = \
         ( (to_shift_column[(date_column > shift_init)]) + center_point )
     
-    # remove negatives 
+    # impute negatives 
+    ## TODO: Imputation
     shifted_column[shifted_column < 0]=0    
         
     return shifted_column   
@@ -691,6 +737,7 @@ def _run_single(region_slug,
                 c_metric = 'min', 
                 print_report = False, 
                 print_plot = False, 
+                write_region_slug = False,
                 athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona"):
     
     logger.info(f'... here we go {region_slug}...\n')  
@@ -732,7 +779,9 @@ def _run_single(region_slug,
                .rename(columns = {'Loess':'S2_Loess'})) 
     df_daily['tcp_clean'] = df_daily \
         .apply(lambda row: 100*(row['S2_shift'] - row['expected_2020'])/row['expected_2020'], axis = 1)
-    df_daily.to_csv(athena_path + f'/cleaning/daily/daily_{region_slug}.csv', index= False)
+    
+    if write_region_slug:
+        df_daily.to_csv(athena_path + f'/cleaning/daily/daily_{region_slug}.csv', index= False)
     
     
     # 4. join weekly results
@@ -751,7 +800,9 @@ def _run_single(region_slug,
         .apply(lambda row: 100*(row['observed'] - row['expected_2020'])/row['expected_2020'], axis = 1)
     df_weekly['tcp_clean'] = df_weekly \
         .apply(lambda row: 100*(row['cleaned'] - row['expected_2020'])/row['expected_2020'], axis = 1)
-    df_weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_{region_slug}.csv', index= False)
+    
+    if write_region_slug:
+        df_weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_{region_slug}.csv', index= False)
     
 
     # 5. write anomalies found
@@ -767,10 +818,7 @@ def _run_single(region_slug,
     
    
     logger.info(f'... {region_slug} done ...\n')  
-    
-    
-    
-    
+ 
     return df_daily, df_weekly
 
 
@@ -805,13 +853,13 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
     daily = daily.rename(columns = {'tcp':'tcp_observed', 
                                     'observed':'tci_observed', 
                                     'S2_shift':'tci_clean'}) 
-    daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index.csv', index= False)
+    daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index_{c_metric}.csv', index= False)
        
     weekly= pd.concat(weekly_l)
     weekly = weekly.rename(columns = {'tcp':'tcp_observed', 
                                       'observed':'tci_observed', 
                                       'cleaned':'tci_clean'}) 
-    weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index.csv', index= False)
+    weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index_{c_metric}.csv', index= False)
     
 
 
