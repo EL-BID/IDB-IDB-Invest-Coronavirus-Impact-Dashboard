@@ -60,7 +60,7 @@ def _validate_series(df, column_name):
 
 
 ### 2. Outlier detection functions
-def _outlier_persist_ad(s, target_column_name, c_param = 3.0, window_param = 7):
+def _outlier_persist_ad(s, target_column_name, c_param, window_param = 7):
     
     try :
         persist_ad = PersistAD(c=c_param, side='both', window = window_param)
@@ -92,7 +92,7 @@ def _outlier_gesdt_ad(s, target_column_name, alpha_param = 0.3, window_param = 7
     
     return anomalies
 
-def _outlier_seasonal_ad(s, target_column_name, c_param = 3.0):
+def _outlier_seasonal_ad(s, target_column_name, c_param):
     
     try : 
         seasonal_ad = SeasonalAD(c=c_param, side="both")
@@ -109,7 +109,7 @@ def _outlier_seasonal_ad(s, target_column_name, c_param = 3.0):
     return anomalies     
 
 
-def _outlier_autregr_ad(s, target_column_name, c_param = 3.0, n_steps_param = 1, step_size_param=7):
+def _outlier_autregr_ad(s, target_column_name, c_param, n_steps_param = 1, step_size_param=7):
     
     try : 
         autoregression_ad = AutoregressionAD(n_steps=n_steps_param, step_size=step_size_param, c=c_param)
@@ -125,8 +125,20 @@ def _outlier_autregr_ad(s, target_column_name, c_param = 3.0, n_steps_param = 1,
         
     return anomalies     
 
+def _c_trun(c_param):
+       
+    if c_param <= 1.5:
+        c_trun  = 1.5
+    elif c_param >= 3:
+        c_trun  = 3
+    else:
+        c_trun = c_param
 
-def _anomalies_detector(s, target_column_name):
+    logger.debug('C truncated: ' + str(c_trun))
+    
+    return c_trun
+
+def _anomalies_detector(s, target_column_name, c_param):
     """
     The function runs three algorithms to detect outliers.
     
@@ -143,11 +155,12 @@ def _anomalies_detector(s, target_column_name):
         s : data frame 
             Number of times an observation is indentified as an outlier
     """
+    c_trunc = _c_trun(c_param)
     
     # implementation of methodologies
-    anomalies = _outlier_persist_ad(s, target_column_name) \
-        .merge(_outlier_seasonal_ad(s, target_column_name)) \
-        .merge(_outlier_autregr_ad(s, target_column_name)) \
+    anomalies = _outlier_persist_ad(s, target_column_name, c_trunc) \
+        .merge(_outlier_seasonal_ad(s, target_column_name, c_trunc)) \
+        .merge(_outlier_autregr_ad( s, target_column_name, c_trunc)) \
         .fillna(0)
     
     # sum of identification per observation
@@ -155,7 +168,6 @@ def _anomalies_detector(s, target_column_name):
         (anomalies['anomaly_persist']) + \
         (anomalies['anomaly_seasonal'] == True) +  \
         (anomalies['anomaly_autor'])
-    
     
     # excpetions for identification
     anomalies.anomaly_sum[anomalies.date <= '2020-03-31'] = 0
@@ -167,8 +179,8 @@ def _anomalies_detector(s, target_column_name):
 
 
 # 2. Find anomalies
-def _find_anomalies(df, anomaly_vote_minimun, target_column_name, print_report=True):
-     """
+def _find_anomalies(df, anomaly_vote_minimun, target_column_name, c_param, print_report=True):
+    """
     The function implements the process of identification.
     
     Parameters
@@ -190,10 +202,8 @@ def _find_anomalies(df, anomaly_vote_minimun, target_column_name, print_report=T
             the method persis, seasonl or autoregressive identification
         anomalies_date: 
             Description
-    """
-        
+    """       
     logger.debug("\n... finding outliers ...")
-    
     
     # validate series
     s = _validate_series(df, target_column_name)
@@ -201,7 +211,9 @@ def _find_anomalies(df, anomaly_vote_minimun, target_column_name, print_report=T
     
     
     # join anomialies detector
-    df_anomaly = df.merge(_anomalies_detector(s, target_column_name), how = 'left')
+    df_anomaly = df.merge(_anomalies_detector(s, target_column_name, c_param), how = 'left')
+    #print(df_anomaly.head())
+    
     anomalies_cnt = sum(df_anomaly.anomaly_sum >= anomaly_vote_minimun)
     anomalies_date = df_anomaly[df_anomaly.anomaly_sum >= anomaly_vote_minimun].date.to_list()
     
@@ -466,6 +478,17 @@ def _initial_shift_date(df_shift_sum):
     
     return shift_init
 
+def _linear_interpolate_ts(shifted_column, date_column):
+    
+    
+    shifted_column[shifted_column < 0] = None
+    
+    df = pd.DataFrame()
+    df['column'] = shifted_column
+    df.index = pd.to_datetime(date_column)
+    df = df.interpolate()
+           
+    return df.reset_index().column
 
 
 def _shift_ts(shift_init, 
@@ -490,51 +513,15 @@ def _shift_ts(shift_init,
     
     shifted_column = to_shift_column
     
-    ## TODO: Only shift 
-    shifted_column[ (date_column > shift_init) ] = \
+    ## only shift 2020
+    #shifted_column[ (date_column > shift_init) ] = \
+    shifted_column[ (date_column > shift_init) & (date_column <= '2020-12-31') ] = \
         ( (to_shift_column[(date_column > shift_init)]) + center_point )
     
-    # impute negatives 
-    ## TODO: Imputation
-    shifted_column[shifted_column < 0]=0    
-        
+    # impute negative values
+    shifted_column = _linear_interpolate_ts(shifted_column, date_column)
+    
     return shifted_column   
-
-
-def _shift_level_report(df_shift, 
-                        df_shift_sum, 
-                        observed_column, 
-                        region_slug):
-    
-    df_shift=df_shift.reset_index()    
-    df_shift['observed_column'] = observed_column
-    df_gather = (df_shift
-         >> gather('variable', 'value', -_['date', 'observed_column']) 
-       )   
-    tab = (df_gather
-         >> mutate(value_rec = _.value.replace( 0, np.nan))
-        )
-    
-    tab[['shift', 'cparam', 'window']] = tab['variable'].str.split('_',expand=True)
-    gg_1 = (p9.ggplot(tab, p9.aes(x ='date', y = 'observed_column'))
-     + p9.geom_line(size = 1) 
-     + p9.geom_point(p9.aes(size = 'value_rec', color = 'value_rec')) 
-     + p9.facet_grid('window ~ cparam')
-     + p9.scale_size_continuous(range=(1.5, 1.5)) 
-     + p9.theme(axis_text_x=p9.element_text(angle=90),
-                figure_size=(8, 6) )
-        )
-    print(gg_1)
-    
-    gg_2 = (p9.ggplot(df_shift_sum, p9.aes(x ='date', y = 'shift_sum'))
-     + p9.geom_col()
-     + p9.theme(axis_text_x=p9.element_text(angle=90),
-                figure_size=(8, 2) )
-        )
-    print(gg_2)
-    
-    #logger.debug(df_shift_sum[df_shift_sum.shift_sum == df_shift_sum.shift_sum.max()])
-    
 
 def _shift_level(df, 
                  column_name, 
@@ -636,7 +623,44 @@ def _plot_end(df_run_1, df_run_2, df_end, region_slug):
             )
         
         return gg
+
     
+
+def _shift_level_report(df_shift, 
+                        df_shift_sum, 
+                        observed_column, 
+                        region_slug):
+    
+    df_shift=df_shift.reset_index()    
+    df_shift['observed_column'] = observed_column
+    df_gather = (df_shift
+         >> gather('variable', 'value', -_['date', 'observed_column']) 
+       )   
+    tab = (df_gather
+         >> mutate(value_rec = _.value.replace( 0, np.nan))
+        )
+    
+    tab[['shift', 'cparam', 'window']] = tab['variable'].str.split('_',expand=True)
+    gg_1 = (p9.ggplot(tab, p9.aes(x ='date', y = 'observed_column'))
+     + p9.geom_line(size = 1) 
+     + p9.geom_point(p9.aes(size = 'value_rec', color = 'value_rec')) 
+     + p9.facet_grid('window ~ cparam')
+     + p9.scale_size_continuous(range=(1.5, 1.5)) 
+     + p9.theme(axis_text_x=p9.element_text(angle=90),
+                figure_size=(8, 6) )
+        )
+    print(gg_1)
+    
+    gg_2 = (p9.ggplot(df_shift_sum, p9.aes(x ='date', y = 'shift_sum'))
+     + p9.geom_col()
+     + p9.theme(axis_text_x=p9.element_text(angle=90),
+                figure_size=(8, 2) )
+        )
+    print(gg_2)
+    
+    #logger.debug(df_shift_sum[df_shift_sum.shift_sum == df_shift_sum.shift_sum.max()])
+    
+
     
     
 
@@ -668,6 +692,52 @@ def _write_missing(df_run_1, df_run_2, region_slug, athena_path):
 
     df_miss.to_csv(write_path + f'/anomalies_{region_slug}.csv')
     
+def _write_daily(df_run, df_run_1, df_run_2, region_slug, athena_path, write_region_slug=False):
+    
+    df_daily = df_run[['date', 'region_slug', 'observed', 'expected_2020', 'tcp']] \
+        .merge(df_run_1[['date', 'Loess', 'S1_shift']] \
+               .rename(columns = {'Loess':'S1_Loess'})) \
+        .merge(df_run_2[['date', 'Loess', 'S2_shift']] \
+               .rename(columns = {'Loess':'S2_Loess'})) 
+    
+    df_daily['tcp_clean'] = df_daily \
+        .apply(lambda row: 100*(row['S2_shift'] - row['expected_2020'])/row['expected_2020'], axis = 1)
+    
+    if write_region_slug:
+        df_daily.to_csv(athena_path + f'/cleaning/daily/daily_{region_slug}.csv', index= False)
+    
+    return df_daily
+    
+    
+def _write_weekly(df_daily, region_slug, athena_path, write_region_slug=False):
+
+    df_daily = df_daily.sort_values(by=['date'])
+    df_daily['monday'] = pd.to_numeric(df_daily.date.apply(lambda x:x.weekday()) == 0)
+    
+    df_weekly = df_daily \
+        .assign(week = df_daily.monday.cumsum(),
+                year = df_daily.date.dt.year) \
+        .siu_group_by('week', 'region_slug') \
+        .siu_summarize(year = _.year.min(),
+                       date_min = _.date.min(),
+                       date_max = _.date.max(), 
+                       days_num = _.date.count(),
+                       observed = _.observed.sum(),
+                       cleaned  = _['S2_shift'].sum(), 
+                       expected_2020 = _.expected_2020.sum()
+                    ) \
+        .siu_ungroup() 
+    
+    df_weekly['tcp'] = df_weekly \
+        .apply(lambda row: 100*(row['observed'] - row['expected_2020'])/row['expected_2020'], axis = 1)
+    df_weekly['tcp_clean'] = df_weekly \
+        .apply(lambda row: 100*(row['cleaned'] - row['expected_2020'])/row['expected_2020'], axis = 1)
+    
+    if write_region_slug:
+        df_weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_{region_slug}.csv', index= False)
+        
+    return df_weekly
+    
 
 ### 7. Run functions
 def _run_step(df_run, 
@@ -685,6 +755,7 @@ def _run_step(df_run,
     df_anomaly, anomalies_date = _find_anomalies(df_run, 
                                  anomaly_vote_minimun = anomaly_vote_minimun, 
                                  target_column_name = target_column_name,
+                                 c_param = c_param,
                                  print_report = print_report)
 
     df_final = df_anomaly[['date', target_column_name]]
@@ -772,38 +843,11 @@ def _run_single(region_slug,
 
     
     # 3. join daily results
-    df_daily = df_run[['date', 'region_slug', 'observed', 'expected_2020', 'tcp']] \
-        .merge(df_run_1[['date', 'Loess', 'S1_shift']] \
-               .rename(columns = {'Loess':'S1_Loess'})) \
-        .merge(df_run_2[['date', 'Loess', 'S2_shift']] \
-               .rename(columns = {'Loess':'S2_Loess'})) 
-    df_daily['tcp_clean'] = df_daily \
-        .apply(lambda row: 100*(row['S2_shift'] - row['expected_2020'])/row['expected_2020'], axis = 1)
-    
-    if write_region_slug:
-        df_daily.to_csv(athena_path + f'/cleaning/daily/daily_{region_slug}.csv', index= False)
+    df_daily = _write_daily(df_run, df_run_1, df_run_2, region_slug, athena_path, write_region_slug)
     
     
     # 4. join weekly results
-    df_weekly = df_daily \
-        .assign(week = df_daily.date.dt.week,
-                year = df_daily.date.dt.year) \
-        .siu_group_by('week', 'year', 'region_slug') \
-        .siu_summarize(date_min = _.date.min(),
-                       date_max = _.date.max(), 
-                       observed = _.observed.sum(),
-                       cleaned  = _['S2_shift'].sum(), 
-                       expected_2020 = _.expected_2020.sum()
-                    ) \
-        .siu_ungroup() 
-    df_weekly['tcp'] = df_weekly \
-        .apply(lambda row: 100*(row['observed'] - row['expected_2020'])/row['expected_2020'], axis = 1)
-    df_weekly['tcp_clean'] = df_weekly \
-        .apply(lambda row: 100*(row['cleaned'] - row['expected_2020'])/row['expected_2020'], axis = 1)
-    
-    if write_region_slug:
-        df_weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_{region_slug}.csv', index= False)
-    
+    df_weekly = _write_weekly(df_daily, region_slug, athena_path, write_region_slug)
 
     # 5. write anomalies found
     _write_missing(df_run_1, df_run_2, region_slug, athena_path)
@@ -823,7 +867,7 @@ def _run_single(region_slug,
 
 
 def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona", 
-               c_metric = 'min'):
+               c_metric = 'max'):
 
     
     qry = """
