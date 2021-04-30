@@ -37,11 +37,11 @@ Function in pipeline: `_outlier_persist_ad(s, target_column_name, c_param, windo
 
 Parameters:
 
-    - `window` (int or str, 7) – Size of the preceding time window.
-    - `c` (float, 1.5 to 3) – Factor used to determine the bound of normal range based on historical interquartile range.
-    - `side` (str, both) - If *both*, detect anomalous positive and negative changes;
-    - `min_periods` (int, None) - Minimum number of observations in each window required to have a value for that window.
-    - `agg` (str, median) - Aggregation operation of the time window, either “mean” or “median”
+  - `window` (int or str, 7) – Size of the preceding time window.
+  - `c` (float, 1.5 to 3) – Factor used to determine the bound of normal range based on historical interquartile range.
+  - `side` (str, both) - If *both*, detect anomalous positive and negative changes;
+  - `min_periods` (int, None) - Minimum number of observations in each window required to have a value for that window.
+  - `agg` (str, median) - Aggregation operation of the time window, either “mean” or “median”
 
 
 
@@ -53,10 +53,10 @@ Function in pipeline: `_outlier_seasonal_ad(s, target_column_name, c_param)`
 
 Parameters: 
 
-    - `freq` (int, None) - Length of a seasonal cycle as the number of time points in a cycle.
-    - `c` (float, 1.5 to 3.0) - Factor used to determine the bound of normal range based on historical interquartile range
-    - `side` (str, both) - If both, to detect anomalous positive and negative residuals;
-    - `trend` (bool, False) -  Whether to extract trend during decomposition.
+  - `freq` (int, None) - Length of a seasonal cycle as the number of time points in a cycle.
+  - `c` (float, 1.5 to 3.0) - Factor used to determine the bound of normal range based on historical interquartile range
+  - `side` (str, both) - If both, to detect anomalous positive and negative residuals;
+  - `trend` (bool, False) -  Whether to extract trend during decomposition.
 
 
 - **Autoregression Anomaly Detector**
@@ -67,11 +67,11 @@ Function in pipeline: `_outlier_autregr_ad(s, target_column_name, c_param, n_ste
 
 Parameters: 
     
-    - `n_steps` (int, 1) - Number of steps (previous values) to include in the model.
-    - `step_size` (int, 7) - Length of a step. For example, if n_steps=2, step_size=3, X_[t-3] and X_[t-6] will be used to predict X_[t].
-    - `regressor` (object, linear) - Regressor to be used. Same as a scikit-learn regressor, it should minimally have fit and predict methods. 
-    - `c` (float, 1.5 to 3.0) - Factor used to determine the bound of normal range based on historical interquartile range. 
-    - `side` (str, both) - “both”, to detect anomalous positive and negative residuals;
+  - `n_steps` (int, 1) - Number of steps (previous values) to include in the model.
+  - `step_size` (int, 7) - Length of a step. For example, if n_steps=2, step_size=3, X_[t-3] and X_[t-6] will be used to predict X_[t].
+  - `regressor` (object, linear) - Regressor to be used. Same as a scikit-learn regressor, it should minimally have fit and predict methods. 
+  - `c` (float, 1.5 to 3.0) - Factor used to determine the bound of normal range based on historical interquartile range. 
+  - `side` (str, both) - “both”, to detect anomalous positive and negative residuals;
 
 
 **Note:** The identificaction of outliers do not apply for data observed before 2020-03-31 and between 2020-12-15 and 2021-01-15.
@@ -87,10 +87,10 @@ Function in pipeline: `_outlier_autregr_ad(s, target_column_name, c_param = 3.0,
 
 Parameters: 
    
-    - `window` (int or str, or 2-tuple of int or str) - Size of the time windows.
-    - `c` (float, optional) - Factor used to determine the bound of normal range based on historical interquartile range. 
-    - `side` (str, optional) - If “both”, to detect anomalous positive and negative changes;
-    - `min_periods` (int, or 2-tuple of int, optional) - Minimum number of observations in each window required to have a value for that window. If 2-tuple, it defines the left and right window respectively.
+  - `window` (int or str, or 2-tuple of int or str) - Size of the time windows.
+  - `c` (float, optional) - Factor used to determine the bound of normal range based on historical interquartile range. 
+  - `side` (str, optional) - If “both”, to detect anomalous positive and negative changes;
+  - `min_periods` (int, or 2-tuple of int, optional) - Minimum number of observations in each window required to have a value for that window. If 2-tuple, it defines the left and right window respectively.
 
 
 For more information about [ADTK Detectors](https://arundo-adtk.readthedocs-hosted.com/en/stable/api/detectors.html) .
@@ -109,9 +109,9 @@ Function in pipeline: `_decompose_lowess(variable_smooth, missing_values, smooth
 
 Parameters: 
 
-    - `smooth_type` (, lowess) 
-    - `periods` (int, 7)
-    - `smooth_fraction` (dbl, .2)
+  - `smooth_type` (, lowess) 
+  - `periods` (int, 7)
+  - `smooth_fraction` (dbl, .2)
     
 
     
