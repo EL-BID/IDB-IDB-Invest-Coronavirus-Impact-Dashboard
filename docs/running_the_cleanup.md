@@ -93,7 +93,7 @@ Parameters:
     - `min_periods` (int, or 2-tuple of int, optional) - Minimum number of observations in each window required to have a value for that window. If 2-tuple, it defines the left and right window respectively.
 
 
-For more information about (ADTK Detectors)[https://arundo-adtk.readthedocs-hosted.com/en/stable/api/detectors.html] .
+For more information about [ADTK Detectors](https://arundo-adtk.readthedocs-hosted.com/en/stable/api/detectors.html) .
 
 
 
@@ -115,7 +115,7 @@ Parameters:
     
 
     
-For more information about (Loess Smoothing)[https://pypi.org/project/tsmoothie/].    
+For more information about [Loess Smoothing](https://pypi.org/project/tsmoothie/).    
 
 
 ## Report and results
