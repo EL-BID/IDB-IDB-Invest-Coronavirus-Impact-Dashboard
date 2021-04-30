@@ -2,14 +2,30 @@
 
 
 
-## Remove outliers
+## Process 
+
+The cleaning process consists in two steps: 
+
+First step: 
+
+1. First identification of anomalies
+2. Imputation of anomalies
+3. First identification of level shifts in 2020
+
+Second step: 
+
+4. Second identification of anomalies
+5. Imputation of anomalies
+6. Second identification of level shifts in 2020
+5. Imputation of negative values
 
 
+### Anomalies 
 
 
-1. Outlier detection
+1. Anomaly detection
 
-The methodology implemented considers three types of anomaly detectors. A threshold of at least one detector identifing the observation as an anomaly.  
+The methodology implemented considers three types of anomaly detectors.
 
 - Persist Anomaly Detector
 
@@ -34,10 +50,10 @@ Function in pipeline: `_outlier_seasonal_ad(s, target_column_name, c_param = 3.0
 
 Parameters: 
 
-    - freq (int, optional) - Length of a seasonal cycle as the number of time points in a cycle.
-    - c (float, optional) - Factor used to determine the bound of normal range based on historical interquartile range
-    - side (str, optional) - If both, : to detect anomalous positive and negative residuals;
-    - trend (bool, optional) -  Whether to extract trend during decomposition.
+    - `freq` (int, optional) - Length of a seasonal cycle as the number of time points in a cycle.
+    - `c` (float, optional) - Factor used to determine the bound of normal range based on historical interquartile range
+    - `side` (str, optional) - If both, : to detect anomalous positive and negative residuals;
+    - `trend` (bool, optional) -  Whether to extract trend during decomposition.
 
 - Autoregression Anomaly Detector
 
@@ -53,21 +69,16 @@ Parameters:
     - `c` (float, 1.5 to 3.0) - Factor used to determine the bound of normal range based on historical interquartile range. 
     - `side` (str, both) - “both”, to detect anomalous positive and negative residuals;
 
-
-
 The identificaction of outliers do not apply for data observed before 2020-03-31 and between 2020-12-15 and 2021-01-15. 
 
 
-2. Imputation of outliers
+2. Anomaly imputation
 
-After detecting teh aoutlier a threshold is set to recognize each observation as an outlier. Then, the imputation of each anomaly is estimated by smoothing the serie using local regression. Although four methods were tested. 
-
-- RollingMean
-- RollingMedian
-- Polinomial
-- Loess
+After detecting an anomaly a threshold is set to recognize each observation as an outlier.In the pipeline is for at least **one** detector to identify the observation as an anomaly. Then, the imputation of each anomaly is estimated by smoothing the serie using local regression. Although four methods were tested (Rolling Mean, Rolling Median, Polinomial and Loess Regression). 
 
 
+
+### Level Shifts
 
 
 
@@ -85,15 +96,6 @@ Selection
 
 Results
 
-
-
-## Iterative process
-
-
-Step 1 and step 2
-
-
-Final correction
 
 
 ## Run the process
