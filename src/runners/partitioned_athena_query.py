@@ -338,7 +338,7 @@ def partition_query(query_path, config):
         queries.append(
             dict(
                 make=generate_query(query_path, config),
-                drop=f"drop table {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}_{config['p_name']}",
+                drop=f"drop table if exists {config['athena_database']}.{config['slug']}_{config['raw_table']}_{config['name']}_{config['p_name']}",
                 config=config,
                 p_path=deepcopy(config["p_path"]),
                 partition=config["partition"],
