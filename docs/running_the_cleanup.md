@@ -29,7 +29,7 @@ To identify anomalies we use the Anomaly Detection Toolkit (ADTK). ADTK is a Pyt
 
 The methodology implemented considers three types of anomaly detectors.
 
-- **Persist Anomaly Detector**
+#### **Persist Anomaly Detector**
 
 This detector compares each time series value with its previous values. It compares time series values with the values of their preceding time windows, and identifies a time point as anomalous if the change of value from its preceding median is anomalously large.
 
@@ -45,7 +45,7 @@ Parameters:
 
 
 
-- **Seasonal Anomaly Detector**
+#### **Seasonal Anomaly Detector**
 
 This detector identifies anomalous values away from seasonal pattern. It uses a seasonal decomposition transformer to remove seasonal pattern (as well as trend), and identifies a time point as anomalous when the residual of seasonal decomposition is anomalously large.
 
@@ -59,7 +59,7 @@ Parameters:
   - `trend` (bool, False) -  Whether to extract trend during decomposition.
 
 
-- **Autoregression Anomaly Detector**
+#### **Autoregression Anomaly Detector**
 
 This detector indentifies anomalous autoregression property in time series. The algorthm applies a regressor to learn autoregressive property of the time series, and identifies a time point as anomalous when the residual of autoregression is anomalously large.
 
