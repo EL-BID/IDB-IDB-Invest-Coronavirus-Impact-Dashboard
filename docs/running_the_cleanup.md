@@ -87,10 +87,10 @@ Function in pipeline: `_outlier_autregr_ad(s, target_column_name, c_param = 3.0,
 
 Parameters: 
    
-  - `window` (int or str, or 2-tuple of int or str) - Size of the time windows.
-  - `c` (float, optional) - Factor used to determine the bound of normal range based on historical interquartile range. 
-  - `side` (str, optional) - If “both”, to detect anomalous positive and negative changes;
-  - `min_periods` (int, or 2-tuple of int, optional) - Minimum number of observations in each window required to have a value for that window. If 2-tuple, it defines the left and right window respectively.
+  - `window` (int, 14) - Size of the time windows.
+  - `c` (float, 0.2 to 5.2) - Factor used to determine the bound of normal range based on historical interquartile range. 
+  - `side` (str, both) - If “both”, to detect anomalous positive and negative changes;
+  - `min_periods` (int, None) - Minimum number of observations in each window required to have a value for that window. If 2-tuple, it defines the left and right window respectively.
 
 
 For more information about [ADTK Detectors](https://arundo-adtk.readthedocs-hosted.com/en/stable/api/detectors.html) .
