@@ -20,16 +20,18 @@ Second step:
 5. Imputation of negative values
 
 
-### Anomalies 
+## Detectors 
+
+To identify anomalies we use the Anomaly Detection Toolkit (ADTK). ADTK is a Python package for unsupervised / rule-based time series anomaly detection.
 
 
-1. Anomaly detection
+### Anomalies detectors
 
 The methodology implemented considers three types of anomaly detectors.
 
-- Persist Anomaly Detector
+- **Persist Anomaly Detector**
 
-This detector compares each time series value with its previous values. It compares time series values with the values of their preceding time windows, and identifies a time point as anomalous if the change of value from its preceding average or median is anomalously large.
+This detector compares each time series value with its previous values. It compares time series values with the values of their preceding time windows, and identifies a time point as anomalous if the change of value from its preceding median is anomalously large.
 
 Function in pipeline: `_outlier_persist_ad(s, target_column_name, c_param, window_param)`
 
@@ -37,29 +39,31 @@ Parameters:
 
     - `window` (int or str, 7) – Size of the preceding time window.
     - `c` (float, 1.5 to 3) – Factor used to determine the bound of normal range based on historical interquartile range.
-    - `side` (str, both) – to detect anomalous positive and negative changes;
-    - `min_periods` (int, None) – Minimum number of observations in each window required to have a value for that window.
-    - `agg` (str, median) – Aggregation operation of the time window, either “mean” or “median”
+    - `side` (str, both) - If *both*, detect anomalous positive and negative changes;
+    - `min_periods` (int, None) - Minimum number of observations in each window required to have a value for that window.
+    - `agg` (str, median) - Aggregation operation of the time window, either “mean” or “median”
 
 
-- Seasonal Anomaly Detector
+
+- **Seasonal Anomaly Detector**
 
 This detector identifies anomalous values away from seasonal pattern. It uses a seasonal decomposition transformer to remove seasonal pattern (as well as trend), and identifies a time point as anomalous when the residual of seasonal decomposition is anomalously large.
 
-Function in pipeline: `_outlier_seasonal_ad(s, target_column_name, c_param = 3.0)`
+Function in pipeline: `_outlier_seasonal_ad(s, target_column_name, c_param)`
 
 Parameters: 
 
-    - `freq` (int, optional) - Length of a seasonal cycle as the number of time points in a cycle.
-    - `c` (float, optional) - Factor used to determine the bound of normal range based on historical interquartile range
-    - `side` (str, optional) - If both, : to detect anomalous positive and negative residuals;
-    - `trend` (bool, optional) -  Whether to extract trend during decomposition.
+    - `freq` (int, None) - Length of a seasonal cycle as the number of time points in a cycle.
+    - `c` (float, 1.5 to 3.0) - Factor used to determine the bound of normal range based on historical interquartile range
+    - `side` (str, both) - If both, to detect anomalous positive and negative residuals;
+    - `trend` (bool, False) -  Whether to extract trend during decomposition.
 
-- Autoregression Anomaly Detector
+
+- **Autoregression Anomaly Detector**
 
 This detector indentifies anomalous autoregression property in time series. The algorthm applies a regressor to learn autoregressive property of the time series, and identifies a time point as anomalous when the residual of autoregression is anomalously large.
 
-Function in pipeline: `_outlier_autregr_ad(s, target_column_name, c_param = 3.0, n_steps_param = 1, step_size_param=7)`
+Function in pipeline: `_outlier_autregr_ad(s, target_column_name, c_param, n_steps_param, step_size_param)`
 
 Parameters: 
     
@@ -69,50 +73,63 @@ Parameters:
     - `c` (float, 1.5 to 3.0) - Factor used to determine the bound of normal range based on historical interquartile range. 
     - `side` (str, both) - “both”, to detect anomalous positive and negative residuals;
 
-The identificaction of outliers do not apply for data observed before 2020-03-31 and between 2020-12-15 and 2021-01-15. 
 
-
-2. Anomaly imputation
-
-After detecting an anomaly a threshold is set to recognize each observation as an outlier.In the pipeline is for at least **one** detector to identify the observation as an anomaly. Then, the imputation of each anomaly is estimated by smoothing the serie using local regression. Although four methods were tested (Rolling Mean, Rolling Median, Polinomial and Loess Regression). 
+**Note:** The identificaction of outliers do not apply for data observed before 2020-03-31 and between 2020-12-15 and 2021-01-15.
 
 
 
-### Level Shifts
+### Level shifts detectors
+
+This detector identifies level shift of time series values. It compares values of two time windows next to each others, and identifies the time point in between as an level-shift point if the difference of the medians in the two time windows is anomalously large.
+
+
+Function in pipeline: `_outlier_autregr_ad(s, target_column_name, c_param = 3.0, n_steps_param = 1, step_size_param=7)`
+
+Parameters: 
+   
+    - `window` (int or str, or 2-tuple of int or str) - Size of the time windows.
+    - `c` (float, optional) - Factor used to determine the bound of normal range based on historical interquartile range. 
+    - `side` (str, optional) - If “both”, to detect anomalous positive and negative changes;
+    - `min_periods` (int, or 2-tuple of int, optional) - Minimum number of observations in each window required to have a value for that window. If 2-tuple, it defines the left and right window respectively.
+
+
+For more information about (ADTK Detectors)[https://arundo-adtk.readthedocs-hosted.com/en/stable/api/detectors.html] .
 
 
 
-----
+## Imputation
 
-Results
+After detecting an anomaly a threshold is set to recognize each observation as an outlier.In the pipeline is for at least **one** detector to identify the observation as an anomaly. Although four methods were tested (Rolling Mean, Rolling Median, Polinomial and Loess Regression), each anomaly is estimated by the decomposition of the serie and smooth it using local regression or lowess curve. 
 
-Correct level shifts
+The serie is log transformed before running the smoothing with the function `numpy.log1p()` and then transformed to the original scale by the funtion `numpy.expm1()`. 
 
-Methodology
+To smooth the serie we use the tsmoothie Python library for time series smoothing and outlier detection in a vectorized way.
 
-Parameters
+Function in pipeline: `_decompose_lowess(variable_smooth, missing_values, smooth_fraction)`
 
-Selection 
+Parameters: 
 
-Results
+    - `smooth_type` (, lowess) 
+    - `periods` (int, 7)
+    - `smooth_fraction` (dbl, .2)
+    
 
-
-
-## Run the process
-
-Single 
-
-Batch
+    
+For more information about (Loess Smoothing)[https://pypi.org/project/tsmoothie/].    
 
 
 ## Report and results
 
 
 
+
 ## Function structures
 
 
-## In the pipeline
 
+## Run the pipeline
 
+Single 
+
+Batch
 
