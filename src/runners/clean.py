@@ -276,7 +276,8 @@ def _impute_anomalies(observed_column,
                       date_column,
                       anomaly_sum_column, 
                       anomaly_vote_minimun, 
-                      smooth_fraction = 0.4):
+                      smooth_fraction = 0.4,
+                      print_plot = False):
     """
     The function runs the process to detect anomalies and impute them.
     
@@ -310,6 +311,7 @@ def _impute_anomalies(observed_column,
     }) 
     
     
+    
     # create missing values
     df_impute.loc[df_impute.anomaly_sum >= anomaly_vote_minimun, 'observed_missing'] = None
     df_impute.loc[df_impute.observed_column < 0, 'observed_missing'] = None
@@ -332,6 +334,8 @@ def _impute_anomalies(observed_column,
                                           df_impute.observed_missing.isna(),
                                           smooth_fraction = smooth_fraction)) 
 
+    if print_plot:
+        print(_plot_imputation(df_impute))
 
     return df_impute
 
@@ -392,11 +396,11 @@ def _run_shift_grid(s, observed_variable, c_param, low_grid = .20, upp_grid = .6
             Validated serie object
         observed_variable : validated serie object 
             Description    
-        c_param : dbl, default 6.0
+        c_param : dbl
             Description
-        low_grid : int, default 14
+        low_grid: dbl, default .20
             Description
-        upp_grid: bool, default True
+        upp_grid: dbl, default .60
             Description
     """
     logger.debug(f"... shift level running grid  ...\n")
@@ -405,7 +409,7 @@ def _run_shift_grid(s, observed_variable, c_param, low_grid = .20, upp_grid = .6
     # grid for values list
     for cp in [round(c_param-c_param*(upp_grid), 4), 
                round(c_param-c_param*(low_grid), 4), 
-               c_param, 
+               round(c_param, 4), 
                round(c_param+c_param*(low_grid), 4), 
                round(c_param+c_param*(upp_grid), 4) ]:
         for wdw in [14, 15, 16, 17, 18]:    
@@ -577,6 +581,7 @@ def _plot_levelshift(df_level, observed_column, shifted_column):
         + p9.geom_line(size = 1) 
         + p9.geom_line(p9.aes(y = shifted_column), size = 1, color = "red") 
         + p9.labs(title='Level Shift')
+        + p9.theme(axis_text_x=p9.element_text(angle=90))
          )
     return gg
     
@@ -587,20 +592,19 @@ def _plot_anomalies(df_anomaly, observed_column, anomalies_cnt):
         + p9.geom_point(p9.aes(size = 'anomaly_sum', color ='anomaly_sum') )
         + p9.labs(title='Anomalies identification',
                  subtitle = f'Anomalies found: {anomalies_cnt}') 
-        + p9.theme(figure_size=(6, 3))
+        + p9.theme(figure_size=(6, 3),
+                  axis_text_x=p9.element_text(angle=90))
          )
     return gg
     
 def _plot_imputation(df_imputate):
     gg = (p9.ggplot(data=df_imputate.reset_index(),
            mapping=p9.aes(x='date', y='observed_column')) 
-        + p9.geom_line(color = 'gray') 
-        + p9.geom_line(p9.aes(y = 'RollingMean'), color = "red", alpha = .4) 
-        + p9.geom_line(p9.aes(y = 'Polinomial'), color = "green", alpha = .4) 
-        + p9.geom_line(p9.aes(y = 'RollingMedian'), color = "blue", alpha = .4)
-        + p9.geom_line(p9.aes(y = 'Loess'), color = "black") 
-        + p9.labs(title='Imputation of anomalies')
-        + p9.theme(figure_size=(6, 3))
+        + p9.geom_line(color = 'gray', size = 1) 
+        + p9.geom_line(p9.aes(y = 'Loess'), color = "red", size = 1) 
+        + p9.labs(title='Imputation of anomalies') 
+        + p9.theme(figure_size=(6, 3),
+                  axis_text_x=p9.element_text(size = 6))
          )    
     return gg
 
@@ -628,8 +632,7 @@ def _plot_end(df_run_1, df_run_2, df_end, region_slug):
 
 def _shift_level_report(df_shift, 
                         df_shift_sum, 
-                        observed_column, 
-                        region_slug):
+                        observed_column):
     
     df_shift=df_shift.reset_index()    
     df_shift['observed_column'] = observed_column
@@ -762,7 +765,8 @@ def _run_step(df_run,
     df_output  = _impute_anomalies(observed_column = df_anomaly[target_column_name], 
                                   date_column = df_anomaly.date, 
                                   anomaly_sum_column = df_anomaly.anomaly_sum, 
-                                  anomaly_vote_minimun = anomaly_vote_minimun).reset_index()
+                                  anomaly_vote_minimun = anomaly_vote_minimun,
+                                  print_plot = print_plot).reset_index()
 
     df_final = df_final.merge(df_output[['date', 'Loess']])
     
@@ -786,7 +790,8 @@ def _run_step(df_run,
          >> gather('variable', 'value', -_['date', 'outliers', 'level_shifts'])
          >> p9.ggplot(p9.aes(x = 'date', y = 'value', color = 'variable'))
          + p9.geom_line()
-         + p9.theme(figure_size = (6, 3)) 
+         + p9.theme(figure_size = (6, 3),
+                    axis_text_x=p9.element_text(angle=90))
          + p9.labs(title = f"Step {output_column_name}")
         )
     if print_plot:
@@ -905,7 +910,16 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
                                       'cleaned':'tci_clean'}) 
     weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index_{c_metric}.csv', index= False)
     
+    
+    
+def clean_data(config):    
+    
+    print(config)
 
 
 ### 8. Start process    
-# _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona")    
+def start(config):
+
+    globals()[config["name"]](config)
+
+    
