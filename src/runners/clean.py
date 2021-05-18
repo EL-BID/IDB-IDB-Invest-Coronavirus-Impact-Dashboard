@@ -156,6 +156,7 @@ def _anomalies_detector(s, target_column_name, c_param):
             Number of times an observation is indentified as an outlier
     """
     c_trunc = _c_trun(c_param)
+    logger.debug(f'C_TRUNC {c_trunc}')
     
     # implementation of methodologies
     anomalies = _outlier_persist_ad(s, target_column_name, c_trunc) \
@@ -344,14 +345,18 @@ def _impute_anomalies(observed_column,
 ### 4. Level shift correction functions
 def _c_param(region_slug, 
              athena_path = '~/shared/spd-sdv-omitnik-waze/corona',  
-             c_metric = 'min'):
+             c_metric = 'min', 
+             f_metric = 1):
     
     c_region = pd.read_csv(athena_path + '/cleaning/data/staging/cities_c_iqr.csv') 
     
     if sum(c_region.region_slug == region_slug) > 0:
-        c_param = c_region[c_region.region_slug == region_slug][f"c_{c_metric}"].to_list()[0]
+        if f_metric < 100:
+            c_param = c_region[c_region.region_slug == region_slug][f"c_{c_metric}"].to_list()[0]*f_metric
+        elif f_metric == 100:
+            c_param = f_metric
     else :
-        c_param = 3
+        c_param = c_region[f"c_{c_metric}"].median() #1.5
         
     logger.debug(f'C {c_metric}: ' + str(c_param))
     return c_param
@@ -404,6 +409,8 @@ def _run_shift_grid(s, observed_variable, c_param, low_grid = .20, upp_grid = .6
             Description
     """
     logger.debug(f"... shift level running grid  ...\n")
+    
+    logger.debug(f'C_LS {c_param}')
     
     shift_l = list()
     # grid for values list
@@ -746,7 +753,8 @@ def _write_weekly(df_daily, region_slug, athena_path, write_region_slug=False):
 def _run_step(df_run, 
               target_column_name, 
               output_column_name, 
-              c_param, 
+              c_param,
+              c_param_ls, 
               anomaly_vote_minimun = 1,  
               print_report = True, 
               print_plot = False):
@@ -774,7 +782,7 @@ def _run_step(df_run,
     logger.info(f'Output variable {output_column_name}')
     df_output[output_column_name], shift_date = _shift_level(df_output, 
                                                 column_name='Loess', 
-                                                c_param = c_param, 
+                                                c_param = c_param_ls, 
                                                 low_grid = .20, 
                                                 upp_grid = .60,
                                                 grid_days_before= 0, 
@@ -810,7 +818,8 @@ def _run_step(df_run,
 def _run_single(region_slug, 
                 anomaly_vote_minimun_s1, 
                 anomaly_vote_minimun_s2, 
-                c_metric = 'min', 
+                c_metric = 'max', 
+                f_metric = 1,
                 print_report = False, 
                 print_plot = False, 
                 write_region_slug = False,
@@ -824,13 +833,15 @@ def _run_single(region_slug,
     
     
     # 00. parameter
-    c_p = _c_param(region_slug, athena_path, c_metric)
+    c_p = _c_param(region_slug, athena_path, c_metric, f_metric = 1)
+    c_p_ls = _c_param(region_slug, athena_path, c_metric, f_metric = f_metric)
     
     
     # 1. running first step
     df_run_1, _gg_1 = _run_step(df_run = df_run.sort_values(by=['region_slug', 'date']),
                          anomaly_vote_minimun = 1,
-                         c_param= c_p,
+                         c_param = c_p,
+                         c_param_ls = c_p_ls,
                          target_column_name = 'observed',
                          output_column_name = 'S1_shift',
                          print_report = print_report, 
@@ -841,6 +852,7 @@ def _run_single(region_slug,
     df_run_2,  _gg_2 = _run_step(df_run = df_run_1[['date', 'S1_shift']].sort_values(by=['date']),
                          anomaly_vote_minimun = 1, 
                          c_param= c_p,
+                         c_param_ls = c_p_ls,
                          target_column_name = 'S1_shift',
                          output_column_name = 'S2_shift',
                          print_report = print_report, 
@@ -872,7 +884,8 @@ def _run_single(region_slug,
 
 
 def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona", 
-               c_metric = 'max'):
+               c_metric = 'max', 
+               f_metric = 1):
 
     
     qry = """
@@ -887,28 +900,31 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
     daily_l = list()
     weekly_l = list()
     
+    # run by region
     for region in regions_list:
         print(region)
         df_daily, df_weekly = _run_single(region_slug=region, 
                                           anomaly_vote_minimun_s1=1, 
                                           anomaly_vote_minimun_s2=1, 
                                           c_metric = c_metric,
+                                          f_metric = f_metric,
                                           print_report = False, 
                                           print_plot = False)
         daily_l.append(df_daily)
         weekly_l.append(df_weekly)
 
+    # write csv
     daily= pd.concat(daily_l)
     daily = daily.rename(columns = {'tcp':'tcp_observed', 
                                     'observed':'tci_observed', 
                                     'S2_shift':'tci_clean'}) 
-    daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index_{c_metric}.csv', index= False)
+    daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index_{c_metric}_ls{f_metric}.csv', index= False)
        
     weekly= pd.concat(weekly_l)
     weekly = weekly.rename(columns = {'tcp':'tcp_observed', 
                                       'observed':'tci_observed', 
                                       'cleaned':'tci_clean'}) 
-    weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index_{c_metric}.csv', index= False)
+    weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index_{c_metric}_ls{f_metric}.csv', index= False)
     
     
     
