@@ -352,18 +352,21 @@ def _c_param(region_slug,
     
     if sum(c_region.region_slug == region_slug) > 0:
         if f_metric < 100:
-            c_param = c_region[c_region.region_slug == region_slug][f"c_{c_metric}"].to_list()[0]*f_metric
+            c_param = (c_region[c_region.region_slug == region_slug][f"c_{c_metric}"].to_list()[0])*f_metric
         elif f_metric == 100:
             c_param = f_metric
     else :
-        c_param = c_region[f"c_{c_metric}"].median() #1.5
+        if f_metric < 100:
+            c_param = 3.0*f_metric #c_region[f"c_{c_metric}"].median()[0])*f_metric
+        elif f_metric == 100:
+            c_param = f_metric
         
     logger.debug(f'C {c_metric}: ' + str(c_param))
     return c_param
 
 
 def _level_shift_detection(s, 
-                           c_param = 6.0, 
+                           c_param = 3.0, 
                            window_param = 14, 
                            print_plot = False):
     """
@@ -447,11 +450,17 @@ def _shifted_adtk_ts(s, column_name, agg="std", window=(3,3), diff="l2", print_p
     return s_transformed
 
 
-def _shift_sum(df_shift):
+def _shift_sum(df_shift,
+               ls_search_start_2020 = '2020-03-31',
+               ls_search_end_2020 = '2020-12-15',
+               ls_search_start_2021 = None,
+               ls_search_end_2021 = None):
+    
+    logger.debug(f'LS 2020 Start {ls_search_start_2020} - {ls_search_end_2020}')
+    logger.debug(f'LS 2021 Start {ls_search_start_2021} - {ls_search_end_2021}')
     
     df_shift_sum = (df_shift.reset_index()
-     >> filter(_.date > '2020-03-31',
-              ((_.date < '2020-12-15') ))
+     >> filter((_.date > ls_search_start_2020) & (_.date < ls_search_end_2020  ))
      >> gather('variable', 'value', -_.date)
      >> filter(_.variable.str.startswith('shift'))
      >> group_by('date')
@@ -541,6 +550,10 @@ def _shift_level(df,
                  upp_grid = .60, 
                  grid_days_before= 0, 
                  grid_days_after = 7,
+                 ls_search_start_2020 = '2020-03-31',
+                 ls_search_end_2020 = '2020-12-15',
+                 ls_search_start_2021 = None,
+                 ls_search_end_2021 = None,               
                  print_report = False):
 
     logger.debug('\n')  
@@ -556,7 +569,11 @@ def _shift_level(df,
                             low_grid = low_grid, 
                             upp_grid = upp_grid)
     # grid summary
-    df_grid_sum = _shift_sum(df_grid)
+    df_grid_sum = _shift_sum(df_grid, 
+                             ls_search_start_2020 = ls_search_start_2020,
+                             ls_search_end_2020 = ls_search_end_2020,
+                             ls_search_start_2021 = ls_search_start_2021,
+                             ls_search_end_2021 = ls_search_end_2021)
     if False:
         df_grid_sum = _shift_window_sum(df_grid, 
                                         days_before= grid_days_before, 
@@ -755,6 +772,10 @@ def _run_step(df_run,
               output_column_name, 
               c_param,
               c_param_ls, 
+              ls_search_start_2020 = '2020-03-31',
+              ls_search_end_2020 = '2020-12-15',
+              ls_search_start_2021 = None,
+              ls_search_end_2021 = None,
               anomaly_vote_minimun = 1,  
               print_report = True, 
               print_plot = False):
@@ -787,10 +808,14 @@ def _run_step(df_run,
                                                 upp_grid = .60,
                                                 grid_days_before= 0, 
                                                 grid_days_after = 7,
+                                                ls_search_start_2020 = ls_search_start_2020,
+                                                ls_search_end_2020 = ls_search_end_2020,
+                                                ls_search_start_2021 = ls_search_start_2021,
+                                                ls_search_end_2021 = ls_search_end_2021,
                                                 print_report = print_report)
     
     df_final = df_final.merge(df_output[['date', output_column_name]]) \
-        .assign(outliers = df_final.apply(lambda row: row['date'] in anomalies_date , axis = 1),
+        .assign(outliers     = df_final.apply(lambda row: row['date'] in anomalies_date , axis = 1),
                 level_shifts = df_final.apply(lambda row: row['date'] in [shift_date] , axis = 1))
     
 
@@ -799,7 +824,7 @@ def _run_step(df_run,
          >> p9.ggplot(p9.aes(x = 'date', y = 'value', color = 'variable'))
          + p9.geom_line()
          + p9.theme(figure_size = (6, 3),
-                    axis_text_x=p9.element_text(angle=90))
+                    axis_text_x = p9.element_text(angle=90))
          + p9.labs(title = f"Step {output_column_name}")
         )
     if print_plot:
