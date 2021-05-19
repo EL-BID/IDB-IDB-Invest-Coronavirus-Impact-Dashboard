@@ -499,8 +499,7 @@ def _initial_shift_date(df_shift_sum):
     return shift_init
 
 def _linear_interpolate_ts(shifted_column, date_column):
-    
-    
+       
     shifted_column[shifted_column < 0] = None
     
     df = pd.DataFrame()
@@ -891,6 +890,7 @@ def _run_single(region_slug,
     # 4. join weekly results
     df_weekly = _write_weekly(df_daily, region_slug, athena_path, write_region_slug)
 
+    
     # 5. write anomalies found
     _write_missing(df_run_1, df_run_2, region_slug, athena_path)
     
@@ -909,47 +909,58 @@ def _run_single(region_slug,
 
 
 def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona", 
-               c_metric = 'max', 
-               f_metric = 1):
+               c_metric = 'max'):
 
-    
+    # region slug 
     qry = """
     select 
-        distinct region_slug
+        distinct region_type, region_slug
     from spd_sdv_waze_corona.prod_daily_daily_index
     where region_slug not like 'br_states_%'
     """
-    regions_list = pd.read_sql_query(qry, conn).sort_values('region_slug').region_slug.unique()
-    logger.info('TO DO regions  ' + str(len(regions_list)))
+    
+    regions_df = pd.read_sql_query(qry, conn).sort_values('region_slug')
+    logger.info('TO DO regions  ' + str(len(regions_df)))
     
     daily_l = list()
     weekly_l = list()
     
     # run by region
-    for region in regions_list:
-        print(region)
-        df_daily, df_weekly = _run_single(region_slug=region, 
-                                          anomaly_vote_minimun_s1=1, 
-                                          anomaly_vote_minimun_s2=1, 
+    for _, row in regions_df.iterrows():
+        
+        # factor of c metric
+        region_type = row['region_type']
+        if region_type == 'country': 
+            f_metric = 20
+        elif region_type == 'city': 
+            f_metric = 100
+        
+        # run cleaning process per region slug
+        df_daily, df_weekly = _run_single(region_slug = row['region_slug'], 
+                                          anomaly_vote_minimun_s1 = 1, 
+                                          anomaly_vote_minimun_s2 = 1, 
                                           c_metric = c_metric,
                                           f_metric = f_metric,
                                           print_report = False, 
                                           print_plot = False)
+        
         daily_l.append(df_daily)
         weekly_l.append(df_weekly)
 
-    # write csv
+    # write csv 
     daily= pd.concat(daily_l)
     daily = daily.rename(columns = {'tcp':'tcp_observed', 
                                     'observed':'tci_observed', 
                                     'S2_shift':'tci_clean'}) 
-    daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index_{c_metric}_ls{f_metric}.csv', index= False)
+    daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index_{c_metric}_lsmix.csv', 
+                 index= False)
        
     weekly= pd.concat(weekly_l)
     weekly = weekly.rename(columns = {'tcp':'tcp_observed', 
                                       'observed':'tci_observed', 
                                       'cleaned':'tci_clean'}) 
-    weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index_{c_metric}_ls{f_metric}.csv', index= False)
+    weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index_{c_metric}_lsmix.csv',
+                  index= False)
     
     
     
