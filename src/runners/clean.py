@@ -909,7 +909,8 @@ def _run_single(region_slug,
 
 
 def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona", 
-               c_metric = 'max'):
+               c_metric = 'max',
+               f_metric = None):
 
     # region slug 
     qry = """
@@ -925,16 +926,25 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
     daily_l = list()
     weekly_l = list()
     
+    if f_metric is None:
+            fend = 'mix'
+    else:
+        fend = f_metric
+
+    
     # run by region
     for _, row in regions_df.iterrows():
         
-        # factor of c metric
-        region_type = row['region_type']
-        if region_type == 'country': 
-            f_metric = 20
-        elif region_type == 'city': 
-            f_metric = 100
         
+        # factor of c metric
+        if f_metric is None:
+            region_type = row['region_type']
+            if region_type == 'country': 
+                f_metric = 20
+            elif region_type == 'city': 
+                f_metric = 100
+                
+
         # run cleaning process per region slug
         df_daily, df_weekly = _run_single(region_slug = row['region_slug'], 
                                           anomaly_vote_minimun_s1 = 1, 
@@ -952,14 +962,14 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
     daily = daily.rename(columns = {'tcp':'tcp_observed', 
                                     'observed':'tci_observed', 
                                     'S2_shift':'tci_clean'}) 
-    daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index_{c_metric}_lsmix.csv', 
+    daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index_{c_metric}_ls{fend}.csv', 
                  index= False)
        
     weekly= pd.concat(weekly_l)
     weekly = weekly.rename(columns = {'tcp':'tcp_observed', 
                                       'observed':'tci_observed', 
                                       'cleaned':'tci_clean'}) 
-    weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index_{c_metric}_lsmix.csv',
+    weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index_{c_metric}_ls{fend}.csv',
                   index= False)
     
     
