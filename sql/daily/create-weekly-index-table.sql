@@ -27,6 +27,7 @@ with ratios as (
 					sum(tci) as expected_2020
 				from {{ athena_database }}.{{ slug }}_daily_historical_2020
 				group by region_slug, month, day, dow)
+            --group by region_slug) h
 			group by region_slug,  dow) h
 	join (
 		select
