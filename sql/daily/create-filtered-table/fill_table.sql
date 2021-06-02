@@ -19,7 +19,7 @@ with t as (
 		from pwazetransformeddb.jams
 		where regexp_like(datetime, '{{ date_filter }}')
 		and st_intersects(
-			st_polygon('{{ region_shapefile_wkt | replace('"', '') }}'), st_line(line_wkt))
+			ST_GeometryFromText('{{ region_shapefile_wkt | replace('"', '') }}'), st_line(line_wkt))
 		and
 		{% for filter in initial_filters %}
 		{%- if loop.last -%}
