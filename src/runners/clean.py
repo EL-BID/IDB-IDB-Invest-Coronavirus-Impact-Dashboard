@@ -5,7 +5,7 @@ import pandas as pd
 from functools import reduce
 from loguru import logger
 from datetime import datetime, timedelta
-from siuba import *
+from siuba import _, filter, gather, group_by, ungroup, mutate, summarize, arrange
 
 # plots
 import matplotlib.pyplot as plt 
