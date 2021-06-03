@@ -973,6 +973,16 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
                   index= False)
     
     
+def smooth_history(config):
+    
+    df_union_daily = pd.read_csv("/home/soniame/private/daily_index_index.csv", index_col=0) \
+    [['date', 'region_slug', 'country_name', 'country_iso_code',
+                'tci_observed', 'tcp_observed', 
+                'tci_cleaned_ls_MIX', 'tcp_cleaned_ls_MIX']] \
+    .rename(columns = {'tci_cleaned_ls_MIX':'tci_smooth', 
+                       'tcp_cleaned_ls_MIX':'tcp_smooth'}) 
+    
+    df_union_daily
     
 def clean_data(config):    
     
