@@ -76,22 +76,6 @@ def _outlier_persist_ad(s, target_column_name, c_param, window_param = 7):
     
     return anomalies
 
-def _outlier_gesdt_ad(s, target_column_name, alpha_param = 0.3, window_param = 7):
-    
-    try :
-        esd_ad = GeneralizedESDTestAD(alpha=alpha_param)
-        anomalies = persist_ad.fit_detect(s)
-    except : 
-        logger.debug('!! No gesdt !!')
-        anomalies = s 
-        anomalies[target_column_name] = 0
-    finally : 
-        anomalies = anomalies \
-            .rename(columns={target_column_name:'anomaly_gesdt'}) \
-            .reset_index()   
-    
-    return anomalies
-
 def _outlier_seasonal_ad(s, target_column_name, c_param):
     
     try : 
@@ -687,12 +671,11 @@ def _shift_level_report(df_shift,
     #logger.debug(df_shift_sum[df_shift_sum.shift_sum == df_shift_sum.shift_sum.max()])
     
 
-    
-    
+
 
 ### 6. Process functions    
 def _reading_data(region_slug):
-      
+     
     qry = f"""
         select 
             *,
@@ -704,6 +687,29 @@ def _reading_data(region_slug):
     df_cty = pd.read_sql_query(qry, conn)
     
     return df_cty
+
+
+def _get_max_date(region_slug):
+    
+    max_date = str(pd.read_sql_query(f"""
+        select date(max(date)) as max_date
+        from spd_sdv_waze_corona.prod_daily_smooth_historical
+        where region_slug in ('{region_slug}')""", conn).max_date[0])
+    
+    logger.debug(f'last update {max_date}')
+    
+    return max_date
+    
+def _get_smooth_previous(region_slug, max_date):
+    
+    df = pd.read_sql_query(f"""
+        select *
+        from spd_sdv_waze_corona.prod_daily_smooth_historical
+        where region_slug in ('{region_slug}') 
+        and date <= date('{max_date}')""", conn)
+    
+    return df
+    
 
 def _write_missing(df_run_1, df_run_2, region_slug, athena_path):
     
@@ -718,24 +724,48 @@ def _write_missing(df_run_1, df_run_2, region_slug, athena_path):
 
     df_miss.to_csv(write_path + f'/anomalies_{region_slug}.csv')
     
-def _write_daily(df_run, df_run_1, df_run_2, region_slug, athena_path, write_region_slug=False):
     
+def _update_daily_smooth(df_daily, region_slug, max_date):
+
+    #df_new = df_daily[df_daily.date > max_date][['date', 'region_slug', 'tci_smooth', 'tcp_smooth']]     
+    #df_prev = pd.read_sql_query(f"""
+    #    select 
+    #        date, region_slug, tci_smooth, tcp_smooth
+    #    from spd_sdv_waze_corona.prod_daily_smooth_historical
+    #    where region_slug in ('{region_slug}')
+    #       and date <= date('{max_date}')""", conn)
+    #df_update = pd.concat([df_prev, df_new])
+
+    return df_daily
+
+    
+def _write_daily(df_run, df_run_1, df_run_2, region_slug, max_date, 
+                 athena_path, write_region_slug=False):
+     
+    # tidy daily smooth
     df_daily = df_run[['date', 'region_slug', 'observed', 'expected_2020', 'tcp']] \
         .merge(df_run_1[['date', 'Loess', 'S1_shift']] \
                .rename(columns = {'Loess':'S1_Loess'})) \
         .merge(df_run_2[['date', 'Loess', 'S2_shift']] \
                .rename(columns = {'Loess':'S2_Loess'})) 
     
-    df_daily['tcp_clean'] = df_daily \
+    df_daily['tcp_smooth'] = df_daily \
         .apply(lambda row: 100*(row['S2_shift'] - row['expected_2020'])/row['expected_2020'], axis = 1)
+    df_daily['tci_smooth'] = df_daily['S2_shift']
     
+    # filter previous
+    df_daily_update = _update_daily_smooth(df_daily, region_slug, max_date)
+    
+    # write csv per region_slug
     if write_region_slug:
-        df_daily.to_csv(athena_path + f'/cleaning/daily/daily_{region_slug}.csv', index= False)
-    
+        df_daily_update.to_csv(athena_path + f'/cleaning/daily/daily_{region_slug}.csv', index= False)
+
+        
     return df_daily
+
     
-    
-def _write_weekly(df_daily, region_slug, athena_path, write_region_slug=False):
+     
+def _write_weekly(df_daily, region_slug, max_date, athena_path, write_region_slug=False):
 
     df_daily = df_daily.sort_values(by=['date'])
     df_daily['monday'] = pd.to_numeric(df_daily.date.apply(lambda x:x.weekday()) == 0)
@@ -884,12 +914,13 @@ def _run_single(region_slug,
 
     
     # 3. join daily results
-    df_daily = _write_daily(df_run, df_run_1, df_run_2, region_slug, athena_path, write_region_slug)
-    
+    max_date = _get_max_date(region_slug)
+    df_daily = _write_daily(df_run, df_run_1, df_run_2, region_slug, max_date, 
+                            athena_path, write_region_slug)   
     
     # 4. join weekly results
-    df_weekly = _write_weekly(df_daily, region_slug, athena_path, write_region_slug)
-
+    df_weekly = _write_weekly(df_daily, region_slug, max_date, 
+                              athena_path, write_region_slug)
     
     # 5. write anomalies found
     _write_missing(df_run_1, df_run_2, region_slug, athena_path)
@@ -973,17 +1004,7 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
                   index= False)
     
     
-def smooth_history(config):
-    
-    df_union_daily = pd.read_csv("/home/soniame/private/daily_index_index.csv", index_col=0) \
-    [['date', 'region_slug', 'country_name', 'country_iso_code',
-                'tci_observed', 'tcp_observed', 
-                'tci_cleaned_ls_MIX', 'tcp_cleaned_ls_MIX']] \
-    .rename(columns = {'tci_cleaned_ls_MIX':'tci_smooth', 
-                       'tcp_cleaned_ls_MIX':'tcp_smooth'}) 
-    
-    df_union_daily
-    
+
 def clean_data(config):    
     
     print(config)

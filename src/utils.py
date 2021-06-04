@@ -15,6 +15,7 @@ import io
 from dateutil import rrule
 import boto3
 from boto3.session import Session
+import awswrangler as wr
 
 from contextlib import contextmanager
 
