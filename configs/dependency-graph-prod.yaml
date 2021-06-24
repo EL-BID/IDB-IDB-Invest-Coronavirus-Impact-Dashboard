@@ -86,8 +86,8 @@
   current_millis: v13
   mode: 'incremental'
   interval:
-    start: 2020-03-01
-    end: 2020-03-07
+    start: 2020-03-02
+    end: 2020-03-08
 
 - 
   path: 'sql/daily/create-daily-index-table.sql'
