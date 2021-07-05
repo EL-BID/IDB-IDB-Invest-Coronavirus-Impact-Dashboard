@@ -674,13 +674,13 @@ def _shift_level_report(df_shift,
 
 
 ### 6. Process functions    
-def _reading_data(region_slug):
+def _reading_data(region_slug, version):
      
     qry = f"""
         select 
             *,
             date_parse(concat(cast(year as varchar), ' ', cast(month as varchar), ' ', cast(day as varchar)), '%Y %m %e') date
-        from spd_sdv_waze_corona.prod_daily_daily_index
+        from spd_sdv_waze_corona.{version}_daily_daily_index
         where region_slug in ('{region_slug}')
         """
     logger.debug(qry)
@@ -693,7 +693,7 @@ def _get_max_date(region_slug):
     
     max_date = str(pd.read_sql_query(f"""
         select date(max(date)) as max_date
-        from spd_sdv_waze_corona.prod_daily_smooth_historical
+        from spd_sdv_waze_corona.prod_daily_daily_smooth_historical
         where region_slug in ('{region_slug}')""", conn).max_date[0])
     
     logger.debug(f'last update {max_date}')
@@ -704,7 +704,7 @@ def _get_smooth_previous(region_slug, max_date):
     
     df = pd.read_sql_query(f"""
         select *
-        from spd_sdv_waze_corona.prod_daily_smooth_historical
+        from spd_sdv_waze_corona.prod_daily_daily_smooth_historical
         where region_slug in ('{region_slug}') 
         and date <= date('{max_date}')""", conn)
     
@@ -877,13 +877,14 @@ def _run_single(region_slug,
                 print_report = False, 
                 print_plot = False, 
                 write_region_slug = False,
+                version = 'prod',
                 athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona"):
     
     logger.info(f'... here we go {region_slug}...\n')  
     region_slug = region_slug #df_run.region_slug.unique()
     
     # 0. download data
-    df_run = _reading_data(region_slug)
+    df_run = _reading_data(region_slug, version)
     
     
     # 00. parameter
@@ -941,16 +942,18 @@ def _run_single(region_slug,
 
 def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona", 
                c_metric = 'max',
-               f_metric = None):
+               f_metric = None,
+               version = 'prod'):
 
+    cm = str(datetime.today().strftime("%Y%m%d%H%m"))
+    
     # region slug 
-    qry = """
+    qry = f"""
     select 
-        distinct region_type, region_slug
-    from spd_sdv_waze_corona.prod_daily_daily_index
+        distinct region_slug
+    from spd_sdv_waze_corona.{version}_daily_daily_index
     where region_slug not like 'br_states_%'
     """
-    
     regions_df = pd.read_sql_query(qry, conn).sort_values('region_slug')
     logger.info('TO DO regions  ' + str(len(regions_df)))
     
@@ -964,8 +967,7 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
 
     
     # run by region
-    for _, row in regions_df.iterrows():
-        
+    for _, row in regions_df.iterrows():     
         
         # factor of c metric
         if f_metric is None:
@@ -973,9 +975,7 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
             if region_type == 'country': 
                 f_metric = 20
             elif region_type == 'city': 
-                f_metric = 100
-                
-
+                f_metric = 100               
         # run cleaning process per region slug
         df_daily, df_weekly = _run_single(region_slug = row['region_slug'], 
                                           anomaly_vote_minimun_s1 = 1, 
@@ -983,8 +983,9 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
                                           c_metric = c_metric,
                                           f_metric = f_metric,
                                           print_report = False, 
-                                          print_plot = False)
-        
+                                          print_plot = False, 
+                                          version = version)
+        # append region_slug to list   
         daily_l.append(df_daily)
         weekly_l.append(df_weekly)
 
@@ -993,14 +994,14 @@ def _run_batch(athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona",
     daily = daily.rename(columns = {'tcp':'tcp_observed', 
                                     'observed':'tci_observed', 
                                     'S2_shift':'tci_clean'}) 
-    daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index_{c_metric}_ls{fend}.csv', 
+    daily.to_csv(athena_path + f'/cleaning/daily/daily_daily_index_{version}_{c_metric}_ls{fend}-{cm}.csv', 
                  index= False)
        
     weekly= pd.concat(weekly_l)
     weekly = weekly.rename(columns = {'tcp':'tcp_observed', 
                                       'observed':'tci_observed', 
                                       'cleaned':'tci_clean'}) 
-    weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index_{c_metric}_ls{fend}.csv',
+    weekly.to_csv(athena_path + f'/cleaning/weekly/weekly_weekly_index_{version}_{c_metric}_ls{fend}-{cm}.csv',
                   index= False)
     
     
