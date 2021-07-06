@@ -682,6 +682,7 @@ def _reading_data(region_slug, version):
             date_parse(concat(cast(year as varchar), ' ', cast(month as varchar), ' ', cast(day as varchar)), '%Y %m %e') date
         from spd_sdv_waze_corona.{version}_daily_daily_index
         where region_slug in ('{region_slug}')
+         and date_parse(concat(cast(year as varchar), ' ', cast(month as varchar), ' ', cast(day as varchar)), '%Y %m %e') >= date('2020-03-09')
         """
     logger.debug(qry)
     df_cty = pd.read_sql_query(qry, conn)
