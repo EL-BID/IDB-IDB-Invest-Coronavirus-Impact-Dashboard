@@ -67,7 +67,7 @@
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: daily
-  verbose: True
+  verbose: False
   depends_on: [
     metadata_variation
   ]
@@ -75,7 +75,7 @@
   mode: 'incremental'
   interval:
     start: 2020-03-09
-    end: 2020-06-22
+    end: 2020-07-04
     
 
 - 
@@ -94,6 +94,7 @@
 - 
   path: 'sql/daily/create-daily-index-table.sql'
   runner: basic_athena_query
+  verbose: True
   depends_on: [
     metadata_variation,
     daily,
