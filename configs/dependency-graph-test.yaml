@@ -67,15 +67,15 @@
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: daily
-  verbose: False
+  verbose: True
   depends_on: [
     metadata_variation
   ]
   current_millis: v13
   mode: 'incremental'
   interval:
-    start: 2020-03-09
-    end: 2020-07-04
+    start: 2021-01-01
+    end: 2021-07-11
     
 
 - 
