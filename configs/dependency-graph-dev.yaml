@@ -71,11 +71,11 @@
   depends_on: [
     metadata_variation
   ]
-  current_millis: v12
+  current_millis: v13
   mode: 'incremental'
   interval:
-    start: 2020-03-09
-    end: 'today'
+    start: 2020-07-08
+    end: 2020-07-08
 
 - 
   path: 'sql/daily/create-filtered-table'
