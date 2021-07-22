@@ -9,6 +9,7 @@ from shapely.ops import transform
 import shapely
 
 
+
 # ################## #
 
 # Joao's polygon
@@ -24,14 +25,18 @@ import shapely
 
 # Date run ----
 cm = str(datetime.today().strftime("%Y%m%d%H%m"))
+print(cm)
 
 # Preparing geometry ----
 geometry = Polygon([(0, 0), (5, 5), (5, 0)])
 print(geometry.area)
 
 # Running katana splits ----
-result = osmpy.core.katana(geometry, osmpy.core.threshold_func, 50, 30)
-print(len(result.geoms))
+result = osmpy.core.katana(geometry, 
+                           threshold_func = osmpy.core.threshold_func, 
+                           threshold_value = 50, 
+                           count = 30)
+print(len(MultiPolygon(result).geoms))
 print(MultiPolygon(result))
 
 # Multipolygon
@@ -44,4 +49,4 @@ grid
 # Export to csv
 outdf = gpd.GeoDataFrame(columns=['geometry'])
 outdf['geometry'] = grid
-outdf.to_csv("/home/soniame/private/testing/geo_grid_area_{cm}.csv")
+outdf.to_csv(f"/home/soniame/private/testing/geo_grid_area_{cm}.csv")
