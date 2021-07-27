@@ -17,36 +17,39 @@ import shapely
 
 # LA's square
 #polygon = 'POLYGON ((-127.265625 34.30714385628804, -128.671875 -56.94497418085159, -28.4765625 -57.70414723434192, -29.8828125 16.97274101999902, -84.72656249999999 25.48295117535531, -116.71874999999999 35.746512259918504, -127.265625 34.30714385628804))'
-# geometry = wkt.loads(polygon)
+#geometry = wkt.loads(polygon)
+
+
+#geometry = Polygon([(0, 0), (5, 5), (5, 0)])
+
+
 
 # ################## #
 
-
-
 # Date run ----
-cm = str(datetime.today().strftime("%Y%m%d%H%m"))
+cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
 print(cm)
 
 # Preparing geometry ----
-geometry = Polygon([(0, 0), (5, 5), (5, 0)])
+polygon = 'POLYGON ((-127.265625 34.30714385628804, -128.671875 -56.94497418085159, -28.4765625 -57.70414723434192, -29.8828125 16.97274101999902, -84.72656249999999 25.48295117535531, -116.71874999999999 35.746512259918504, -127.265625 34.30714385628804))'
+geometry = wkt.loads(polygon)
 print(geometry.area)
 
 # Running katana splits ----
 result = osmpy.core.katana(geometry, 
                            threshold_func = osmpy.core.threshold_func, 
-                           threshold_value = 50, 
-                           count = 30)
+                           threshold_value = 800, 
+                           count = 100)
 print(len(MultiPolygon(result).geoms))
-print(MultiPolygon(result))
+#print(MultiPolygon(result))
 
-# Multipolygon
+# Multipolygon ----
 grid = list()
 for polygon in MultiPolygon(result):  # same for multipolygon.geoms
     grid.append(str(polygon))
-grid    
 
 
-# Export to csv
+# Export to csv ----
 outdf = gpd.GeoDataFrame(columns=['geometry'])
 outdf['geometry'] = grid
-outdf.to_csv(f"/home/soniame/private/testing/geo_grid_area_{cm}.csv")
+outdf.to_csv(f"~/private/projects/geo_grid_area_{cm}.csv")
