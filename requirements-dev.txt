@@ -1,6 +1,7 @@
 pandas==1.0.5
 pyaml
 ipykernel
+keplergl
 pyathena
 fire
 networkx<=2.0.0
