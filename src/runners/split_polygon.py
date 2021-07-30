@@ -1,4 +1,5 @@
-# analysis libraries
+
+# LIBRARIES
 import pandas as pd
 import geopandas as gpd
 from datetime import datetime
@@ -7,37 +8,52 @@ from shapely.geometry import box, Polygon, MultiPolygon, GeometryCollection, sha
 from shapely import wkt
 from shapely.ops import transform
 import shapely
+# from shapely.wkt import loads
+
+## FUNCTIONS
+
+def intersection_func(line, geometry):
+    line_wkt = wkt.loads(line)
+    result = geometry.intersection(line_wkt).is_empty == False
+    return(int(result))
+
+def threshold_density_func(geometry, threshold_value):
+    """Compares the threshold values with the number of lines"""
+    
+    print('Running')
+    
+    times = [intersection_func(line, geometry) for x in df_lines.line_wkt]
+    intersection = sum(times)
+    total = len(times)
+    
+    print(intersection)
+    print(total)
+    print(intersection/total)
+    
+    return (intersection/total) < (threshold_value/total)
 
 
-
-# ################## #
-
-# Joao's polygon
-# polygon = 'POLYGON((2.0117187499999822 44.38657313925715,-19.433593750000018 19.207272119703983,19.414062499999982 6.904449621538131,64.94140624999999 -3.096801256840523,81.46484374999999 37.21269961002643,45.78124999999998 24.106495997107682,53.69140624999998 51.22054369437158,3.7695312499999822 37.07257833232809,2.0117187499999822 44.38657313925715))'
+## POLIGONOS
 
 # LA's square
-#polygon = 'POLYGON ((-127.265625 34.30714385628804, -128.671875 -56.94497418085159, -28.4765625 -57.70414723434192, -29.8828125 16.97274101999902, -84.72656249999999 25.48295117535531, -116.71874999999999 35.746512259918504, -127.265625 34.30714385628804))'
+# polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
 #geometry = wkt.loads(polygon)
 
 
-#geometry = Polygon([(0, 0), (5, 5), (5, 0)])
 
-
-
-# ################## #
+## RUNNING
 
 # Date run ----
 cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
 print(cm)
 
 # Preparing geometry ----
-polygon = 'POLYGON ((-127.265625 34.30714385628804, -128.671875 -56.94497418085159, -28.4765625 -57.70414723434192, -29.8828125 16.97274101999902, -84.72656249999999 25.48295117535531, -116.71874999999999 35.746512259918504, -127.265625 34.30714385628804))'
+polygon = 'POLYGON ((-77.10205078124999 -13.004557745339769, -72.158203125 -13.004557745339769, -72.158203125 -8.90678000752024, -77.10205078124999 -8.90678000752024, -77.10205078124999 -13.004557745339769))'
 geometry = wkt.loads(polygon)
-print(geometry.area)
 
 # Running katana splits ----
 result = osmpy.core.katana(geometry, 
-                           threshold_func = osmpy.core.threshold_func, 
+                           threshold_func = threshold_density_func, 
                            threshold_value = 800, 
                            count = 100)
 print(len(MultiPolygon(result).geoms))
