@@ -70,4 +70,4 @@ for polygon in MultiPolygon(result):  # same for multipolygon.geoms
 # Export to csv ----
 outdf = gpd.GeoDataFrame(columns=['geometry'])
 outdf['geometry'] = grid
-outdf.to_csv(f"~/private/projects/geo_grid_area_{cm}.csv")
+outdf.to_csv(f"~/private/geo_id_polygon/geo_grid_area_{cm}.csv")
