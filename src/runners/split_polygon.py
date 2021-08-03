@@ -3,29 +3,37 @@
 import pandas as pd
 import geopandas as gpd
 from datetime import datetime
-import osmpy
+
 from shapely.geometry import box, Polygon, MultiPolygon, GeometryCollection, shape
 from shapely import wkt
 from shapely.ops import transform
 
+from loguru import logger
 
 
 ## FUNCTIONS
-def intersection_func(line, geometry):
+def _intersection_func(line, geometry):
     
     # TODO: create coarse grid
     result = geometry.intersection(wkt.loads(line)).is_empty == False
     return(int(result))
 
-def threshold_density_func(geometry, threshold_value):
-    """Compares the threshold values with the number of lines"""
+def _threshold_density_func(geometry, threshold_value):
+    """Compares the threshold values with the number of jams
+    Parameters
+    ----------
+    geometry: Polygon or MultiPolygon
+        Geometry to intersect lines
+    threshold_value: number
+        Max percentage of jams pero square
+    """
     
     print('Running')
     
     # Intersection of lines within square
     # TODO: change to global variable
     df_lines = pd.read_csv('/home/soniame/private/line_wkt_count_202010701.csv')
-    times = [intersection_func(line, geometry) for line in df_lines.line_wkt]
+    times = [_intersection_func(line, geometry) for line in df_lines.line_wkt]
     total_lines = df_lines.count_lines
     
     # Total lines in square
@@ -107,41 +115,35 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
     return final_result
 
 
-
-## POLIGONOS
-
-# LA's square
-# polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
-#geometry = wkt.loads(polygon)
-
-
-
 ## RUNNING
+def create_squares():
+    
+    # Date run ----
+    cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
+    print(cm)
 
-# Date run ----
-cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
-print(cm)
+    # Polygon geometry definition ----
+    # - Latin america BID
+    polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
+    geometry = wkt.loads(polygon)
 
-# Preparing geometry ----
-# - Latin america BID
-polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
-geometry = wkt.loads(polygon)
+    # Running katana splits ----
+    result = katana(geometry, 
+                    threshold_func = _threshold_density_func, 
+                    threshold_value = .01, 
+                    max_number_tiles = 100)
+    # print(len(MultiPolygon(result).geoms))
+    # print(MultiPolygon(result))
 
-# Running katana splits ----
-result = katana(geometry, 
-                threshold_func = threshold_density_func, 
-                threshold_value = .01, 
-                max_number_tiles = 100)
-print(len(MultiPolygon(result).geoms))
-#print(MultiPolygon(result))
-
-# Multipolygon ----
-grid = list()
-for polygon in MultiPolygon(result):  # same for multipolygon.geoms
-    grid.append(str(polygon))
+    # Multipolygon ----
+    grid = list()
+    for polygon in MultiPolygon(result):  # same for multipolygon.geoms
+        grid.append(str(polygon))
 
 
-# Export to csv ----
-outdf = gpd.GeoDataFrame(columns=['geometry'])
-outdf['geometry'] = grid
-outdf.to_csv(f"~/private/geo_id_polygon/geo_grid_area_{cm}.csv")
+    # Export to csv ----
+    outdf = gpd.GeoDataFrame(columns=['geometry'])
+    outdf['geometry'] = grid
+    outdf.to_csv(f"~/private/geo_id_polygon/geo_grid_area_{cm}.csv")
+
+
