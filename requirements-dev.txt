@@ -29,3 +29,5 @@ pyod
 tsmoothie
 osmpy
 geopandas
+openpyxl
+folium
