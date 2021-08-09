@@ -140,9 +140,11 @@ def create_squares():
 
     # Lines 
     df_lines = pd.read_csv('/home/soniame/private/projects/corona_geo_id/lines/line_wkt_count_202010701.csv')
+    logger.debug(f"Liles: {len(df_lines)}")
     
     # Coarse grid
     tiles = Babel('h3').polyfill(geometry, resolution=1)
+    logger.debug(f"Tiles: {len(tiles)}")
     
     # Lines to coarse grid ----
     with Pool(5) as p:
