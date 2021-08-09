@@ -12,6 +12,17 @@ from loguru import logger
 
 
 ## FUNCTIONS
+def line_to_coarse(line):
+    logger.debug(line)
+    
+    inter_list = list()
+    for tile in tiles:
+        geom = tile.geometry.shapely
+        inter_list.append(geom.intersection(wkt.loads(line)).is_empty)
+
+    result = {'line': line, 'coarse_grid': tiles[inter_list == False].geometry.wkt}
+    return(result)
+
 def _intersection_func(line, geometry):
     
     # TODO: create coarse grid
@@ -127,6 +138,17 @@ def create_squares():
     polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
     geometry = wkt.loads(polygon)
 
+    # Lines 
+    df_lines = pd.read_csv('/home/soniame/private/projects/corona_geo_id/lines/line_wkt_count_202010701.csv')
+    
+    # Coarse grid
+    tiles = Babel('h3').polyfill(geometry, resolution=1)
+    
+    # Lines to coarse grid ----
+    with Pool(5) as p:
+        r = p.map(partial(line_to_coarse), df_lines.line_wkt)
+    df_coarse = pd.DataFrame(r)    
+    
     # Running katana splits ----
     result = katana(geometry, 
                     threshold_func = _threshold_density_func, 
