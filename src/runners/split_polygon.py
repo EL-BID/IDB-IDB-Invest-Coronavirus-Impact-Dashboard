@@ -35,7 +35,7 @@ def line_to_coarse(line, tiles):
         pos = np.where(inter_list)[0].tolist()[0]  
         t_wkt = tiles[pos].geometry.wkt
     
-    result = {'line': line, 'coarse_grid': t_wkt}
+    result = {'line': line, 'coarse_wkt': t_wkt}
     
     #logger.debug(f"{pos} : {result}")
     
@@ -170,9 +170,10 @@ def create_squares():
     with Pool(10) as p:
         r = p.map(partial(line_to_coarse, tiles = tiles), df_lines.line_wkt)
     df_coarse = pd.DataFrame(r)    
-    df_coarse = pd.read_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id.csv")
+    df_coarse.to_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id.csv", index = False)
     
     # Running katana splits ----
+    logger.info('Katana grid')
     #result = katana(geometry, 
     #                threshold_func = _threshold_density_func, 
     #                threshold_value = .01, 
