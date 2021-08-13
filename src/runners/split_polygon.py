@@ -8,15 +8,43 @@ from datetime import datetime
 from shapely.geometry import box, Polygon, MultiPolygon, GeometryCollection, shape
 from shapely import wkt
 from shapely.ops import transform
+
 from babelgrid import Babel
 
 from multiprocessing.pool import Pool
 from functools import partial
 
+
 from loguru import logger
 
 
 ## FUNCTIONS
+def _get_lines(update_data = False):
+
+    logger.info('Lines')
+
+    # Download data from Athena
+    if update_data:
+        logger.debug("Downloading lines")
+        
+        conn = utils.connect_athena(path='configs/athena.yaml')
+        qry = f"""
+            select line_wkt, count(line_wkt) as count_lines
+            from spd_sdv_waze_corona.raw_sample_jams
+            group by line_wkt"""
+        df_lines = pd.read_sql_query(qry, conn)
+        df_lines.to_csv('/home/soniame/private/line_wkt_count_202010712.csv', index=False)
+    # Read current table
+    else:
+        logger.debug("Reading lines")             
+        df_lines = pd.read_csv('/home/soniame/private/projects/corona_geo_id/lines/line_wkt_count_202010712.csv')
+    
+    logger.debug(f"Lines: {len(df_lines)}")
+                     
+    return(df_lines)
+
+
+
 def line_to_coarse(line, tiles):
     
     #logger.debug(f"{line}")
@@ -41,11 +69,13 @@ def line_to_coarse(line, tiles):
     
     return(result)
 
+
 def _intersection_func(line, geometry):
     
     # TODO: create coarse grid
     result = geometry.intersection(wkt.loads(line)).is_empty == False
     return(int(result))
+
 
 def _threshold_density_func(geometry, threshold_value):
     """Compares the threshold values with the number of jams
@@ -61,8 +91,8 @@ def _threshold_density_func(geometry, threshold_value):
     
     # Intersection of lines within square
     # TODO: change to global variable
-    df_lines = pd.read_csv('/home/soniame/private/line_wkt_count_202010701.csv')
-    times = [_intersection_func(line, geometry) for line in df_lines.line_wkt]
+    # df_lines = pd.read_csv('/home/soniame/private/line_wkt_count_202010701.csv')
+    # times = [_intersection_func(line, geometry) for line in df_lines.line_wkt]
     total_lines = df_lines.count_lines
     
     # Total lines in square
@@ -144,6 +174,53 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
     return final_result
 
 
+
+def _coarse_grid(df_lines, tiles):
+    
+    logger.info('Coarse grid')
+    
+    prev = pd.read_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id.csv")
+    logger.debug(f'PL: {len(prev)}')
+    
+    lines = df_lines.line_wkt[:10]
+    lines = lines[lines.isin([prev.line[:10]]) == False]
+    logger.debug(f'NL: {len(lines)}')
+    
+    with Pool(10) as p:
+        r = p.map(partial(line_to_coarse, tiles = tiles), lines)
+        
+    update = pd.DataFrame(r)   
+    df_coarse = update.append(prev)
+    df_coarse.to_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id_new.csv", index = False)
+    
+    return None
+    
+
+    
+def _katana_grid(geometry):
+    
+    logger.info('Katana grid')
+    
+    result = katana(geometry, 
+                    threshold_func = _threshold_density_func, 
+                    threshold_value = .01, 
+                    max_number_tiles = 100)
+    print(len(MultiPolygon(result).geoms))
+    print(MultiPolygon(result))
+
+    # Multipolygon ----
+    grid = list()
+    for polygon in MultiPolygon(result):  # same for multipolygon.geoms
+        grid.append(str(polygon))
+
+
+    # Export to csv ----
+    outdf = gpd.GeoDataFrame(columns=['geometry'])
+    outdf['geometry'] = grid
+    outdf.to_csv(f"~/private/geo_id_polygon/geo_grid_area_{cm}.csv")
+
+    
+
 ## RUNNING
 def create_squares():
     
@@ -157,40 +234,16 @@ def create_squares():
     geometry = wkt.loads(polygon)
 
     # Lines 
-    logger.info('Lines')
-    df_lines = pd.read_csv('/home/soniame/private/projects/corona_geo_id/lines/line_wkt_count_202010701.csv')
-    logger.debug(f"Liles: {len(df_lines)}")
+    df_lines = _get_lines()
     
     # Coarse grid
     tiles = Babel('h3').polyfill(geometry, resolution=1)
     logger.debug(f"Tiles: {len(tiles)}")
     
     # Lines to coarse grid ----
-    logger.info('Coarse grid')
-    with Pool(10) as p:
-        r = p.map(partial(line_to_coarse, tiles = tiles), df_lines.line_wkt)
-    df_coarse = pd.DataFrame(r)    
-    df_coarse.to_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id.csv", index = False)
+    _coarse_grid(df_lines, tiles)
     
     # Running katana splits ----
-    logger.info('Katana grid')
-    #result = katana(geometry, 
-    #                threshold_func = _threshold_density_func, 
-    #                threshold_value = .01, 
-    #                max_number_tiles = 100)
-    # print(len(MultiPolygon(result).geoms))
-    # print(MultiPolygon(result))
-
-    # Multipolygon ----
-    #grid = list()
-    #for polygon in MultiPolygon(result):  # same for multipolygon.geoms
-    #    grid.append(str(polygon))
-
-
-    # Export to csv ----
-    #outdf = gpd.GeoDataFrame(columns=['geometry'])
-    #outdf['geometry'] = grid
-    #outdf.to_csv(f"~/private/geo_id_polygon/geo_grid_area_{cm}.csv")
-
+    # _katana_grid
 
 create_squares()
