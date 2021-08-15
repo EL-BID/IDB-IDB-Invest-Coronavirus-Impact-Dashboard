@@ -45,25 +45,33 @@ def _get_lines(update_data = False):
 
 
 
-def line_to_coarse(line, tiles):
+def line_to_coarse(line, tiles, prev):
     
-    #logger.debug(f"{line}")
-    # grid tiles intersection per line
-    inter_list = list()
-    for tile in tiles:
-        geom = tile.geometry.shapely
-        inter_list.append(geom.intersection(wkt.loads(line)).is_empty == False)
+    
+    if sum(line == prev.line) == 0:
+        # logger.debug(f"{line}")
         
-    # wkt assigned to each line
-    if sum(inter_list) == 0:
-        # In case there's no intersection
-        pos = None
-        t_wkt = ""
-    else:
-        pos = np.where(inter_list)[0].tolist()[0]  
-        t_wkt = tiles[pos].geometry.wkt
-    
-    result = {'line': line, 'coarse_wkt': t_wkt}
+        # grid tiles intersection per line
+        inter_list = list()
+        for tile in tiles:
+            geom = tile.geometry.shapely
+            inter_list.append(geom.intersection(wkt.loads(line)).is_empty == False)
+
+        # wkt assigned to each line
+        if sum(inter_list) == 0:
+            # In case there's no intersection
+            pos = None
+            t_wkt = ""
+        else:
+            pos = np.where(inter_list)[0].tolist()[0]  
+            t_wkt = tiles[pos].geometry.wkt
+
+        result = {'line': line, 'coarse_wkt': t_wkt}
+        
+    else: 
+        logger.debug(f"done before")
+        result = {'line': line, 'coarse_wkt': prev.coarse_wkt}
+        
     
     #logger.debug(f"{pos} : {result}")
     
@@ -180,17 +188,17 @@ def _coarse_grid(df_lines, tiles):
     logger.info('Coarse grid')
     
     prev = pd.read_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id.csv")
-    logger.debug(f'PL: {len(prev)}')
+    logger.debug(f'PL: {len(prev)}') # preview lines
     
-    lines = df_lines.line_wkt[:10]
-    lines = lines[lines.isin([prev.line[:10]]) == False]
-    logger.debug(f'NL: {len(lines)}')
+    lines = df_lines.line_wkt
+    logger.debug(f'NL: {len(lines)}') # new lines
     
-    with Pool(10) as p:
-        r = p.map(partial(line_to_coarse, tiles = tiles), lines)
+    with Pool(20) as p:
+        r = p.map(partial(line_to_coarse, tiles = tiles, prev = prev), lines)
         
-    update = pd.DataFrame(r)   
-    df_coarse = update.append(prev)
+    df_coarse = pd.DataFrame(r)   
+    logger.debug(f"UL: {df_coarse.shape[0]}") # update lines
+    
     df_coarse.to_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id_new.csv", index = False)
     
     return None
