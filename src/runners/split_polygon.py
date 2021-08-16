@@ -45,37 +45,61 @@ def _get_lines(update_data = False):
 
 
 
-def line_to_coarse(line, tiles, prev):
-    
-    
-    if sum(line == prev.line) == 0:
-        # logger.debug(f"{line}")
-        
-        # grid tiles intersection per line
-        inter_list = list()
-        for tile in tiles:
-            geom = tile.geometry.shapely
-            inter_list.append(geom.intersection(wkt.loads(line)).is_empty == False)
 
-        # wkt assigned to each line
-        if sum(inter_list) == 0:
-            # In case there's no intersection
-            pos = None
-            t_wkt = ""
-        else:
-            pos = np.where(inter_list)[0].tolist()[0]  
-            t_wkt = tiles[pos].geometry.wkt
 
-        result = {'line': line, 'coarse_wkt': t_wkt}
-        
-    else: 
-        logger.debug(f"done before")
-        result = {'line': line, 'coarse_wkt': prev.coarse_wkt}
-        
+def _line_to_coarse(line, tiles):
     
-    #logger.debug(f"{pos} : {result}")
-    
+    # list with logical value of grid tiles intersection per line
+    # Total length is the number of tiles
+    inter_list = list()
+    for tile in tiles:
+        # tile geometry
+        geom = tile.geometry.shapely
+        # intersection of tile geometry with line
+        inter_list.append(geom.intersection(wkt.loads(line)).is_empty == False)
+
+    # wkt assigned to each line
+    if sum(inter_list) == 0:
+        # In case there's no intersection
+        pos = None
+        t_wkt = ""
+    else:
+        pos = np.where(inter_list)[0].tolist()[0]  
+        t_wkt = tiles[pos].geometry.wkt
+
+    result = {'line': line, 'coarse_wkt': t_wkt}        
+        
     return(result)
+
+
+def _coarse_grid(df_lines, tiles):
+    
+    logger.info('Coarse grid')
+    
+    # Lines done previously
+    prev = pd.read_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id.csv"). \
+        rename(columns = {'line':'line_wkt'})
+    logger.debug(f'PL: {len(prev)}') # preview lines  
+    
+    # Elimination of lines already done
+    df_merge = df_lines.merge(prev, how='left')
+    df_merge = df_merge[df_merge.coarse_wkt.isnull() == True]
+    logger.debug(f'Lines done: {len(df_lines) - len(df_merge)}') # new lines
+    
+    # Final lines
+    lines = df_merge.line_wkt
+    logger.debug(f'NL: {len(lines)}') # new lines
+    
+    # Matching lines per tile
+    with Pool(10) as p:
+        r = p.map(partial(_line_to_coarse, tiles = tiles), lines)
+        
+    df_coarse = pd.DataFrame(r)   
+    logger.debug(f"UL: {df_coarse.shape[0]}") # update lines
+    
+    df_coarse.to_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id_new.csv", index = False)
+    
+    return None
 
 
 def _intersection_func(line, geometry):
@@ -180,28 +204,6 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
         else:
             final_result.append(g)
     return final_result
-
-
-
-def _coarse_grid(df_lines, tiles):
-    
-    logger.info('Coarse grid')
-    
-    prev = pd.read_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id.csv")
-    logger.debug(f'PL: {len(prev)}') # preview lines
-    
-    lines = df_lines.line_wkt
-    logger.debug(f'NL: {len(lines)}') # new lines
-    
-    with Pool(20) as p:
-        r = p.map(partial(line_to_coarse, tiles = tiles, prev = prev), lines)
-        
-    df_coarse = pd.DataFrame(r)   
-    logger.debug(f"UL: {df_coarse.shape[0]}") # update lines
-    
-    df_coarse.to_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id_new.csv", index = False)
-    
-    return None
     
 
     
