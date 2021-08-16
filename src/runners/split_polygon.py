@@ -19,6 +19,18 @@ from loguru import logger
 
 
 ## FUNCTIONS
+def _split_groups(df_lines):
+    ng = 6
+    size = len(df_lines)/ng
+    index_split = list()
+    for n in range(ng):
+        new_list = [n+1]*int(size)
+        index_split.extend(new_list)
+    len(index_split)    
+    
+    df_lines['split'] = index_split
+    return(df_lines)
+
 def _get_lines(update_data = False):
 
     logger.info('Lines')
@@ -245,6 +257,7 @@ def create_squares():
 
     # Lines 
     df_lines = _get_lines()
+    df_lines = df_lines[df_lines.split == 1]
     
     # Coarse grid
     tiles = Babel('h3').polyfill(geometry, resolution=1)
@@ -256,4 +269,4 @@ def create_squares():
     # Running katana splits ----
     # _katana_grid
 
-create_squares()
+#create_squares()
