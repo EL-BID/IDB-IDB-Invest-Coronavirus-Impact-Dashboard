@@ -84,7 +84,7 @@ def _line_to_coarse(line, tiles):
     return(result)
 
 
-def _coarse_grid(df_lines, tiles):
+def _coarse_grid(df_lines, tiles, split):
     
     logger.info('Coarse grid')
     
@@ -109,7 +109,7 @@ def _coarse_grid(df_lines, tiles):
     df_coarse = pd.DataFrame(r)   
     logger.debug(f"UL: {df_coarse.shape[0]}") # update lines
     
-    df_coarse.to_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id_new.csv", index = False)
+    df_coarse.to_csv(f"/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id_new_{split}.csv", index = False)
     
     return None
 
@@ -244,7 +244,7 @@ def _katana_grid(geometry):
     
 
 ## RUNNING
-def create_squares():
+def create_squares(split):
     
     # Date run ----
     cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
@@ -257,16 +257,16 @@ def create_squares():
 
     # Lines 
     df_lines = _get_lines()
-    df_lines = df_lines[df_lines.split == 1]
+    df_lines = df_lines[df_lines.split == split]
     
     # Coarse grid
     tiles = Babel('h3').polyfill(geometry, resolution=1)
     logger.debug(f"Tiles: {len(tiles)}")
     
     # Lines to coarse grid ----
-    _coarse_grid(df_lines, tiles)
+    _coarse_grid(df_lines, tiles, split)
     
     # Running katana splits ----
     # _katana_grid
 
-#create_squares()
+create_squares(split = 1)
