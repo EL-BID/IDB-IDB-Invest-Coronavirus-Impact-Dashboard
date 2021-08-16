@@ -257,6 +257,7 @@ def create_squares(split):
 
     # Lines 
     df_lines = _get_lines()
+    logger.debug(f"Split: {split}")
     df_lines = df_lines[df_lines.split == split]
     
     # Coarse grid
@@ -269,4 +270,4 @@ def create_squares(split):
     # Running katana splits ----
     # _katana_grid
 
-create_squares(split = 1)
+create_squares(split = 2)
