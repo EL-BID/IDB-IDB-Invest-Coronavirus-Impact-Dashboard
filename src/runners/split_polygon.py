@@ -56,9 +56,6 @@ def _get_lines(update_data = False):
     return(df_lines)
 
 
-
-
-
 def _line_to_coarse(line, tiles):
     
     # list with logical value of grid tiles intersection per line
@@ -84,9 +81,13 @@ def _line_to_coarse(line, tiles):
     return(result)
 
 
-def _coarse_grid(df_lines, tiles, split):
+def _create_coarse_grid(df_lines, tiles, split):
+    """
+    The function creates de intersection between a H3 grid tiles and the lines in 50 sample dates.
+    It's splitted for parallelization purposes
+    """
     
-    logger.info('Coarse grid')
+    logger.info('Create coarse grid')
     
     # Lines done previously
     prev = pd.read_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id.csv"). \
@@ -109,10 +110,19 @@ def _coarse_grid(df_lines, tiles, split):
     df_coarse = pd.DataFrame(r)   
     logger.debug(f"UL: {df_coarse.shape[0]}") # update lines
     
+    # Locallty saved - Join is made at 
+    # Notebook: notebooks/katana_bounds.ipynb#Split-lines-into-grid
     df_coarse.to_csv(f"/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id_new_{split}.csv", index = False)
     
     return None
 
+def _get_coarse_grid():
+    
+    logger.info('Get coarse grid')
+    
+    df_coarse = pd.read_csv('/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/coarse_id/coarse_grid_sample.csv')
+    
+    return(df_coarse)
 
 def _intersection_func(line, geometry):
     
@@ -244,7 +254,7 @@ def _katana_grid(geometry):
     
 
 ## RUNNING
-def create_squares(split):
+def create_squares(split = 0):
     
     # Date run ----
     cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
@@ -257,17 +267,22 @@ def create_squares(split):
 
     # Lines 
     df_lines = _get_lines()
-    logger.debug(f"Split: {split}")
-    df_lines = df_lines[df_lines.split == split]
+    if split > 0:
+        logger.debug(f"Split: {split}")
+        df_lines = df_lines[df_lines.split == split]
     
     # Coarse grid
     tiles = Babel('h3').polyfill(geometry, resolution=1)
     logger.debug(f"Tiles: {len(tiles)}")
     
     # Lines to coarse grid ----
-    _coarse_grid(df_lines, tiles, split)
+    if update_coarse_grid:
+        df_coarse = _create_coarse_grid(df_lines, tiles, split)(df_lines, tiles, split)
+    else:
+        df_coarse = _get_coarse_grid()
+
     
     # Running katana splits ----
     # _katana_grid
 
-create_squares(split = 2)
+#create_squares()
