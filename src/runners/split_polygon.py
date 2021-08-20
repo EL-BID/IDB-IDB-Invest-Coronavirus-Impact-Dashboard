@@ -273,17 +273,23 @@ def rerun_coarse_grid():
         rename(columns = {'line':'line_wkt'})
     # Reading distribution
     tab = pd.read_csv('/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/figures/coarse_grid_distribution.csv')
-    # Top 6 polygons
+    split_names = ['R2_1', 'R2_2', 'R2_3', 'R2_4', 'R2_5', 'R2_6', 'R2_7']
     
-    big_polygon = tab.sort_values(by=['lines'], ascending=False)[:6].coarse_wkt[1]
-    # Tiles resolution 2
-    geometry = wkt.loads(big_polygon)
-    tiles_r2 = Babel('h3').polyfill(geometry, resolution=2)
-    # Lines
-    df_new = df_coarse[df_coarse.coarse_wkt == big_polygon]. \
-        assign(split='R2_2')
-    # Create coarse grid
-    _create_coarse_grid(df_lines = df_new, tiles = tiles_r2, split = 'R2_2')
+    logger.info('SPLIT 2')
+    for x in [1, 2, 3, 4, 5]:
+        split_n = split_names[x]
+        logger.debug(f"S: {split_n}")
+        # Top 6 polygons
+        big_polygon = tab.sort_values(by=['lines'], ascending=False)[:6].coarse_wkt[x]
+        logger.debug(big_polygon)
+        # Tiles resolution 2 for polygon
+        geometry = wkt.loads(big_polygon)
+        tiles_r2 = Babel('h3').polyfill(geometry, resolution=2)
+        # Lines
+        df_new = df_coarse[df_coarse.coarse_wkt == big_polygon]. \
+            assign(split=split_n)
+        # Create coarse grid
+        _create_coarse_grid(df_lines = df_new, tiles = tiles_r2, split = split_n)
 
     return None
 
