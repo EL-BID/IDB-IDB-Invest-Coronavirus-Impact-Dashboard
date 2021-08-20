@@ -19,6 +19,24 @@ from loguru import logger
 
 
 ## FUNCTIONS
+# Append data coarse
+def _coarse_union(csv_files):
+    df_coarse = pd.DataFrame()
+    
+    for path_file in csv_files:
+        
+        logger.debug(path_file)
+        data_file = pd.read_csv(path_file)
+        df_coarse = df_coarse.append(data_file)
+        
+        logger.debug(len(df_coarse))
+        logger.debug(len(df_coarse.drop_duplicates()))
+        
+    logger.debug(df_coarse.shape)
+    logger.debug(df_coarse.drop_duplicates().shape)
+    
+    return(df_coarse)
+    
 def _split_groups(df_lines, ng = 6):
     """
     Split lines into same density groups
@@ -266,7 +284,7 @@ def _katana_grid(geometry):
     outdf.to_csv(f"~/private/geo_id_polygon/geo_grid_area_{cm}.csv")
 
     
-def rerun_coarse_grid():
+def _new_res_coarse_grid(h3_resolution=2):
     
     # Reading coarse grid
     df_coarse = _get_coarse_grid(). \
@@ -284,7 +302,7 @@ def rerun_coarse_grid():
         logger.debug(big_polygon)
         # Tiles resolution 2 for polygon
         geometry = wkt.loads(big_polygon)
-        tiles_r2 = Babel('h3').polyfill(geometry, resolution=2)
+        tiles_r2 = Babel('h3').polyfill(geometry, resolution=h3_resolution)
         # Lines
         df_new = df_coarse[df_coarse.coarse_wkt == big_polygon]. \
             assign(split=split_n)
@@ -327,4 +345,4 @@ def create_squares(split = 0):
 
     
 #create_squares()
-rerun_coarse_grid()
+#_new_res_coarse_grid()
