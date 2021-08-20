@@ -27,10 +27,10 @@ def _coarse_union(csv_files):
         
         logger.debug(path_file)
         data_file = pd.read_csv(path_file)
-        df_coarse = df_coarse.append(data_file)
+        logger.debug(f"File: {len(data_file)}")
         
-        logger.debug(len(df_coarse))
-        logger.debug(len(df_coarse.drop_duplicates()))
+        df_coarse = df_coarse.append(data_file)
+        logger.debug(f"Union: {len(df_coarse)}")
         
     logger.debug(df_coarse.shape)
     logger.debug(df_coarse.drop_duplicates().shape)
