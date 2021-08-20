@@ -19,8 +19,10 @@ from loguru import logger
 
 
 ## FUNCTIONS
-def _split_groups(df_lines):
-    ng = 6
+def _split_groups(df_lines, ng = 6):
+    """
+    Split lines into same density groups
+    """
     size = len(df_lines)/ng
     index_split = list()
     for n in range(ng):
@@ -32,11 +34,13 @@ def _split_groups(df_lines):
     return(df_lines)
 
 def _get_lines(update_data = False):
-
+    """
+    Get data frame of lines with count of jams per line and split number
+    """ 
     logger.info('Lines')
-
-    # Download data from Athena
+    
     if update_data:
+        # Download data from Athena
         logger.debug("Downloading lines")
         
         conn = utils.connect_athena(path='configs/athena.yaml')
@@ -45,11 +49,15 @@ def _get_lines(update_data = False):
             from spd_sdv_waze_corona.raw_sample_jams
             group by line_wkt"""
         df_lines = pd.read_sql_query(qry, conn)
-        df_lines.to_csv('/home/soniame/private/line_wkt_count_202010712.csv', index=False)
-    # Read current table
+        df_lines.to_csv('/home/soniame/private/projects/corona_geo_id/lines/line_wkt_count_202010712.csv', index=False)
     else:
-        logger.debug("Reading lines")             
-        df_lines = pd.read_csv('/home/soniame/private/projects/corona_geo_id/lines/line_wkt_count_202010712.csv')
+        # Read current table
+        logger.debug("Reading lines")
+        
+        path_vs = '/home/soniame/private/projects/corona_geo_id/lines/line_wkt_count_202010712.csv'
+        logger.debug(f"From {path_vs}")
+        
+        df_lines = pd.read_csv(path_vs)
     
     logger.debug(f"Lines: {len(df_lines)}")
                      
@@ -84,23 +92,24 @@ def _line_to_coarse(line, tiles):
 def _create_coarse_grid(df_lines, tiles, split):
     """
     The function creates de intersection between a H3 grid tiles and the lines in 50 sample dates.
-    It's splitted for parallelization purposes
+    It's split for parallelization purposes. Each split runns pero split
     """
     
     logger.info('Create coarse grid')
     
-    # Lines done previously
-    prev = pd.read_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id.csv"). \
-        rename(columns = {'line':'line_wkt'})
-    logger.debug(f'PL: {len(prev)}') # preview lines  
-    
-    # Elimination of lines already done
-    df_merge = df_lines.merge(prev, how='left')
-    df_merge = df_merge[df_merge.coarse_wkt.isnull() == True]
-    logger.debug(f'Lines done: {len(df_lines) - len(df_merge)}') # new lines
+    if False:
+        # Lines done previously
+        prev = pd.read_csv("/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id.csv"). \
+            rename(columns = {'line':'line_wkt'})
+        logger.debug(f'PL: {len(prev)}') # preview lines  
+
+        # Elimination of lines already done
+        df_merge = df_lines.merge(prev, how='left')
+        df_merge = df_merge[df_merge.coarse_wkt.isnull() == True]
+        logger.debug(f'Lines done: {len(df_lines) - len(df_merge)}') # new lines
     
     # Final lines
-    lines = df_merge.line_wkt
+    lines = df_lines.line_wkt
     logger.debug(f'NL: {len(lines)}') # new lines
     
     # Matching lines per tile
@@ -112,7 +121,9 @@ def _create_coarse_grid(df_lines, tiles, split):
     
     # Locallty saved - Join is made at 
     # Notebook: notebooks/katana_bounds.ipynb#Split-lines-into-grid
-    df_coarse.to_csv(f"/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id_new_{split}.csv", index = False)
+    path_vs = f"/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id_new_{split}.csv"
+    logger.debug(f"To {path_vs}")
+    df_coarse.to_csv(path_vs, index = False)
     
     return None
 
@@ -120,7 +131,10 @@ def _get_coarse_grid():
     
     logger.info('Get coarse grid')
     
-    df_coarse = pd.read_csv('/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/coarse_id/coarse_grid_sample.csv')
+    path_vs = '/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/coarse_id/coarse_grid_sample.csv'
+    logger.debug(f'From {path_vs}')
+    
+    df_coarse = pd.read_csv(path_vs)
     
     return(df_coarse)
 
@@ -252,6 +266,26 @@ def _katana_grid(geometry):
     outdf.to_csv(f"~/private/geo_id_polygon/geo_grid_area_{cm}.csv")
 
     
+def rerun_coarse_grid():
+    
+    # Reading coarse grid
+    df_coarse = _get_coarse_grid(). \
+        rename(columns = {'line':'line_wkt'})
+    # Reading distribution
+    tab = pd.read_csv('/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/figures/coarse_grid_distribution.csv')
+    # Top 6 polygons
+    
+    big_polygon = tab.sort_values(by=['lines'], ascending=False)[:6].coarse_wkt[1]
+    # Tiles resolution 2
+    geometry = wkt.loads(big_polygon)
+    tiles_r2 = Babel('h3').polyfill(geometry, resolution=2)
+    # Lines
+    df_new = df_coarse[df_coarse.coarse_wkt == big_polygon]. \
+        assign(split='R2_2')
+    # Create coarse grid
+    _create_coarse_grid(df_lines = df_new, tiles = tiles_r2, split = 'R2_2')
+
+    return None
 
 ## RUNNING
 def create_squares(split = 0):
@@ -267,17 +301,17 @@ def create_squares(split = 0):
 
     # Lines 
     df_lines = _get_lines()
-    if split > 0:
+    if split != 0:
         logger.debug(f"Split: {split}")
         df_lines = df_lines[df_lines.split == split]
     
     # Coarse grid
-    tiles = Babel('h3').polyfill(geometry, resolution=1)
+    tiles = Babel('h3').polyfill(geometry, resolution = 1)
     logger.debug(f"Tiles: {len(tiles)}")
     
     # Lines to coarse grid ----
     if update_coarse_grid:
-        df_coarse = _create_coarse_grid(df_lines, tiles, split)(df_lines, tiles, split)
+        df_coarse = _create_coarse_grid(df_lines, tiles, split)
     else:
         df_coarse = _get_coarse_grid()
 
@@ -285,4 +319,6 @@ def create_squares(split = 0):
     # Running katana splits ----
     # _katana_grid
 
+    
 #create_squares()
+rerun_coarse_grid()
