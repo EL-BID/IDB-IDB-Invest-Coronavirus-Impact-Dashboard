@@ -14,15 +14,19 @@ from babelgrid import Babel
 from multiprocessing.pool import Pool
 from functools import partial
 
-
 from loguru import logger
 
 
 ## FUNCTIONS
-# Append data coarse
+
 def _coarse_union(csv_files):
-    df_coarse = pd.DataFrame()
+    """
+    Append coarse data from csv_files
+    Either from parallelization of the same polygon or 
+    breaking big polygons into a smaller grid
+    """
     
+    df_coarse = pd.DataFrame()
     for path_file in csv_files:
         
         logger.debug(path_file)
