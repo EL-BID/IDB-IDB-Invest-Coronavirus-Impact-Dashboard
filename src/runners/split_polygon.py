@@ -71,12 +71,12 @@ def _get_lines(update_data = False):
             from spd_sdv_waze_corona.raw_sample_jams
             group by line_wkt"""
         df_lines = pd.read_sql_query(qry, conn)
-        df_lines.to_csv('/home/soniame/private/projects/corona_geo_id/lines/line_wkt_count_202010712.csv', index=False)
+        df_lines.to_csv('/shared/spd-sdv-omitnik-waze/corona/geo_partition/lines/line_wkt_count_202010712.csv', index=False)
     else:
         # Read current table
         logger.debug("Reading lines")
         
-        path_vs = '/home/soniame/private/projects/corona_geo_id/lines/line_wkt_count_202010712.csv'
+        path_vs = '/shared/spd-sdv-omitnik-waze/corona/geo_partition/lines/line_wkt_count_202010712.csv'
         logger.debug(f"From {path_vs}")
         
         df_lines = pd.read_csv(path_vs)
