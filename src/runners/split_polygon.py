@@ -81,7 +81,7 @@ def _get_lines(update_data = False):
         
         df_lines = pd.read_csv(path_vs)
     
-    logger.debug(f"Lines: {len(df_lines)}")
+    logger.debug(f"L: {len(df_lines)}")
                      
     return(df_lines)
 
@@ -111,7 +111,7 @@ def _line_to_coarse(line, tiles):
     return(result)
 
 
-def _create_coarse_grid(df_lines, tiles, split):
+def _create_coarse_grid(df_lines, split):
     """
     The function creates de intersection between a H3 grid tiles and the lines in 50 sample dates.
     It's split for parallelization purposes. Each split runns pero split
@@ -134,6 +134,10 @@ def _create_coarse_grid(df_lines, tiles, split):
     lines = df_lines.line_wkt
     logger.debug(f'NL: {len(lines)}') # new lines
     
+    # Tiles H3
+    tiles = Babel('h3').polyfill(geometry, resolution = 1)
+    logger.debug(f"Tiles: {len(tiles)}")
+    
     # Matching lines per tile
     with Pool(10) as p:
         r = p.map(partial(_line_to_coarse, tiles = tiles), lines)
@@ -149,14 +153,45 @@ def _create_coarse_grid(df_lines, tiles, split):
     
     return None
 
+
+def _new_res_coarse_grid(h3_resolution=2):
+    
+    # Reading coarse grid
+    df_coarse = _get_coarse_grid(). \
+        rename(columns = {'line':'line_wkt'})
+    # Reading distribution
+    tab = pd.read_csv('/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/figures/coarse_grid_distribution.csv')
+    split_names = ['R2_1', 'R2_2', 'R2_3', 'R2_4', 'R2_5', 'R2_6', 'R2_7']
+    
+    logger.info('SPLIT 2')
+    for x in [1, 2, 3, 4, 5]:
+        split_n = split_names[x]
+        logger.debug(f"S: {split_n}")
+        # Top 6 polygons
+        big_polygon = tab.sort_values(by=['lines'], ascending=False)[:6].coarse_wkt[x]
+        logger.debug(big_polygon)
+        # Tiles resolution 2 for polygon
+        geometry = wkt.loads(big_polygon)
+        tiles_r2 = Babel('h3').polyfill(geometry, resolution=h3_resolution)
+        # Lines
+        df_new = df_coarse[df_coarse.coarse_wkt == big_polygon]. \
+            assign(split=split_n)
+        # Create coarse grid
+        _create_coarse_grid(df_lines = df_new, tiles = tiles_r2, split = split_n)
+
+    return None
+
+
 def _get_coarse_grid():
     
     logger.info('Get coarse grid')
     
-    path_vs = '/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/coarse_id/coarse_grid_sample.csv'
+    path_vs = '/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/coarse_id/coarse_grid_sample_R2.csv'
     logger.debug(f'From {path_vs}')
     
     df_coarse = pd.read_csv(path_vs)
+    
+    logger.debug(f'L: {len(df_coarse)}')
     
     return(df_coarse)
 
@@ -182,7 +217,7 @@ def _threshold_density_func(geometry, threshold_value):
     # Intersection of lines within square
     # TODO: change to global variable
     # df_lines = pd.read_csv('/home/soniame/private/line_wkt_count_202010701.csv')
-    # times = [_intersection_func(line, geometry) for line in df_lines.line_wkt]
+    times = [_intersection_func(line, geometry) for line in df_lines.line_wkt]
     total_lines = df_lines.count_lines
     
     # Total lines in square
@@ -288,33 +323,6 @@ def _katana_grid(geometry):
     outdf.to_csv(f"~/private/geo_id_polygon/geo_grid_area_{cm}.csv")
 
     
-def _new_res_coarse_grid(h3_resolution=2):
-    
-    # Reading coarse grid
-    df_coarse = _get_coarse_grid(). \
-        rename(columns = {'line':'line_wkt'})
-    # Reading distribution
-    tab = pd.read_csv('/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/figures/coarse_grid_distribution.csv')
-    split_names = ['R2_1', 'R2_2', 'R2_3', 'R2_4', 'R2_5', 'R2_6', 'R2_7']
-    
-    logger.info('SPLIT 2')
-    for x in [1, 2, 3, 4, 5]:
-        split_n = split_names[x]
-        logger.debug(f"S: {split_n}")
-        # Top 6 polygons
-        big_polygon = tab.sort_values(by=['lines'], ascending=False)[:6].coarse_wkt[x]
-        logger.debug(big_polygon)
-        # Tiles resolution 2 for polygon
-        geometry = wkt.loads(big_polygon)
-        tiles_r2 = Babel('h3').polyfill(geometry, resolution=h3_resolution)
-        # Lines
-        df_new = df_coarse[df_coarse.coarse_wkt == big_polygon]. \
-            assign(split=split_n)
-        # Create coarse grid
-        _create_coarse_grid(df_lines = df_new, tiles = tiles_r2, split = split_n)
-
-    return None
-
 ## RUNNING
 def create_squares(split = 0):
     
@@ -333,11 +341,7 @@ def create_squares(split = 0):
         logger.debug(f"Split: {split}")
         df_lines = df_lines[df_lines.split == split]
     
-    # Coarse grid
-    tiles = Babel('h3').polyfill(geometry, resolution = 1)
-    logger.debug(f"Tiles: {len(tiles)}")
-    
-    # Lines to coarse grid ----
+    # Coarse grid ----
     if update_coarse_grid:
         df_coarse = _create_coarse_grid(df_lines, tiles, split)
     else:
