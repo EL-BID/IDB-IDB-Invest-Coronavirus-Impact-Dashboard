@@ -195,8 +195,16 @@ def _get_coarse_grid():
     
     return(df_coarse)
 
+def _get_dist_table():
+    
+    logger.info('Get distribution table')
+    path_dist = '/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/figures/coarse_grid_distribution_R.csv'
+    df_dist   = pd.read_csv(path_dist)
 
+    logger.debug(f'G: {len(df_dist)}')
 
+    return(df_dist)
+    
 ### KATANA GRID
 def threshold_func(geometry, threshold_value):
     """Compares the threshold values with the polygon area"""
@@ -244,6 +252,9 @@ def _threshold_density_func(geometry, threshold_value, df_dist, df_coarse):
     """
     Compares in coarse grid
     """
+    
+    logger.debug(f"Area: {geometry.area}")
+        
     # Coarse check
     in_jams, in_polygons = _intersection_coarse(geometry, df_dist)
     th_coarse = sum(in_jams)/sum(df_dist.jams)
@@ -256,6 +267,7 @@ def _threshold_density_func(geometry, threshold_value, df_dist, df_coarse):
         th_lines = _intersection_lines(df_coarse, in_polygons)
         return(th_lines)
 
+    
 def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_tiles=0):
     """Splits a geometry in tiles forming a grid given a threshold function and
     a maximum number of tiles.
@@ -341,7 +353,7 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
     # Export to csv ----
     outdf = gpd.GeoDataFrame(columns=['geometry'])
     outdf['geometry'] = grid
-    outdf.to_csv(f"~/private/geo_id_polygon/geo_grid_area_{cm}.csv")
+    outdf.to_csv(f"/home/soniame/shared/spd-sdv-omitnikwaze/corona/geo_partition/geo_id/geo_grid_area_{cm}.csv")
 
     
 ## RUNNING
@@ -356,15 +368,14 @@ def create_squares():
     polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
     geometry_la = wkt.loads(polygon)
     
+    # Distribution table ----
+    df_dist = _get_dist_table()
+
     # Coarse grid ----
     df_coarse = _get_coarse_grid()
-    
-    path_dist = '/home/soniame/shared/spd-sdv-omitnikwaze/corona/geo_partition/figures/coarse_grid_distribution_R.csv'
-    df_dist   = pd.read_csv(path_dist)
-    
+        
     # Running katana splits ----
     r = _katana_grid(geometry_la, _threshold_density_func, .01, 100)
 
-    
-#create_squares()
-#_new_res_coarse_grid()
+#_new_res_coarse_grid()    
+create_squares()
