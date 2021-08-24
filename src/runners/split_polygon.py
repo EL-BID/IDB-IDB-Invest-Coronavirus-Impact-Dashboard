@@ -19,42 +19,6 @@ from loguru import logger
 
 ## FUNCTIONS
 
-def _coarse_union(csv_files):
-    """
-    Append coarse data from csv_files
-    Either from parallelization of the same polygon or 
-    breaking big polygons into a smaller grid
-    """
-    
-    df_coarse = pd.DataFrame()
-    for path_file in csv_files:
-        
-        logger.debug(path_file)
-        data_file = pd.read_csv(path_file)
-        logger.debug(f"File: {len(data_file)}")
-        
-        df_coarse = df_coarse.append(data_file)
-        logger.debug(f"Union: {len(df_coarse)}")
-        
-    logger.debug(df_coarse.shape)
-    logger.debug(df_coarse.drop_duplicates().shape)
-    
-    return(df_coarse)
-    
-def _split_groups(df_lines, ng = 6):
-    """
-    Split lines into same density groups
-    """
-    size = len(df_lines)/ng
-    index_split = list()
-    for n in range(ng):
-        new_list = [n+1]*int(size)
-        index_split.extend(new_list)
-    len(index_split)    
-    
-    df_lines['split'] = index_split
-    return(df_lines)
-
 def _get_lines(update_data = False):
     """
     Get data frame of lines with count of jams per line and split number
@@ -71,18 +35,32 @@ def _get_lines(update_data = False):
             from spd_sdv_waze_corona.raw_sample_jams
             group by line_wkt"""
         df_lines = pd.read_sql_query(qry, conn)
-        df_lines.to_csv('/shared/spd-sdv-omitnik-waze/corona/geo_partition/lines/line_wkt_count_202010712.csv', index=False)
+        df_lines.to_csv('/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/lines/line_wkt_count_202010712.csv', index=False)
     else:
         # Read current table
         logger.debug("Reading lines")
         
-        path_vs = '/shared/spd-sdv-omitnik-waze/corona/geo_partition/lines/line_wkt_count_202010712.csv'
+        path_vs = '/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/lines/line_wkt_count_202010712.csv'
         logger.debug(f"From {path_vs}")
         
         df_lines = pd.read_csv(path_vs)
     
     logger.debug(f"L: {len(df_lines)}")
                      
+    return(df_lines)
+
+def _split_groups(df_lines, ng = 6):
+    """
+    Split lines into same density groups
+    """
+    size = len(df_lines)/ng
+    index_split = list()
+    for n in range(ng):
+        new_list = [n+1]*int(size)
+        index_split.extend(new_list)
+    len(index_split)    
+    
+    df_lines['split'] = index_split
     return(df_lines)
 
 
@@ -182,10 +160,32 @@ def _new_res_coarse_grid(h3_resolution=2):
     return None
 
 
+def _coarse_union(csv_files):
+    """
+    Append coarse data from csv_files
+    Either from parallelization of the same polygon or 
+    breaking big polygons into a smaller grid
+    """
+    
+    df_coarse = pd.DataFrame()
+    for path_file in csv_files:
+        
+        logger.debug(path_file)
+        data_file = pd.read_csv(path_file)
+        logger.debug(f"File: {len(data_file)}")
+        
+        df_coarse = df_coarse.append(data_file)
+        logger.debug(f"Union: {len(df_coarse)}")
+        
+    logger.debug(df_coarse.shape)
+    logger.debug(df_coarse.drop_duplicates().shape)
+    
+    return(df_coarse)
+
+
 def _get_coarse_grid():
     
     logger.info('Get coarse grid')
-    
     path_vs = '/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/coarse_id/coarse_grid_sample_R2.csv'
     logger.debug(f'From {path_vs}')
     
@@ -195,44 +195,66 @@ def _get_coarse_grid():
     
     return(df_coarse)
 
-def _intersection_func(line, geometry):
-    
-    # TODO: create coarse grid
-    result = geometry.intersection(wkt.loads(line)).is_empty == False
-    return(int(result))
 
 
-def _threshold_density_func(geometry, threshold_value):
-    """Compares the threshold values with the number of jams
-    Parameters
-    ----------
-    geometry: Polygon or MultiPolygon
-        Geometry to intersect lines
-    threshold_value: number
-        Max percentage of jams pero square
-    """
-    
-    print('Running')
-    
-    # Intersection of lines within square
-    # TODO: change to global variable
-    # df_lines = pd.read_csv('/home/soniame/private/line_wkt_count_202010701.csv')
-    times = [_intersection_func(line, geometry) for line in df_lines.line_wkt]
-    total_lines = df_lines.count_lines
-    
-    # Total lines in square
-    inter = sum([times[x]*total_lines[x] for x in range(len(total_lines))])
-    total = sum(total_lines)
-    
-    print(f"Intersection {inter}")
-    print(f"Total lines {total}")
-    print(f"Proportion {inter/total}")
-    
-    return (inter/total) < (threshold_value)
-
+### KATANA GRID
 def threshold_func(geometry, threshold_value):
     """Compares the threshold values with the polygon area"""
     return geometry.area < threshold_value
+
+
+def _intersection_geometry(geometry, wkt_str, jams = None):
+
+    intersection = int(geometry.intersection(wkt.loads(wkt_str)).is_empty == False)
+    if jams == None:
+        result = intersection
+    else:     
+        result = intersection*jams
+    
+    return(result)
+
+
+def _pool_lines( arg ):
+    
+    idx, row = arg
+    result  = _intersection_geometry(geometry, row['coarse_wkt_R'], row['count_lines'])
+    return(result)
+
+
+def _intersection_coarse(geometry, df_dist):
+    
+    df_dist = df_dist[df_dist.coarse_wkt_R != '(MISSING)']
+    in_jams = [_intersection_geometry(geometry, row['coarse_wkt_R'], row['jams']) for index, row in df_dist.iterrows()]
+    in_polygons = df_dist[[x > 0 for x in in_jams]]
+    
+    return(in_jams, in_polygons)
+
+def _intersection_lines(df_coarse, in_polygons):
+    
+    df_lines = df_coarse.merge(in_polygons[['coarse_wkt_R', 'jams']], how='inner', on = 'coarse_wkt_R')
+    with Pool(10) as p:
+        times = p.map(_pool_intersection, [(idx, row) for idx, row in df_lines.iterrows()])        
+        
+    th_lines = sum(times)/sum(df_lines.count_lines)
+    
+    return( (th_lines) < (threshold_value) )
+    
+
+def _threshold_density_func(geometry, threshold_value, df_dist, df_coarse):
+    """
+    Compares in coarse grid
+    """
+    # Coarse check
+    in_jams, in_polygons = _intersection_coarse(geometry, df_dist)
+    th_coarse = sum(in_jams)/sum(df_dist.jams)
+    logger.debug(f"TC{th_coarse}") 
+    
+    if th_coarse > threshold_value:
+        return(False)
+    if th_coarse < threshold_value:
+        # Intersection of lines withing coarse grid
+        th_lines = _intersection_lines(df_coarse, in_polygons)
+        return(th_lines)
 
 def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_tiles=0):
     """Splits a geometry in tiles forming a grid given a threshold function and
@@ -300,14 +322,14 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
     
 
     
-def _katana_grid(geometry):
+def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
     
     logger.info('Katana grid')
     
     result = katana(geometry, 
-                    threshold_func = _threshold_density_func, 
-                    threshold_value = .01, 
-                    max_number_tiles = 100)
+                    threshold_func = threshold_func, 
+                    threshold_value = threshold_value, 
+                    max_number_tiles = max_number_tiles)
     print(len(MultiPolygon(result).geoms))
     print(MultiPolygon(result))
 
@@ -316,7 +338,6 @@ def _katana_grid(geometry):
     for polygon in MultiPolygon(result):  # same for multipolygon.geoms
         grid.append(str(polygon))
 
-
     # Export to csv ----
     outdf = gpd.GeoDataFrame(columns=['geometry'])
     outdf['geometry'] = grid
@@ -324,7 +345,7 @@ def _katana_grid(geometry):
 
     
 ## RUNNING
-def create_squares(split = 0):
+def create_squares():
     
     # Date run ----
     cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
@@ -333,23 +354,16 @@ def create_squares(split = 0):
     # Polygon geometry definition ----
     # - Latin america BID
     polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
-    geometry = wkt.loads(polygon)
-
-    # Lines 
-    df_lines = _get_lines()
-    if split != 0:
-        logger.debug(f"Split: {split}")
-        df_lines = df_lines[df_lines.split == split]
+    geometry_la = wkt.loads(polygon)
     
     # Coarse grid ----
-    if update_coarse_grid:
-        df_coarse = _create_coarse_grid(df_lines, tiles, split)
-    else:
-        df_coarse = _get_coarse_grid()
-
+    df_coarse = _get_coarse_grid()
+    
+    path_dist = '/home/soniame/shared/spd-sdv-omitnikwaze/corona/geo_partition/figures/coarse_grid_distribution_R.csv'
+    df_dist   = pd.read_csv(path_dist)
     
     # Running katana splits ----
-    # _katana_grid
+    r = _katana_grid(geometry_la, _threshold_density_func, .01, 100)
 
     
 #create_squares()
