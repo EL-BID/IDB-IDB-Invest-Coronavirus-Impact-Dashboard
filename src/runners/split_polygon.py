@@ -222,13 +222,6 @@ def _intersection_geometry(geometry, wkt_str, jams = None):
     return(result)
 
 
-def _pool_lines( arg ):
-    
-    idx, row = arg
-    result  = _intersection_geometry(geometry, row['coarse_wkt_R'], row['count_lines'])
-    return(result)
-
-
 def _intersection_coarse(geometry, df_dist):
     
     df_dist = df_dist[df_dist.coarse_wkt_R != '(MISSING)']
@@ -237,18 +230,31 @@ def _intersection_coarse(geometry, df_dist):
     
     return(in_jams, in_polygons)
 
-def _intersection_lines(df_coarse, in_polygons):
+
+def _pool_lines( arg, geometry ):
+    
+    idx, row = arg
+    result  = _intersection_geometry(geometry, row['coarse_wkt_R'], row['count_lines'])
+    return(result)
+
+
+def _intersection_lines(df_coarse, in_polygons, geometry):
     
     df_lines = df_coarse.merge(in_polygons[['coarse_wkt_R', 'jams']], how='inner', on = 'coarse_wkt_R')
-    with Pool(10) as p:
-        times = p.map(_pool_intersection, [(idx, row) for idx, row in df_lines.iterrows()])        
-        
-    th_lines = sum(times)/sum(df_lines.count_lines)
+    logger.debug(f"L: {len(df_lines)}")
+    logger.debug(f"A: {geometry.area}")
     
-    return( (th_lines) < (threshold_value) )
+    with Pool(10) as p:
+        times = p.map( partial(_pool_lines, geometry = geometry), 
+                       [(idx, row) for idx, row in df_lines.iterrows()] )        
+    # OJO CON EL DENOMINADOR    
+    th_lines = sum(times)/sum(df_lines.count_lines)
+    logger.debug(f"Den: {sum(df_lines.count_lines)}")
+    
+    return( (th_lines) )
     
 
-def _threshold_density_func(geometry, threshold_value, df_dist, df_coarse):
+def _threshold_density_func(geometry, threshold_value):
     """
     Compares in coarse grid
     """
@@ -258,14 +264,15 @@ def _threshold_density_func(geometry, threshold_value, df_dist, df_coarse):
     # Coarse check
     in_jams, in_polygons = _intersection_coarse(geometry, df_dist)
     th_coarse = sum(in_jams)/sum(df_dist.jams)
-    logger.debug(f"TC{th_coarse}") 
+    logger.debug(f"THC: {th_coarse}") 
     
     if th_coarse > threshold_value:
         return(False)
-    if th_coarse < threshold_value:
+    if th_coarse <= threshold_value:
         # Intersection of lines withing coarse grid
-        th_lines = _intersection_lines(df_coarse, in_polygons)
-        return(th_lines)
+        th_lines = _intersection_lines(df_coarse, in_polygons, geometry)
+        logger.debug(f"THL: {th_lines}")
+        return(th_lines < threshold_value)
 
     
 def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_tiles=0):
@@ -353,7 +360,7 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
     # Export to csv ----
     outdf = gpd.GeoDataFrame(columns=['geometry'])
     outdf['geometry'] = grid
-    outdf.to_csv(f"/home/soniame/shared/spd-sdv-omitnikwaze/corona/geo_partition/geo_id/geo_grid_area_{cm}.csv")
+    outdf.to_csv(f"/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/geo_grid_area_{cm}.csv")
 
     
 ## RUNNING
@@ -369,9 +376,11 @@ def create_squares():
     geometry_la = wkt.loads(polygon)
     
     # Distribution table ----
+    global df_dist
     df_dist = _get_dist_table()
 
     # Coarse grid ----
+    global df_coarse
     df_coarse = _get_coarse_grid()
         
     # Running katana splits ----
