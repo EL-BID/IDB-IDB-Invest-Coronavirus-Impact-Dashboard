@@ -228,7 +228,9 @@ def _intersection_coarse(geometry, df_dist):
     in_jams = [_intersection_geometry(geometry, row['coarse_wkt_R'], row['jams']) for index, row in df_dist.iterrows()]
     in_polygons = df_dist[[x > 0 for x in in_jams]]
     
-    return(in_jams, in_polygons)
+    th_coarse = round(sum(in_jams)/sum(df_dist.jams), 4)
+
+    return(th_coarse, in_polygons)
 
 
 def _pool_lines( arg, geometry ):
@@ -241,39 +243,38 @@ def _pool_lines( arg, geometry ):
 def _intersection_lines(df_coarse, in_polygons, geometry):
     
     df_lines = df_coarse.merge(in_polygons[['coarse_wkt_R', 'jams']], how='inner', on = 'coarse_wkt_R')
-    logger.debug(f"L: {len(df_lines)}")
-    logger.debug(f"A: {geometry.area}")
+    logger.debug(f"Lin: {len(df_lines)}")
     
     with Pool(10) as p:
         times = p.map( partial(_pool_lines, geometry = geometry), 
                        [(idx, row) for idx, row in df_lines.iterrows()] )        
-    # OJO CON EL DENOMINADOR    
-    th_lines = sum(times)/sum(df_lines.count_lines)
-    logger.debug(f"Den: {sum(df_lines.count_lines)}")
+    logger.debug(f"SumT: {sum(times)}")
     
-    return( (th_lines) )
+    th_lines = sum(times)/sum(df_dist.jams)
+    
+    return( round(th_lines, 4) )
     
 
 def _threshold_density_func(geometry, threshold_value):
     """
     Compares in coarse grid
-    """
+    """        
     
-    logger.debug(f"Area: {geometry.area}")
-        
+    logger.debug(f"Ar: {geometry.area}")
+    
     # Coarse check
-    in_jams, in_polygons = _intersection_coarse(geometry, df_dist)
-    th_coarse = sum(in_jams)/sum(df_dist.jams)
+    th_coarse, in_polygons = _intersection_coarse(geometry, df_dist)
     logger.debug(f"THC: {th_coarse}") 
     
-    if th_coarse > threshold_value:
+    if (th_coarse > (threshold_value)*2):
         return(False)
-    if th_coarse <= threshold_value:
+    if ((th_coarse <= (threshold_value)*2) & (th_coarse > threshold_value)):
         # Intersection of lines withing coarse grid
         th_lines = _intersection_lines(df_coarse, in_polygons, geometry)
         logger.debug(f"THL: {th_lines}")
-        return(th_lines < threshold_value)
-
+        return(th_lines <= threshold_value)
+    if (th_coarse <= threshold_value):
+        return(True)
     
 def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_tiles=0):
     """Splits a geometry in tiles forming a grid given a threshold function and
@@ -308,6 +309,8 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
     if threshold_func(geometry, threshold_value) or number_tiles == max_number_tiles:
         # either the polygon is smaller than the threshold, or the maximum
         # number of recursions has been reached
+        logger.debug(f"Final Geom: {geometry.area}")
+        logger.debug(f"{str(geometry)}")
         return [geometry]
     if height >= width:
         # split left to right
@@ -372,6 +375,7 @@ def create_squares():
 
     # Polygon geometry definition ----
     # - Latin america BID
+    polygon = 'POLYGON ((-71.19140625 -39.198205348894795, -61.962890625 -39.198205348894795, -61.962890625 -31.316101383495635, -71.19140625 -31.316101383495635, -71.19140625 -39.198205348894795))'
     polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
     geometry_la = wkt.loads(polygon)
     
@@ -382,6 +386,7 @@ def create_squares():
     # Coarse grid ----
     global df_coarse
     df_coarse = _get_coarse_grid()
+
         
     # Running katana splits ----
     r = _katana_grid(geometry_la, _threshold_density_func, .01, 100)
