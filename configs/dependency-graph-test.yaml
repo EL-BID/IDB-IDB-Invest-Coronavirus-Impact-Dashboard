@@ -147,11 +147,11 @@
     - table: daily_daily_index
       worksheet: daily
       overall_drop: [region_shapefile_wkt]
-      public_drop: ['observed', 'expected_2020', 'dashboard']
+      public_drop: ['observed', 'expected_2020', 'dashboard', 'ratio_20']
     - table: daily_weekly_index
       worksheet: weekly
       overall_drop: [region_shapefile_wkt]
-      public_drop: ['observed', 'expected_2020', 'dashboard']
+      public_drop: ['observed', 'expected_2020', 'dashboard', 'ratio_20']
     - table: analysis_metadata_variation
       worksheet: metadata
       overall_drop: ['region_shapefile_binary', 'area']
