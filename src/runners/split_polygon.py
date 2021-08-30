@@ -266,9 +266,9 @@ def _threshold_density_func(geometry, threshold_value):
     th_coarse, in_polygons = _intersection_coarse(geometry, df_dist)
     logger.debug(f"THC: {th_coarse}") 
     
-    if (th_coarse > (threshold_value)*2):
+    if (th_coarse > (threshold_value)*3):
         return(False)
-    if ((th_coarse <= (threshold_value)*2) & (th_coarse > threshold_value)):
+    if ((th_coarse <= (threshold_value)*3) & (th_coarse > threshold_value)):
         # Intersection of lines withing coarse grid
         th_lines = _intersection_lines(df_coarse, in_polygons, geometry)
         logger.debug(f"THL: {th_lines}")
@@ -306,6 +306,11 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
     bounds = geometry.bounds
     width = bounds[2] - bounds[0]
     height = bounds[3] - bounds[1]
+    
+    logger.debug(f"number_tiles: {number_tiles}")
+    logger.debug(f"max_number_tiles: {max_number_tiles}")
+    
+    # Making the cuts
     if threshold_func(geometry, threshold_value) or number_tiles == max_number_tiles:
         # either the polygon is smaller than the threshold, or the maximum
         # number of recursions has been reached
@@ -320,18 +325,25 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
         # split top to bottom
         a = box(bounds[0], bounds[1], bounds[0] + width / 2, bounds[3])
         b = box(bounds[0] + width / 2, bounds[1], bounds[2], bounds[3])
+    
+    # Creating result
     result = []
-    for d in (
-        a,
-        b,
-    ):
+    for d in (a, b,):
+        # c is the intersection of the geometry with the new bounds
         c = geometry.intersection(d)
+        logger.debug(f"c: {c}")
+        # check if c is in GeometryCollection
         if not isinstance(c, GeometryCollection):
+            # if not add it
             c = [c]
         for e in c:
+            # check if e is in Polygon or MultiPolygon
             if isinstance(e, (Polygon, MultiPolygon)):
-                result.extend(katana(e, threshold_func, threshold_value, number_tiles + 1))
-    if count > 0:
+                # if it is then extend the result with that new geometry
+                result.extend(katana(e, threshold_func, threshold_value, max_number_tiles, number_tiles + 1))
+    logger.debug(f"Result: {len(result)}")
+    if number_tiles > 0:
+        logger.debug(f"result: {result}")
         return result
     # convert multipart into singlepart
     final_result = []
@@ -370,13 +382,15 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
 def create_squares():
     
     # Date run ----
+    global cm
     cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
     print(cm)
 
     # Polygon geometry definition ----
     # - Latin america BID
-    polygon = 'POLYGON ((-71.19140625 -39.198205348894795, -61.962890625 -39.198205348894795, -61.962890625 -31.316101383495635, -71.19140625 -31.316101383495635, -71.19140625 -39.198205348894795))'
+    
     polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
+    polygon = 'POLYGON ((-71.19140625 -39.198205348894795, -61.962890625 -39.198205348894795, -61.962890625 -31.316101383495635, -71.19140625 -31.316101383495635, -71.19140625 -39.198205348894795))'
     geometry_la = wkt.loads(polygon)
     
     # Distribution table ----
@@ -389,7 +403,7 @@ def create_squares():
 
         
     # Running katana splits ----
-    r = _katana_grid(geometry_la, _threshold_density_func, .01, 100)
+    r = _katana_grid(geometry_la, _threshold_density_func, .01, 10)
 
 #_new_res_coarse_grid()    
 create_squares()
