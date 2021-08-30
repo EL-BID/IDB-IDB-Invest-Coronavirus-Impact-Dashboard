@@ -359,6 +359,7 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
 def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
     
     logger.info('Katana grid')
+    logger.info(f'Run tm {cm}')
     
     result = katana(geometry, 
                     threshold_func = threshold_func, 
@@ -389,7 +390,6 @@ def create_squares():
 
     # Polygon geometry definition ----
     # - Latin america BID
-    
     polygon = 'POLYGON ((-71.19140625 -39.198205348894795, -61.962890625 -39.198205348894795, -61.962890625 -31.316101383495635, -71.19140625 -31.316101383495635, -71.19140625 -39.198205348894795))'
     polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
     geometry_la = wkt.loads(polygon)
