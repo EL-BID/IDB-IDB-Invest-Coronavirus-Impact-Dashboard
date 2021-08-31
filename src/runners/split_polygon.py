@@ -377,7 +377,7 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
     outdf = gpd.GeoDataFrame(columns=['geometry'])
     outdf['geometry'] = grid
     outdf.to_csv('/home/soniame/private/result.csv')
-    outdf.to_csv(f"/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/geo_grid_area_{cm}.csv")
+    outdf.to_csv(f"/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/geo_grid_area_{cm}.csv",index = False)
 
     
 ## RUNNING
