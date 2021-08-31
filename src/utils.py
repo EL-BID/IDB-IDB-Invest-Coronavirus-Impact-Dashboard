@@ -191,7 +191,7 @@ def query_athena(query, config, config_path="configs/athena.yaml"):
         if config["force"]:
 
             cursor.execute(
-                f'drop table \
+                f'drop table if exists \
                 {config["athena_database"]}.{config["slug"]}_{config["raw_table"]}_{config["name"]}'
             )
 
