@@ -31,18 +31,19 @@ ratios as (
 	select 
 		d.region_slug,
 		d.week_number,
+		d.week_number_obs,
 		d.min_year,
 		d.min_month,
 		d.min_day,
+		d.max_year,
 		d.max_month,
 		d.max_day,
-		observed,
-		expected_2020,
+		d.observed,
+		h.expected_2020,
 		cast(d.observed as double) / cast(h.expected_2020 as double) as ratio_20
 	from (		
 	        select
 				region_slug,
-				dow,
 				sum(expected_2020) expected_2020
 			from (
 				select
@@ -61,6 +62,7 @@ ratios as (
 			min_by(year, dow) min_year,
 			min_by(month, dow) min_month,
 			min_by(day, dow) min_day,
+            max_by(year, dow) max_year,
 			max_by(month, dow) max_month,
 			max_by(day, dow) max_day,
 			sum(tci) observed
@@ -77,7 +79,8 @@ ratios as (
              )
 		group by region_slug, 
                 week_number_obs,
-				WEEK(date_parse(concat(cast(year as varchar), ' ', cast(month as varchar), ' ', cast(day as varchar)), '%Y %m %e'))) d
+				week_number
+		) d
 	on d.region_slug = h.region_slug)
 select
 	localtimestamp last_updated_utc,
@@ -94,6 +97,7 @@ select
 	ratios.min_year,
 	ratios.min_month,
 	ratios.min_day,
+	ratios.max_year,
 	ratios.max_month,
 	ratios.max_day,
 	ratios.observed,
