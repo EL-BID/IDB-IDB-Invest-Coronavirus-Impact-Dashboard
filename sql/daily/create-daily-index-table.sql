@@ -35,6 +35,9 @@ with ratios as (
 		    "day",
 		    sum(tci) as observed
 		from {{ athena_database }}.{{ slug }}_daily_daily
+        where date_parse(concat(cast(year as varchar), ' ', 
+            cast(month as varchar), ' ', 
+            cast(day as varchar)), '%Y %m %e') >= date('2020-03-09')
 		group by
 		        region_slug,
 				"year",
