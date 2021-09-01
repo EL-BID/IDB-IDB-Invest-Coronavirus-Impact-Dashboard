@@ -107,7 +107,7 @@ select
 	metadata.dashboard,
 	metadata.region_shapefile_wkt
 from ratios
-join {{ athena_database }}.{{ slug }}_analysis_metadata_variation metadata
+join {{ athena_database }}.prod_analysis_metadata_variation metadata
 on ratios.region_slug = metadata.region_slug
 where weekly_approved = true
 or metadata.region_slug in ('{{ cv_exception | join(', ') }}')
