@@ -1,6 +1,6 @@
 # Dashboard Updates
 
-**Update (20201-09-02)**
+**Update (09/02/2021)**
 
 *  Duplicated data was found for specific regions and dates. This has been solved by downloading and processing the full data again a
 The series has been replace, so there could be differences with the previous version.
