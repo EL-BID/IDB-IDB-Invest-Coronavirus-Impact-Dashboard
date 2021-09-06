@@ -132,7 +132,7 @@ def _create_coarse_grid(df_lines, split):
     return None
 
 
-def _new_res_coarse_grid(h3_resolution=2):
+def create_coarse_grid(h3_resolution=2):
     
     # Reading coarse grid
     df_coarse = _get_coarse_grid(). \
@@ -211,21 +211,26 @@ def threshold_func(geometry, threshold_value):
     return geometry.area < threshold_value
 
 
-def _intersection_geometry(geometry, wkt_str, jams = None):
+def _intersection_geometry(geometry, wkt_str, jams = None, line_result = None):
 
-    intersection = int(geometry.intersection(wkt.loads(wkt_str)).is_empty == False)
+    intersection = int(geometry.intersection(wkt.loads(str(wkt_str))).is_empty == False)
     if jams == None:
         result = intersection
-    else:     
+    if jams != None:     
         result = intersection*jams
-    
+    if line_result == True:
+        if intersection > 0:
+            result = {'wkt_def': wkt_str, 'geom_def': str(geometry)}
+        else:
+            result = {'wkt_def': wkt_str, 'geom_def': None}
+        
     return(result)
 
 
-def _intersection_coarse(geometry, df_dist):
+def _intersection_coarse(geometry, df_dist, wkt = 'coarse_wkt_R'):
     
     df_dist = df_dist[df_dist.coarse_wkt_R != '(MISSING)']
-    in_jams = [_intersection_geometry(geometry, row['coarse_wkt_R'], row['jams']) for index, row in df_dist.iterrows()]
+    in_jams = [_intersection_geometry(geometry, row[wkt], row['jams']) for index, row in df_dist.iterrows()]
     in_polygons = df_dist[[x > 0 for x in in_jams]]
     
     th_coarse = round(sum(in_jams)/sum(df_dist.jams), 4)
@@ -233,10 +238,10 @@ def _intersection_coarse(geometry, df_dist):
     return(th_coarse, in_polygons)
 
 
-def _pool_lines( arg, geometry ):
+def _pool_lines( arg, geometry, wkt = 'coarse_wkt_R', jams = 'count_lines', line_result = None):
     
     idx, row = arg
-    result  = _intersection_geometry(geometry, row['coarse_wkt_R'], row['count_lines'])
+    result  = _intersection_geometry(geometry, row[wkt], row[jams], line_result)
     return(result)
 
 
@@ -253,7 +258,8 @@ def _intersection_lines(df_coarse, in_polygons, geometry):
     th_lines = sum(times)/sum(df_dist.jams)
     
     return( round(th_lines, 4) )
-    
+
+
 
 def _threshold_density_func(geometry, threshold_value):
     """
@@ -406,5 +412,54 @@ def create_squares():
     # Running katana splits ----
     r = _katana_grid(geometry_la, _threshold_density_func, .01, 10)
 
-#_new_res_coarse_grid()    
-create_squares()
+    
+def _lines_squares(square):
+    square = wkt.loads(str(square))
+    logger.debug(f'{square}')
+    
+    # Hexagons intersected with square
+    _, in_hex = _intersection_coarse(square, df_dist)
+    logger.debug(f'Hex: {len(in_hex)}')
+
+    # Lines inside this coarse
+    df_lines = df_coarse.merge(in_hex[['coarse_wkt_R', 'jams']], how='inner', on = 'coarse_wkt_R')
+    logger.debug(f"Lin: {len(df_lines)}")
+
+    # Intersection of lines inside square
+    with Pool(10) as p:
+        result = p.map( partial(_pool_lines, 
+                               geometry = square,
+                               wkt = 'line_wkt', 
+                               jams = 'jams', 
+                               line_result = True), 
+                       [(idx, row) for idx, row in df_lines.iterrows()] )
+        
+    return(result)
+
+    
+def density_squares():
+    
+    # Date run ----
+    global cm
+    cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
+    print(cm)
+    
+    # Distribution table ----
+    global df_dist
+    df_dist = _get_dist_table()
+
+    # Coarse grid ----
+    global df_coarse
+    df_coarse = _get_coarse_grid()
+
+    # Geo grid ----
+    mypath = "/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/"
+    geo_id_path = max([os.path.join(mypath, x) for x in os.listdir(mypath)])
+    global df_geo_id
+    df_geo_id = pd.read_csv(geo_id_path)
+        
+    # Running katana splits ----
+    #r = _lines_squares(df_geo_id.)    
+    
+# create_coarse_grid()    
+# create_squares()
