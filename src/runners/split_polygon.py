@@ -1,5 +1,6 @@
 
 # LIBRARIES
+import os
 import pandas as pd
 import numpy as np
 import geopandas as gpd
@@ -434,7 +435,8 @@ def _lines_squares(square):
                                line_result = True), 
                        [(idx, row) for idx, row in df_lines.iterrows()] )
         
-    return(result)
+    df = pd.DataFrame(result).dropna()    
+    return(df)
 
     
 def density_squares():
@@ -458,8 +460,19 @@ def density_squares():
     global df_geo_id
     df_geo_id = pd.read_csv(geo_id_path)
         
-    # Running katana splits ----
-    #r = _lines_squares(df_geo_id.)    
+    # Running squares splits ----
+    # r = _lines_squares(df_geo_id.geometry[0])  
+    df = pd.DataFrame()
+    for i in range(len(df_geo_id.geometry)):
+        square = df_geo_id.geometry[i]
+        df_sq = _lines_squares(square)
+        logger.debug(f"{df_sq}")
+        df_sq.to_csv(f'/home/soniame/private/projects/corona_geo_id/geo_id/results_{i}.csv')
+        df = df.append(df_sq, ignore_index=True)
+        
+
+    df.to_csv('/home/soniame/private/result.csv')
     
 # create_coarse_grid()    
 # create_squares()
+density_squares()
