@@ -456,22 +456,26 @@ def density_squares():
 
     # Geo grid ----
     mypath = "/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/"
-    geo_id_path = max([os.path.join(mypath, x) for x in os.listdir(mypath)])
+    geo_id_path = min([os.path.join(mypath, x) for x in os.listdir(mypath)])
     global df_geo_id
     df_geo_id = pd.read_csv(geo_id_path)
-        
+    
+    dir_name = geo_id_path.split("/")[-1].replace(".csv", "")
+    path_dir = f'/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_lines/{dir_name}'
+    os.makedirs(path_dir, exist_ok=True)
+    
     # Running squares splits ----
     # r = _lines_squares(df_geo_id.geometry[0])  
-    df = pd.DataFrame()
-    for i in range(207, len(df_geo_id.geometry)):
+    #df = pd.DataFrame()
+    for i in range(6, len(df_geo_id.geometry)):
+        logger.debug(f"i: {i}")
         square = df_geo_id.geometry[i]
         df_sq = _lines_squares(square)
         logger.debug(f"{df_sq}")
-        df_sq.to_csv(f'/home/soniame/private/projects/corona_geo_id/geo_id/results_{i}.csv')
-        df = df.append(df_sq, ignore_index=True)
+        df_sq.to_csv(f'{path_dir}/results_{i}.csv')
+        #df = df.append(df_sq, ignore_index=True)
         
 
-    df.to_csv('/home/soniame/private/result.csv')
     
 # create_coarse_grid()    
 # create_squares()
