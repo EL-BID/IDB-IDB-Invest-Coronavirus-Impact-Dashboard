@@ -67,15 +67,15 @@
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: daily
-  verbose: True
+  verbose: False
   depends_on: [
     metadata_variation
   ]
   current_millis: v13
   mode: 'incremental'
   interval:
-    start: 2020-07-08
-    end: 2020-07-08
+    start: 2021-07-11
+    end: 2021-09-10
 
 - 
   path: 'sql/daily/create-filtered-table'
@@ -100,7 +100,6 @@
     historical_2020
   ]
   name: daily_index
-  pass: True
   
 - 
   path: 'sql/daily/create-weekly-index-table.sql'
@@ -111,7 +110,6 @@
     historical_2020
   ]
   name: weekly_index
-  pass: True
 
 - 
   path: 'sql/daily/create-hourly-index-table.sql'
@@ -165,4 +163,3 @@
     #   worksheet: grouphours
     #   overall_drop: []
     #   public_drop: []
-  pass: True

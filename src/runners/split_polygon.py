@@ -467,16 +467,19 @@ def density_squares():
     # Running squares splits ----
     # r = _lines_squares(df_geo_id.geometry[0])  
     #df = pd.DataFrame()
-    for i in range(6, len(df_geo_id.geometry)):
+    for i in range(len(df_geo_id.geometry)):
         logger.debug(f"i: {i}")
         square = df_geo_id.geometry[i]
         df_sq = _lines_squares(square)
         logger.debug(f"{df_sq}")
         df_sq.to_csv(f'{path_dir}/results_{i}.csv')
         #df = df.append(df_sq, ignore_index=True)
-        
 
     
-# create_coarse_grid()    
-# create_squares()
-density_squares()
+#create_coarse_grid()    
+#create_squares()
+#density_squares()
+
+def start(config):
+
+    globals()[config["name"]](config)
