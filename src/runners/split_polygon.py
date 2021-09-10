@@ -476,16 +476,16 @@ def density_squares(config):
 #create_coarse_grid()    
 #create_squares()
 #density_squares()
+
 def check_existence(config):
 
     return True
 
 def start(config):
 
-    print( config)
     
     # Date run ----
-    print([config["name"]])
+    logger.debug([config["name"]])
     
     globals()[config["name"]](config)
     

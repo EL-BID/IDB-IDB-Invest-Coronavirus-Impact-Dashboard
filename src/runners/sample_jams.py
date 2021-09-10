@@ -11,7 +11,7 @@ from loguru import logger
 from src import utils
 from src.runners.partitioned_athena_query import _get_hours
 
-def _sample_dates(start_date, end_date):
+def sample_dates(start_date, end_date):
     """
     Sample 50 days from date range
     - Exclude weekends and end of year. 
@@ -67,3 +67,15 @@ def _sample_dates(start_date, end_date):
     
     return(_get_hours(_dates))
 
+
+def check_existence(config):
+
+    return True
+
+def start(config):
+
+    
+    # Date run ----    
+    globals()[config["name"]](config)
+    
+    

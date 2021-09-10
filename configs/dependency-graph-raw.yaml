@@ -1,6 +1,12 @@
 # Geo ID data
 - 
   path: 'sql/raw/create-raw-jams.sql'
+  runner: sample_jams
+  name: sample_dates
+  pass: True
+  
+- 
+  path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
   name: density_squares
   force: True
