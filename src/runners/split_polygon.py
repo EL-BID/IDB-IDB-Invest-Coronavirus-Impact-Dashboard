@@ -441,11 +441,10 @@ def _lines_squares(square):
     
 def density_squares(config):
     
-    # Date run ----
     global cm
     cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
     print(cm)
-    
+
     # Distribution table ----
     global df_dist
     df_dist = _get_dist_table()
@@ -477,7 +476,17 @@ def density_squares(config):
 #create_coarse_grid()    
 #create_squares()
 #density_squares()
+def check_existence(config):
+
+    return True
 
 def start(config):
 
+    print( config)
+    
+    # Date run ----
+    print([config["name"]])
+    
     globals()[config["name"]](config)
+    
+    
