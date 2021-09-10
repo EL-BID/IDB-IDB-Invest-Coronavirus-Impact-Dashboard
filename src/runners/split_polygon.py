@@ -133,7 +133,7 @@ def _create_coarse_grid(df_lines, split):
     return None
 
 
-def create_coarse_grid(h3_resolution=2):
+def create_coarse_grid(config, h3_resolution=2):
     
     # Reading coarse grid
     df_coarse = _get_coarse_grid(). \
@@ -388,7 +388,7 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
 
     
 ## RUNNING
-def create_squares():
+def create_squares(config):
     
     # Date run ----
     global cm
@@ -397,7 +397,7 @@ def create_squares():
 
     # Polygon geometry definition ----
     # - Latin america BID
-    polygon = 'POLYGON ((-71.19140625 -39.198205348894795, -61.962890625 -39.198205348894795, -61.962890625 -31.316101383495635, -71.19140625 -31.316101383495635, -71.19140625 -39.198205348894795))'
+    # polygon = 'POLYGON ((-71.19140625 -39.198205348894795, -61.962890625 -39.198205348894795, -61.962890625 -31.316101383495635, -71.19140625 -31.316101383495635, -71.19140625 -39.198205348894795))'
     polygon = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
     geometry_la = wkt.loads(polygon)
     
@@ -439,7 +439,7 @@ def _lines_squares(square):
     return(df)
 
     
-def density_squares():
+def density_squares(config):
     
     # Date run ----
     global cm
@@ -466,14 +466,12 @@ def density_squares():
     
     # Running squares splits ----
     # r = _lines_squares(df_geo_id.geometry[0])  
-    #df = pd.DataFrame()
     for i in range(len(df_geo_id.geometry)):
         logger.debug(f"i: {i}")
         square = df_geo_id.geometry[i]
         df_sq = _lines_squares(square)
         logger.debug(f"{df_sq}")
         df_sq.to_csv(f'{path_dir}/results_{i}.csv')
-        #df = df.append(df_sq, ignore_index=True)
 
     
 #create_coarse_grid()    
