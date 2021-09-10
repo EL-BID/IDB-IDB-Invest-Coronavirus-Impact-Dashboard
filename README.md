@@ -17,8 +17,10 @@ that “social distancing” restrictions and recommendations due to the coronav
 having on the population and on economic activity.
 
 
+:warning: All the data in the daily and weekly series has been replaced by a new version of the series, because duplicated data was found for specific regions and dates in the data published in 2020. This problem has now been fixed, but **there could be differences between the data in this version of the Dashboard and prior version**. Data in the latest update of the Dashboard is available only until July 11th, 2021 as internat changes are being made to the process of downloading and storing data. Updated information will become available in Octobre 2021. 
 
-:warning: We are facing internal technical issues which caused the data to stop updating on July 15th. We are working to get back with up-to-date data as soon as possible.
+:warning: In addition, due to unexpected difficulties with downloading and re-processing the data, right now we are not providing TCI changes for the countries of Brazil and Mexico (but we do provide their cities). This will be solved in the next few weeks. 
+
 
 ## Use the data
 
