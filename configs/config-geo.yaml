@@ -1,0 +1,144 @@
+# This is a configuration file that sets up all the important 
+# paramenters to run a Waze normalization pipeline. Most of the 
+# time, users just have to modify simple parameters concerning 
+# the name of the process `slug` and dates. 
+
+
+# Name of the process. 
+# Everything will be saved under the `slug` name: Athena tables and 
+# S3 data. So it is very important that you remember it and that it 
+# means something. A resoanable `slug` is the name of the city or 
+# region that you are running the pipeline for.
+
+# Pipeline Groups
+# Add historical to run full pipeline
+
+tables: [
+    raw,
+    # daily, 
+    # metadata, 
+    # analysis, 
+    # grid,
+    # cities,
+    # historical,
+    ] #
+
+
+# Athena 
+# Those variables are used build Athena queries and locate the working database,
+
+# Where the data is going to be saved. 
+s3_path: s3://iadbprod-public-stata-as-a-service/spd-sdv-omitnik-waze/corona
+
+bucket: iadbprod-public-stata-as-a-service
+prefix: spd-sdv-omitnik-waze/corona
+
+# Where to save all tables to run the pipeline.
+athena_database: spd_sdv_waze_corona
+
+# Where to find the raw Waze data
+raw_database: spd_sdv_waze_reprocessed
+
+
+# Athena Configurations
+number_of_athena_jobs: 10
+
+# Initial Filters
+# They are applied at the first step of the pipeline that extracts data
+# from the raw table. Those filters define the universe where all 
+# calculations are going to happen.
+# If ` - blockingalertuuid is null` is uncommented, then you will delete
+# all information about blocked roads. In the standard mode, blocked roads
+# are kept in the unbalanced panel, but are not part of the estiamates.
+initial_filters:
+    - speed >= 0
+    - length > 0
+    - blockingalertuuid is null # uncomment to filter blocked roads
+
+# Waze Feed
+feed_frequency: 5
+reference_timestamp: '2015-01-01 00:00:00' # do not change
+
+# Pipeline Intervals 
+full_2019_interval:
+    start: 2019-01-01
+    end: 2019-12-31
+
+daily_table:
+    break_date: 2020-03-15
+    before: spd_sdv_waze_reprocessed.jams_ready
+    after: '"p-waze-parquet-waze"."jams"'
+
+variation_coef_threshold: 0.5
+osm_length_threshold: 0.1
+
+# Countries partitions
+countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
+            TD,AV,SC,PO,SG,UY,GY,BH,GP,SX,VC,BF,AA,MB,FG,CJ,TK,SP,MH,ST,BD,CV,
+            HA,AC,MF,BQ,GJ,VI,DO,MR]
+
+cv_exception: ['country_brazil']
+
+#selected_regions: ['mexicocity', 'bogota', 'saopaulo']
+
+accepted_osm_keys: [
+    motorway,
+    trunk,
+    primary,
+    secondary,
+    tertiary,
+    unclassified,
+    residential
+]
+
+# Metadata 
+metadata:
+    regions_metadata:
+        columns: [
+            country_name,
+            country_iso,
+            region_slug,
+            region_name,
+            region_type,
+            population,
+            dashboard,
+            timezone,
+            region_shapefile_wkt,
+            rerun,
+            grid    
+            ]
+    country_waze_to_iso:
+        columns: [
+            waze_code,
+            iso2_code,
+            IDB_code,
+            country_name_IDB_eng,
+            country_name
+        ]
+
+# Tests
+tests:
+    all_polygons:
+        - metadata_metadata_ready
+        - daily_historical_2019
+        - daily_historical_2020
+        - daily_index
+
+    existence:
+        - metadata_regions_metadata
+        - metadata_metadata_ready
+        - daily_historical_2019
+        - daily_historical_2020
+        - daily_index
+        - historical_historical_2019_raw
+        - historical_historical_2020_raw
+        - daily_daily_raw
+        - daily_daily
+
+timezone:
+    replace:
+        America/Punta_Arenas: America/Santiago
+
+# Grid
+coarse_resolutions: 7
+granular_resolution: 8
