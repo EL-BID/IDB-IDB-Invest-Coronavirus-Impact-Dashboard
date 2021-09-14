@@ -17,3 +17,8 @@
   name: create_squares
   pass: True
 
+- 
+  path: 'sql/raw/create-raw-jams.sql'
+  runner: split_polygon
+  name: redo_squares
+  force: True

@@ -206,6 +206,7 @@ def _get_dist_table():
 
     return(df_dist)
     
+    
 ### KATANA GRID
 def threshold_func(geometry, threshold_value):
     """Compares the threshold values with the polygon area"""
@@ -385,7 +386,8 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
     outdf['geometry'] = grid
     outdf.to_csv('/home/soniame/private/result.csv')
     outdf.to_csv(f"/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/geo_grid_area_{cm}.csv",index = False)
-
+    
+    
     
 ## RUNNING
 def create_squares(config):
@@ -413,6 +415,44 @@ def create_squares(config):
     # Running katana splits ----
     r = _katana_grid(geometry_la, _threshold_density_func, .01, 10)
 
+    
+def redo_squares(config):
+    
+    # Date run ----
+    global cm
+    cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
+    print(cm)
+
+    # Distribution table ----
+    global df_dist
+    df_dist = _get_dist_table()
+
+    # Coarse grid ----
+    global df_coarse
+    df_coarse = _get_coarse_grid()
+    
+    # New distribution
+    tab = pd.read_csv("/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/figures/geo_lines_distribution.csv")
+
+    # Polygon geometry definition ----
+    ratio = tab \
+        .sort_values('jams', ascending=False) \
+        .assign(ratio = lambda x: x.jams / (sum(df_dist.jams)*.01))
+    squares = ratio[ratio.ratio > 2]
+    
+    cm_ve = cm
+    for polygon in squares.geo_id.tolist()[:1]:
+        
+        logger.debug(polygon)
+        
+        geometry = wkt.loads(polygon)
+        cm = cm_ve + polygon
+
+        logger.debug(cm)
+        
+        # Running katana splits ----
+        r = _katana_grid(geometry, _threshold_density_func, .01, 5)
+    
     
 def _lines_squares(square):
     square = wkt.loads(str(square))
@@ -455,7 +495,7 @@ def density_squares(config):
 
     # Geo grid ----
     mypath = "/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/"
-    geo_id_path = min([os.path.join(mypath, x) for x in os.listdir(mypath)])
+    geo_id_path = max([os.path.join(mypath, x) for x in os.listdir(mypath)])
     global df_geo_id
     df_geo_id = pd.read_csv(geo_id_path)
     

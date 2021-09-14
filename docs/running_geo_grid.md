@@ -1,25 +1,25 @@
 
-## Split Latin-America in Squares
+# Split Latin-America in Squares
+
 
 ---
 
 **Project:** Coronavirus Dashboard
 
-**Reference:**
-
-- Geometric objects tutorial: https://autogis-site.readthedocs.io/en/latest/notebooks/L1/geometric-objects.html
-- Split methodology: https://snorfalorpagus.net/blog/2016/03/13/splitting-large-polygons-for-faster-intersections/
-- Running example: https://gist.github.com/JoaoCarabetta/8a5df60ac0012e56219a5b2dffcb20e3
-- Katana function: https://github.com/JoaoCarabetta/osmpy/blob/36e0b75bd65c6d8d6d9d379c410561ba1ea19bbf/osmpy/core.py#L46
-- Katana example: https://gist.github.com/JoaoCarabetta/8a5df60ac0012e56219a5b2dffcb20e3
-- Random sample in Athena: https://stackoverflow.com/questions/44510714/random-sample-of-size-n-in-athena
-- Athena partition projection: https://docs.aws.amazon.com/athena/latest/ug/partition-projection-kinesis-firehose-example.html
-- Polygons and geojson visualization: https://geojson.io/
-
 **Objective:** Split Latin-America geometry to create a distributed table.
 
-Steps
--------
+
+**Storage:** Data is saved as csv  at `shared/spd-sdv-omitnik-waze/corona/geo_partition`
+
+`coarse_id`
+`figures`
+`geo_id`
+`geo_lines`
+`lines`
+
+
+### Steps
+
 
 1. Download days/weeks of waze jams data.
 Get a random sample of several days and put it in memory, should be faster.
@@ -37,6 +37,8 @@ R: Downloaded sample of 50 days. The days were selected from data available from
 
 
 <br> 
+
+
 
 2. Coarse grid for lines using H3 Grid resolution 1 and resolution 2. 
 
@@ -100,4 +102,15 @@ st_polygon(<REGION_SLUG_GEO>))
 ```
 
 
+----
 
+**Reference:**
+
+- Geometric objects tutorial: https://autogis-site.readthedocs.io/en/latest/notebooks/L1/geometric-objects.html
+- Split methodology: https://snorfalorpagus.net/blog/2016/03/13/splitting-large-polygons-for-faster-intersections/
+- Running example: https://gist.github.com/JoaoCarabetta/8a5df60ac0012e56219a5b2dffcb20e3
+- Katana function: https://github.com/JoaoCarabetta/osmpy/blob/36e0b75bd65c6d8d6d9d379c410561ba1ea19bbf/osmpy/core.py#L46
+- Katana example: https://gist.github.com/JoaoCarabetta/8a5df60ac0012e56219a5b2dffcb20e3
+- Random sample in Athena: https://stackoverflow.com/questions/44510714/random-sample-of-size-n-in-athena
+- Athena partition projection: https://docs.aws.amazon.com/athena/latest/ug/partition-projection-kinesis-firehose-example.html
+- Polygons and geojson visualization: https://geojson.io/
