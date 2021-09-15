@@ -27,7 +27,8 @@
 ### Pipeline
 
 
-1. Download days/weeks of waze jams data.
+**1. Download days/weeks of waze jams data.**
+
 Get a random sample of several days and put it in memory, should be faster.
 
 ```
@@ -37,32 +38,33 @@ ORDER BY RANDOM()
 LIMIT 100
 ```
 
-**Implementation**. Downloaded sample of 50 days. The days were selected from data available from January 15 to December 15 each year from 2019 to 2021. Only week days were considered and random seeds were defined. **Code** can be found at `notebooks/katana_bounds.ipynb` (1.1  Sample dates). 
+*Implementation*. Data was sampled from 50 days. The days were selected from January 15 to December 15 per year from 2019 to 2021. Only week days were considered and random seeds were defined. 
 
 - Lines 21,904,128
 - Jams 507,139,112
 
+Code can be found at `notebooks/katana_bounds.ipynb` (1.1  Sample dates) and funtions from `src/runners/split_polygon.py`. The data can be found at the S3 bucket in `shared/spd-sdv-omitnik-waze/corona/geo_partition/lines/line_wkt_count_*.csv`
 
-Stored at `lines/`. 
+
 
 <br> 
 
 
 
-2. Coarse grid for lines using H3 Grid resolution 1 and resolution 2. 
+**2. Coarse grid for lines using H3 Grid resolution 1 and resolution 2. **
 
 This step was implemented as consequence of the slow run time of katana grid. So the idea is to first intersect tiles (hexagons) with lines. Every grid has one millon or less lines included. 
 
-**Implementation**. Code can be found in the code at `src/runners/split_polygon.py` function `create_coarse_grid()`. The data can be found at the S3 bucket in `shared/spd-sdv-omitnik-waze/corona/geo_partition/coarse_id/coarse_grid_sample.csv`
+*Implementation*. Code can be found in the code at `src/runners/split_polygon.py` function `create_coarse_grid()`. The data can be found at the S3 bucket in `shared/spd-sdv-omitnik-waze/corona/geo_partition/coarse_id/coarse_grid_sample.csv`
 
 
 <br> 
 
-3. Katana function to create squares.
+**3. Katana function to create squares.**
 
 In this step we used the katana method to create a grid that is proportional to the density of data. I.e. if there is more data, then the tile is smaller. São Paulo should have several tiles and the amazon should have one. Example attached in html.
 
-**Implementation**. Code can be found at `src/runners/split_polygon.py` function `create_squares()`. This function creates the katana grid considering the polygon defined for Latin-America. The function `_threshold_density_func()` defines if a square is big enough considering the number of jams in the square proposed represent less than 0.1% of the jams observed in the data sampled in step 1. 
+*Implementation*. Code can be found at `src/runners/split_polygon.py` function `create_squares()`. This function creates the katana grid considering the polygon defined for Latin-America. The function `_threshold_density_func()` defines if a square is big enough considering the number of jams in the square proposed represent less than 0.1% of the jams observed in the data sampled in step 1. 
 
 The output is a table with the polygon per square and can be found at the S3 bucket in `shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/{cm}/geo_grid_area_{cm}.csv`
 
@@ -71,29 +73,31 @@ A second grid was created in polygons with a number of jams twice or more over t
 For the second grid, the output are several tables, one per polygon, including the polygon of the squares redone. It also can be found at the S3 bucket in `shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/{cm}/geo_grid_area_{cm}POLYGON ((*)).csv`
 
 
-3b. Tune the parameters to get a reasonable number of tiles. 
+**3b.** Tune the parameters to get a reasonable number of tiles. 
 
 **Implementation**. Parameters in this step are defined at the function `_katana_grid()`. 
 
 <br> 
 
-4. Frequency of lines per square
+**4. Frequency of lines per square**
 
 In this step first we assign a square or geo_id to each line in the data.
 
 **Implementation**. Code can be found at `src/runners/split_polygon.py` function `density_squares()`. The output is a csv table with each line observed assigned to a geo_id. 
 
 
-4b. Distribution table
+**4b.** Distribution table
 
 **Implementation**. Code can be found at `src/runners/split_polygon.py` function `_get_dist_table()`. The output is a csv table with the number of unique lines and jams per geo_id. 
 
 
+**4c.** Frequency and distribution table for squares redone
 
 
 <br> 
 
-5. Create a support table. The support table has to carry geo partition information.
+**5. Create a support table. The support table has to carry geo partition information.**
+
 You have to build this table once with all partitions. After that, the table will remain the same. 
 Support table schema:
 
@@ -105,7 +109,9 @@ geometry_wkt     --> string
 
 <br> 
 
-6. Create a table in athena that has the same columns as the raw table with an extra column: `geo_partition_id`. The query should look like this:
+**6. Create a table in athena that has the same columns as the raw table with an extra column: `geo_partition_id`. **
+
+The query should look like this:
 That might not work for all full dataset, so you can first create an empty table, then run this query daily using INSERT INTO to add the new data to the final table.
 
 ```
@@ -121,11 +127,13 @@ on ST_INTERSECT(t1.line, t2.geometry)
 
 <br> 
 
-7. To update it, just run an INSERT INTO with the missing days/hours
+**7. To update it, just run an INSERT INTO with the missing days/hours**
 
 <br> 
 
-8. Now you have data partitioned by geography. Every time that you need to query for a region, you can use the support table to get the geo_partition_ids. You'd just have to add this snippet on the existing queries.
+**8. Now you have data partitioned by geography.**
+
+Every time that you need to query for a region, you can use the support table to get the geo_partition_ids. You'd just have to add this snippet on the existing queries.
 
 ```
 select geo_partition_id
@@ -135,7 +143,7 @@ where ST_INTERSECT(<region_slug>, t2.geometry)
 
 <br> 
 
-9. You have to find out which geo partitions intersect with your region slug through intersection 
+**9.** You have to find out which geo partitions intersect with your region slug through intersection 
 Example of how a query should look like
 
 ```
