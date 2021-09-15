@@ -477,6 +477,10 @@ def _lines_squares(square):
     df = pd.DataFrame(result).dropna()    
     return(df)
 
+def find_poly(x):
+    if (x.endswith('.csv')) & ('POLYGON' in x):
+        return(os.path.join(mypath, x))
+    else
     
 def density_squares(config):
     
@@ -492,20 +496,31 @@ def density_squares(config):
     df_coarse = _get_coarse_grid()
 
     # Geo grid ----
-    mypath = "/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/"
-    geo_id_path = max([os.path.join(mypath, x) for x in os.listdir(mypath)])
-    global df_geo_id
-    df_geo_id = pd.read_csv(geo_id_path)
+    cm_read = config['cm_read']
+    mypath = f"{config['s3_path']}/geo_partition/geo_id/{cm_read}"
+    geo_id_path = [os.path.join(mypath, x) for x in os.listdir(mypath)]
+    logger.debug(f"Files: {len(geo_id_path)}")
     
-    dir_name = geo_id_path.split("/")[-1].replace(".csv", "")
-    path_dir = f'/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_lines/{dir_name}'
+    # Read all files in geo_id partitions
+    # global df_geo_id
+    df_squares = pd.DataFrame()
+    for path in geo_id_path:
+        # read the data frame
+        df = pd.read_csv(geo_id_path)        
+        df['polygon'] = path[path.find('POL'):].replace('.csv', '')
+        df_squares = df_squares.append(df)
+    logger.debug(f"Polygons: {len(df_squares)}")
+    
+    # Create directory
+    #dir_name = geo_id_path.split("/")[-1].replace(".csv", "")
+    path_dir = f"{config['s3_path']}/geo_partition/geo_lines/{cm_read}"
     os.makedirs(path_dir, exist_ok=True)
     
     # Running squares splits ----
-    # r = _lines_squares(df_geo_id.geometry[0])  
-    for i in range(len(df_geo_id.geometry)):
+    # r = _lines_squares(df_squares.geometry[0])  
+    for i in range(len(df_squares.geometry)):
         logger.debug(f"i: {i}")
-        square = df_geo_id.geometry[i]
+        square = df_squares.geometry[i]
         df_sq = _lines_squares(square)
         logger.debug(f"{df_sq}")
         df_sq.to_csv(f'{path_dir}/results_{i}.csv')
