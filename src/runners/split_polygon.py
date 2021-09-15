@@ -351,7 +351,6 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
                 result.extend(katana(e, threshold_func, threshold_value, max_number_tiles, number_tiles + 1))
     logger.debug(f"Result: {len(result)}")
     if number_tiles > 0:
-        logger.debug(f"result: {result}")
         return result
     # convert multipart into singlepart
     final_result = []
@@ -384,7 +383,6 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
     # Export to csv ----
     outdf = gpd.GeoDataFrame(columns=['geometry'])
     outdf['geometry'] = grid
-    outdf.to_csv('/home/soniame/private/result.csv')
     outdf.to_csv(f"/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/geo_grid_area_{cm}.csv",index = False)
     
     
@@ -417,11 +415,12 @@ def create_squares(config):
 
     
 def redo_squares(config):
-    
+     
+    logger.debug(config)
+        
     # Date run ----
     global cm
     cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
-    print(cm)
 
     # Distribution table ----
     global df_dist
@@ -441,17 +440,17 @@ def redo_squares(config):
     squares = ratio[ratio.ratio > 2]
     
     cm_ve = cm
-    for polygon in squares.geo_id.tolist()[:1]:
+    
+    for polygon in squares.geo_id.tolist():
         
         logger.debug(polygon)
-        
         geometry = wkt.loads(polygon)
         cm = cm_ve + polygon
 
         logger.debug(cm)
         
         # Running katana splits ----
-        r = _katana_grid(geometry, _threshold_density_func, .01, 5)
+        r = _katana_grid(geometry, _threshold_density_func, .01, config['max_tiles'])
     
     
 def _lines_squares(square):
@@ -483,7 +482,6 @@ def density_squares(config):
     
     global cm
     cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
-    print(cm)
 
     # Distribution table ----
     global df_dist
@@ -525,7 +523,7 @@ def start(config):
 
     
     # Date run ----
-    logger.debug([config["name"]])
+    logger.debug(config)
     
     globals()[config["name"]](config)
     

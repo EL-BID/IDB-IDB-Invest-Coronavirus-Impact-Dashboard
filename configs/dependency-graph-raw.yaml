@@ -8,17 +8,28 @@
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
-  name: density_squares
-  force: True
-
+  name: create_coarse_grid 
+  depends_on: [sample_dates]
+  pass: True
+  
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
   name: create_squares
+  depends_on: [create_coarse_grid]
+  pass: True
+
+- 
+  path: 'sql/raw/create-raw-jams.sql'
+  runner: split_polygon
+  name: density_squares
+  depends_on: [density_squares]
   pass: True
 
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
   name: redo_squares
-  force: True
+  depends_on: [create_squares, density_squares]
+  max_tiles: 5
+  pass: True
