@@ -9,36 +9,37 @@
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
   name: create_coarse_grid 
-  depends_on: [sample_dates]
+  #depends_on: [sample_dates]
   pass: True
   
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
   name: create_squares
-  depends_on: [create_coarse_grid]
+  #depends_on: [create_coarse_grid]
   pass: True
 
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
-  name: density_squares
+  name: density_squares_1
   cm_read: '2021083013081630344071'
-  depends_on: [density_squares]
+  #depends_on: [density_squares]
   pass: True
 
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
   name: redo_squares
-  depends_on: [create_squares, density_squares]
+  #depends_on: [create_squares, density_squares]
   max_tiles: 5
   pass: True
 
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
-  name: density_squares
+  name: density_lines_squares
   cm_read: '2021091413091631639640'
-  depends_on: [redo_squares]
-  pass: True
+  force: True
+  
+ 
