@@ -453,7 +453,8 @@ def redo_squares(config):
         r = _katana_grid(geometry, _threshold_density_func, .01, config['max_tiles'])
     
     
-def _lines_squares(square):
+    
+def _lines_squares(square, df_coarse, df_dist):
     square = wkt.loads(str(square))
     logger.debug(f'{square}')
     
@@ -477,69 +478,62 @@ def _lines_squares(square):
     df = pd.DataFrame(result).dropna()    
     return(df)
 
-def find_poly(x):
-    if (x.endswith('.csv')) & ('POLYGON' in x):
-        return(os.path.join(mypath, x))
-    else
-    
-def density_squares(config):
-    
-    global cm
-    cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
 
+def find_poly(x):
+    if x.endswith('.csv'):
+        return(os.path.join(mypath, x))
+
+    
+def density_lines_squares(config):
+    
     # Distribution table ----
-    global df_dist
     df_dist = _get_dist_table()
 
     # Coarse grid ----
-    global df_coarse
     df_coarse = _get_coarse_grid()
 
+    #logger.debug(config['cm_read'])
+    path_s3 = '/home/soniame/shared/spd-sdv-omitnik-waze/corona'
+    
     # Geo grid ----
-    cm_read = config['cm_read']
-    mypath = f"{config['s3_path']}/geo_partition/geo_id/{cm_read}"
-    geo_id_path = [os.path.join(mypath, x) for x in os.listdir(mypath)]
-    logger.debug(f"Files: {len(geo_id_path)}")
+    cm_read = '2021091413091631639640' #config['cm_read']
+    read_paths = f"{path_s3}/geo_partition/geo_id/{cm_read}"
+    geo_id_paths = [os.path.join(read_paths, x) for x in os.listdir(read_paths)]
+    logger.debug(f"Files: {len(geo_id_paths)}")
     
     # Read all files in geo_id partitions
-    # global df_geo_id
     df_squares = pd.DataFrame()
-    for path in geo_id_path:
+    for path in geo_id_paths:
         # read the data frame
-        df = pd.read_csv(geo_id_path)        
-        df['polygon'] = path[path.find('POL'):].replace('.csv', '')
-        df_squares = df_squares.append(df)
-    logger.debug(f"Polygons: {len(df_squares)}")
-    
+        if path.endswith('.csv'):
+            df = pd.read_csv(path)        
+            df['polygon'] = path[path.find('POL'):].replace('.csv', '')
+            df_squares = df_squares.append(df)
+    logger.debug(f"Sh: {df_squares.shape}")    
+            
     # Create directory
-    #dir_name = geo_id_path.split("/")[-1].replace(".csv", "")
-    path_dir = f"{config['s3_path']}/geo_partition/geo_lines/{cm_read}"
+    path_dir = f"{path_s3}/geo_partition/geo_lines/{cm_read}"
     os.makedirs(path_dir, exist_ok=True)
     
     # Running squares splits ----
-    # r = _lines_squares(df_squares.geometry[0])  
+    logger.debug(f"Polygons: {len(df_squares.geometry)}")
+    squares_list = df_squares.geometry.tolist()
     for i in range(len(df_squares.geometry)):
         logger.debug(f"i: {i}")
-        square = df_squares.geometry[i]
-        df_sq = _lines_squares(square)
-        logger.debug(f"{df_sq}")
-        df_sq.to_csv(f'{path_dir}/results_{i}.csv')
+        square = squares_list[i]
+        df_sq = _lines_squares(square, df_coarse, df_dist)
+        #logger.debug(f"{df_sq.head()}")
+        df_sq.to_csv(f'{path_dir}/results_{i}.csv', index = False)
 
-    
-#create_coarse_grid()    
-#create_squares()
-#density_squares()
-
+        
 def check_existence(config):
 
     return True
 
 def start(config):
-
     
     # Date run ----
-    logger.debug(config)
+    #logger.debug(config)
     
     globals()[config["name"]](config)
-    
     
