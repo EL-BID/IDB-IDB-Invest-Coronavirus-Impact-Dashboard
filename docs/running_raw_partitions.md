@@ -51,7 +51,7 @@ Code can be found at `notebooks/katana_bounds.ipynb` (1.1  Sample dates) and fun
 
 
 
-**2. Coarse grid for lines using H3 Grid resolution 1 and resolution 2. **
+**2. Coarse grid for lines using H3 Grid resolution 1 and resolution 2.**
 
 This step was implemented as consequence of the slow run time of katana grid. So the idea is to first intersect tiles (hexagons) with lines. Every grid has one millon or less lines included. 
 
