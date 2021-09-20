@@ -493,7 +493,7 @@ def density_lines_squares(config):
     df_coarse = _get_coarse_grid()
 
     #logger.debug(config['cm_read'])
-    path_s3 = '/home/soniame/shared/spd-sdv-omitnik-waze/corona'
+    path_s3 = config['s3_path'] #'/home/soniame/shared/spd-sdv-omitnik-waze/corona'
     
     # Geo grid ----
     cm_read = '2021091413091631639640' #config['cm_read']
@@ -525,6 +525,68 @@ def density_lines_squares(config):
         #logger.debug(f"{df_sq.head()}")
         df_sq.to_csv(f'{path_dir}/results_{i}.csv', index = False)
 
+def _lines_join(config):
+    
+    cm_read = '2021091413091631639640'
+    path_s3 ='/home/soniame/shared/spd-sdv-omitnik-waze/corona'
+    
+    for cm in cm_read:
+        path_dir = f"{path_s3}/geo_partition/geo_lines/{cm_read}"
+        paths_read = [os.path.join(path_dir, x) for x in os.listdir(path_dir)]
+
+        df_geo_lines = pd.DataFrame()
+        for path in paths_read:
+            print(path)
+            if path.endswith('.csv'):
+                try:
+                    df = pd.read_csv(path)
+                    df_geo_lines = df_geo_lines.append(df)
+                except:  
+                    logger.debug("No data" )
+        # Join
+        df_geo_lines = _lines_join()
+        df_geo_lines = df_geo_lines \
+            .rename(columns = {'wkt_def':'line_wkt', 'geom_def':'geo_id'})    
+        df_geo_lines.head()
+        df = df_geo_lines.merge(df_coarse[['line_wkt', 'count_lines']].rename(columns = {'count_lines':'jams'}))
+
+    return(df_geo_lines)
+
+def _distribution_tab(df):
+
+    tab = (df
+      >> group_by(_.geo_id)
+      >> summarize(lines = _.line_wkt.count(), 
+                   jams = _.jams.sum())
+      >> ungroup()
+      >> arrange("jams")
+      )
+    tab['geometry'] = gpd.GeoSeries.from_wkt(tab['geo_id'])
+    tab = gpd.GeoDataFrame(tab, geometry='geometry')
+
+    print(tab.shape)
+    
+    return(tab)
+
+def density_lines_figures(config):
+    
+    # Coarse grid ----
+    df_coarse = _get_coarse_grid()
+    
+    # Lines 
+    df = _lines_join(config)
+    
+    # Table
+    tab = _distribution_tab(df)
+    
+    # Map
+    tab = gpd.GeoDataFrame(tab, geometry='geometry')
+    tab['geometry'] = gpd.GeoSeries.from_wkt(tab['geo_id'])
+    tab.crs = "EPSG:4326"
+    tab = tab.to_crs(epsg=3857)
+    ax = tab.plot(figsize=(10, 10), alpha=0.5, edgecolor='k',legend=True, cmap='OrRd')
+    ctx.add_basemap(ax)
+            
         
 def check_existence(config):
 
