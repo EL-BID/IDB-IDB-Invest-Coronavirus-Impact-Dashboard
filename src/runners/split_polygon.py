@@ -426,6 +426,8 @@ def redo_squares(config):
      
     logger.debug(config)
         
+    config['path_s3'] = '/home/soniame/shared/spd-sdv-omitnik-waze/corona'
+        
     # Date run ----
     global cm
     cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
@@ -439,16 +441,19 @@ def redo_squares(config):
     df_coarse = _get_coarse_grid()
     
     # New distribution
-    tab = pd.read_csv("/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/figures/geo_lines_distribution.csv")
+    tab = pd.read_csv(f"{config['path_s3']}/geo_partition/dist/distribution_{config['cm_read']}.csv")
+    logger.debug(f"UP: {tab.geo_id.nunique()}")
 
     # Polygon geometry definition ----
     ratio = tab \
         .sort_values('jams', ascending=False) \
-        .assign(ratio = lambda x: x.jams / (sum(df_dist.jams)*.01))
+        .assign(ratio = lambda x: x.jams / (sum(df_coarse.count_lines)*.01))
+    logger.debug(f"Total {(sum(df_coarse.count_lines)*.01)}")
     squares = ratio[ratio.ratio > config['ratio_min']]
+    logger.debug(f"RS: {len(squares)}")
     
+    # Katana in each polygon
     cm_ve = cm
-    
     for polygon in squares.geo_id.tolist():
         
         logger.debug(polygon)
@@ -536,7 +541,7 @@ def density_lines_squares(config):
         
 def _lines_join(config):
     
-    logger.debug('lines to geo partition id')
+    logger.info('lines to geo partition id')
     
     # paths
     cm_read = config['cm_read']
@@ -574,7 +579,7 @@ def _lines_join(config):
 
 def _distribution_tab(df, config):
     
-    logger.debug('table')
+    logger.info('table')
 
     tab = (df
       >> group_by(_.geo_id)
@@ -584,7 +589,7 @@ def _distribution_tab(df, config):
       >> arrange("jams")
       )
     
-    tab.to_csv(f"/geo_partition/dist/distribution_{config['cm_read']}.csv", index=False)
+    tab.to_csv(f"{config['path_s3']}/geo_partition/dist/distribution_{config['cm_read']}.csv", index=False)
     tab['geometry'] = gpd.GeoSeries.from_wkt(tab['geo_id'])
     tab = gpd.GeoDataFrame(tab, geometry='geometry')
     
@@ -593,8 +598,8 @@ def _distribution_tab(df, config):
 
 def _distribution_map(tab, config):
 
-    logger.debug('map')
-    pdf_path = f"{config['path_s3']}/geo_partition/geo_lines/figures/map_distribution_{config['cm_read']}.pdf"
+    logger.info('map')
+    pdf_path = f"{config['path_s3']}/geo_partition/figures/map_distribution_{config['cm_read']}.pdf"
     with PdfPages(pdf_path) as pdf:
         tab = gpd.GeoDataFrame(tab, geometry='geometry')
         tab['geometry'] = gpd.GeoSeries.from_wkt(tab['geo_id'])
