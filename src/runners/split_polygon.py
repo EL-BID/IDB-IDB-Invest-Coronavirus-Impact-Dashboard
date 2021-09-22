@@ -2,9 +2,14 @@
 # LIBRARIES
 import os
 import pandas as pd
+from siuba import group_by, ungroup, arrange, summarize, _
 import numpy as np
 import geopandas as gpd
 from datetime import datetime
+
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+import contextily as ctx
 
 from shapely.geometry import box, Polygon, MultiPolygon, GeometryCollection, shape
 from shapely import wkt
@@ -16,6 +21,8 @@ from multiprocessing.pool import Pool
 from functools import partial
 
 from loguru import logger
+
+
 
 
 ## FUNCTIONS
@@ -284,6 +291,7 @@ def _threshold_density_func(geometry, threshold_value):
     if (th_coarse <= threshold_value):
         return(True)
     
+    
 def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_tiles=0):
     """Splits a geometry in tiles forming a grid given a threshold function and
     a maximum number of tiles.
@@ -437,7 +445,7 @@ def redo_squares(config):
     ratio = tab \
         .sort_values('jams', ascending=False) \
         .assign(ratio = lambda x: x.jams / (sum(df_dist.jams)*.01))
-    squares = ratio[ratio.ratio > 2]
+    squares = ratio[ratio.ratio > config['ratio_min']]
     
     cm_ve = cm
     
@@ -493,10 +501,10 @@ def density_lines_squares(config):
     df_coarse = _get_coarse_grid()
 
     #logger.debug(config['cm_read'])
-    path_s3 = config['s3_path'] #'/home/soniame/shared/spd-sdv-omitnik-waze/corona'
+    path_s3 = '/home/soniame/shared/spd-sdv-omitnik-waze/corona' #config['s3_path']
     
     # Geo grid ----
-    cm_read = '2021091413091631639640' #config['cm_read']
+    cm_read = config['cm_read']
     read_paths = f"{path_s3}/geo_partition/geo_id/{cm_read}"
     geo_id_paths = [os.path.join(read_paths, x) for x in os.listdir(read_paths)]
     logger.debug(f"Files: {len(geo_id_paths)}")
@@ -525,34 +533,48 @@ def density_lines_squares(config):
         #logger.debug(f"{df_sq.head()}")
         df_sq.to_csv(f'{path_dir}/results_{i}.csv', index = False)
 
+        
 def _lines_join(config):
     
-    cm_read = '2021091413091631639640'
-    path_s3 ='/home/soniame/shared/spd-sdv-omitnik-waze/corona'
+    logger.debug('lines to geo partition id')
     
-    for cm in cm_read:
-        path_dir = f"{path_s3}/geo_partition/geo_lines/{cm_read}"
-        paths_read = [os.path.join(path_dir, x) for x in os.listdir(path_dir)]
+    # paths
+    cm_read = config['cm_read']
+    path_dir = f"{config['path_s3']}/geo_partition/geo_lines/{cm_read}"
+    
+    # Paths to read 
+    paths_read = [os.path.join(path_dir, x) for x in os.listdir(path_dir)]
+    df_geo_lines = pd.DataFrame()
 
-        df_geo_lines = pd.DataFrame()
-        for path in paths_read:
-            print(path)
-            if path.endswith('.csv'):
-                try:
-                    df = pd.read_csv(path)
-                    df_geo_lines = df_geo_lines.append(df)
-                except:  
-                    logger.debug("No data" )
-        # Join
-        df_geo_lines = _lines_join()
-        df_geo_lines = df_geo_lines \
-            .rename(columns = {'wkt_def':'line_wkt', 'geom_def':'geo_id'})    
-        df_geo_lines.head()
-        df = df_geo_lines.merge(df_coarse[['line_wkt', 'count_lines']].rename(columns = {'count_lines':'jams'}))
+    # Concatenate results
+    for path in paths_read:
+        #print(path)
+        if path.endswith('.csv'):
+            try:
+                df = pd.read_csv(path)
+                df_geo_lines = df_geo_lines.append(df)
+            except:  
+                logger.debug("No data" )
 
-    return(df_geo_lines)
+    # Join all files
+    df_geo_lines = df_geo_lines \
+        .rename(columns = {'wkt_def':'line_wkt', 'geom_def':'geo_id'}) 
+    df_geo_lines = df_geo_lines[['line_wkt', 'geo_id']].groupby('line_wkt').first().reset_index()  
+    df_geo_lines.head()
 
-def _distribution_tab(df):
+    # Join jams per line
+    df = df_geo_lines.merge(df_coarse[['line_wkt', 'count_lines']] \
+                            .rename(columns = {'count_lines':'jams'}), 
+                            how = 'right')
+
+    # Write data to csv
+    df[['line_wkt', 'geo_id', 'jams']].to_csv(f'{path_dir}.csv')
+
+    return(df)
+
+def _distribution_tab(df, config):
+    
+    logger.debug('table')
 
     tab = (df
       >> group_by(_.geo_id)
@@ -561,32 +583,46 @@ def _distribution_tab(df):
       >> ungroup()
       >> arrange("jams")
       )
+    
+    tab.to_csv(f"/geo_partition/dist/distribution_{config['cm_read']}.csv", index=False)
     tab['geometry'] = gpd.GeoSeries.from_wkt(tab['geo_id'])
     tab = gpd.GeoDataFrame(tab, geometry='geometry')
-
-    print(tab.shape)
     
     return(tab)
 
+
+def _distribution_map(tab, config):
+
+    logger.debug('map')
+    pdf_path = f"{config['path_s3']}/geo_partition/geo_lines/figures/map_distribution_{config['cm_read']}.pdf"
+    with PdfPages(pdf_path) as pdf:
+        tab = gpd.GeoDataFrame(tab, geometry='geometry')
+        tab['geometry'] = gpd.GeoSeries.from_wkt(tab['geo_id'])
+        tab.crs = "EPSG:4326"
+        tab = tab.to_crs(epsg=3857)
+        ax = tab.plot(figsize=(10, 10), alpha=0.5, edgecolor='k', 
+                      column='jams',legend=True, cmap='OrRd')
+        ctx.add_basemap(ax)
+        pdf.savefig()  
+
+        
 def density_lines_figures(config):
     
+    config['path_s3'] = '/home/soniame/shared/spd-sdv-omitnik-waze/corona'
+    
     # Coarse grid ----
+    global df_coarse 
     df_coarse = _get_coarse_grid()
     
     # Lines 
     df = _lines_join(config)
     
     # Table
-    tab = _distribution_tab(df)
+    tab = _distribution_tab(df, config)
     
     # Map
-    tab = gpd.GeoDataFrame(tab, geometry='geometry')
-    tab['geometry'] = gpd.GeoSeries.from_wkt(tab['geo_id'])
-    tab.crs = "EPSG:4326"
-    tab = tab.to_crs(epsg=3857)
-    ax = tab.plot(figsize=(10, 10), alpha=0.5, edgecolor='k',legend=True, cmap='OrRd')
-    ctx.add_basemap(ax)
-            
+    _distribution_map(tab, config)
+    
         
 def check_existence(config):
 
@@ -595,7 +631,6 @@ def check_existence(config):
 def start(config):
     
     # Date run ----
-    #logger.debug(config)
     
     globals()[config["name"]](config)
     
