@@ -22,7 +22,7 @@
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
-  name: density_lines_squares
+  name: density_lines_squares_1
   cm_read: '2021083013081630344071'
   #depends_on: [density_squares]
   pass: True
@@ -40,14 +40,14 @@
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
-  name: density_lines_squares
+  name: density_lines_squares_2
   cm_read: '2021091413091631639640'
   pass: True
   
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
-  name: density_lines_figures
+  name: density_lines_figures_2
   cm_read: '2021091413091631639640'
   pass: True
   
@@ -57,6 +57,14 @@
   name: redo_squares
   cm_read: '2021091413091631639640'
   ratio_min: 2
-  max_tiles: 10
+  max_tiles: 5
   #depends_on: [create_squares, density_squares]
+  pass: True
+
+- 
+  path: 'sql/raw/create-raw-jams.sql'
+  runner: split_polygon
+  name: density_lines_squares
+  cm_read: '2021092123091632281795'
   force: True
+  
