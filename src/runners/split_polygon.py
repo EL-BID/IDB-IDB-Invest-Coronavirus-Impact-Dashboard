@@ -371,7 +371,7 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
     
 
     
-def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
+def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles, config):
     
     logger.info('Katana grid')
     logger.info(f'Run tm {cm}')
@@ -391,7 +391,10 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles):
     # Export to csv ----
     outdf = gpd.GeoDataFrame(columns=['geometry'])
     outdf['geometry'] = grid
-    outdf.to_csv(f"/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/geo_grid_area_{cm}.csv",index = False)
+    
+    path_dir = f"{config['path_s3']}/geo_partition/geo_id/{config['cm_ve']}"
+    os.makedirs(path_dir, exist_ok=True)
+    outdf.to_csv(f"{path_dir}/geo_grid_area_{cm}.csv",index = False)
     
     
     
@@ -419,7 +422,7 @@ def create_squares(config):
 
         
     # Running katana splits ----
-    r = _katana_grid(geometry_la, _threshold_density_func, .01, 10)
+    r = _katana_grid(geometry_la, _threshold_density_func, .01, 10, config)
 
     
 def redo_squares(config):
@@ -454,6 +457,7 @@ def redo_squares(config):
     
     # Katana in each polygon
     cm_ve = cm
+    config['cm_ve'] = cm
     for polygon in squares.geo_id.tolist():
         
         logger.debug(polygon)
@@ -463,7 +467,7 @@ def redo_squares(config):
         logger.debug(cm)
         
         # Running katana splits ----
-        r = _katana_grid(geometry, _threshold_density_func, .01, config['max_tiles'])
+        r = _katana_grid(geometry, _threshold_density_func, .01, config['max_tiles'], config)
     
     
     
