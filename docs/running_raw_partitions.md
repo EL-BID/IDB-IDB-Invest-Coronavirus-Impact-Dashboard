@@ -72,6 +72,9 @@ A second grid was created in polygons with a number of jams twice or more over t
 
 For the second grid, the output are several tables, one per polygon, including the polygon of the squares redone. It also can be found at the S3 bucket in `shared/spd-sdv-omitnik-waze/corona/geo_partition/geo_id/{cm}/geo_grid_area_{cm}POLYGON ((*)).csv`
 
+1. `2021083013081630344071/`: 364 squares
+2. `/`:  squares
+
 
 **3b.** Tune the parameters to get a reasonable number of tiles. 
 
@@ -158,6 +161,13 @@ WHERE st_intersects(geometry,
 st_polygon(<REGION_SLUG_GEO>))
 ```
 
+
+### Run 
+
+To run the pipeline
+```
+python src/entrypoint.py single --slug=raw --n_tries=1 --dependency_graph_path=configs/dependency-graph-raw.yaml --config_path=configs/config-raw.yaml &>> log.log
+```
 
 ----
 
