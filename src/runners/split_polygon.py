@@ -242,7 +242,12 @@ def _intersection_coarse(geometry, df_dist, wkt = 'coarse_wkt_R'):
     in_jams = [_intersection_geometry(geometry, row[wkt], row['jams']) for index, row in df_dist.iterrows()]
     in_polygons = df_dist[[x > 0 for x in in_jams]]
     
-    th_coarse = round(sum(in_jams)/sum(df_dist.jams), 4)
+    logger.debug(f"SumTimes: {sum(in_jams)}")
+    logger.debug(f"SumJams: {sum(df_dist.jams)}")
+    logger.debug(f"SumCoarse: {sum(df_coarse.count_lines)}")
+
+    
+    th_coarse = round(sum(in_jams)/sum(df_coarse.count_lines), 4)
 
     return(th_coarse, in_polygons)
 
@@ -262,9 +267,11 @@ def _intersection_lines(df_coarse, in_polygons, geometry):
     with Pool(10) as p:
         times = p.map( partial(_pool_lines, geometry = geometry), 
                        [(idx, row) for idx, row in df_lines.iterrows()] )        
-    logger.debug(f"SumT: {sum(times)}")
+    logger.debug(f"SumTimes: {sum(times)}")
+    logger.debug(f"SumJams: {sum(df_dist.jams)}")
+    logger.debug(f"SumCoarse: {sum(df_coarse.count_lines)}")
     
-    th_lines = sum(times)/sum(df_dist.jams)
+    th_lines = sum(times)/sum(df_coarse.count_lines)
     
     return( round(th_lines, 4) )
 
@@ -419,7 +426,6 @@ def create_squares(config):
     # Coarse grid ----
     global df_coarse
     df_coarse = _get_coarse_grid()
-
         
     # Running katana splits ----
     r = _katana_grid(geometry_la, _threshold_density_func, .01, 10, config)
@@ -434,12 +440,13 @@ def redo_squares(config):
     # Date run ----
     global cm
     cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
+    logger.debug(cm)
 
     # Distribution table ----
     global df_dist
     df_dist = _get_dist_table()
 
-    # Coarse grid ----
+    # Coarse grid
     global df_coarse
     df_coarse = _get_coarse_grid()
     
@@ -447,13 +454,13 @@ def redo_squares(config):
     tab = pd.read_csv(f"{config['path_s3']}/geo_partition/dist/distribution_{config['cm_read']}.csv")
     logger.debug(f"UP: {tab.geo_id.nunique()}")
 
-    # Polygon geometry definition ----
+    # Polygon geometry definition
     ratio = tab \
         .sort_values('jams', ascending=False) \
-        .assign(ratio = lambda x: x.jams / (sum(df_coarse.count_lines)*.01))
-    logger.debug(f"Total {(sum(df_coarse.count_lines)*.01)}")
+        .assign(ratio = lambda x: x.jams /(sum(df_coarse.count_lines)*.01))
+    logger.debug(f"Total .01 {(sum(df_coarse.count_lines)*.01)}")
     squares = ratio[ratio.ratio > config['ratio_min']]
-    logger.debug(f"RS: {len(squares)}")
+    logger.debug(f"Redo: {len(squares)}")
     
     # Katana in each polygon
     cm_ve = cm
@@ -466,7 +473,7 @@ def redo_squares(config):
 
         logger.debug(cm)
         
-        # Running katana splits ----
+        # Running katana splits 
         r = _katana_grid(geometry, _threshold_density_func, .01, config['max_tiles'], config)
     
     
@@ -516,7 +523,7 @@ def density_lines_squares(config):
     cm_read = config['cm_read']
     read_paths = f"{path_s3}/geo_partition/geo_id/{cm_read}"
     geo_id_paths = [os.path.join(read_paths, x) for x in os.listdir(read_paths)]
-    logger.debug(f"Files: {len(geo_id_paths)}")
+    logger.debug(f"Paths: {len(geo_id_paths)}")
     
     # Read all files in geo_id partitions
     df_squares = pd.DataFrame()
@@ -535,7 +542,8 @@ def density_lines_squares(config):
     # Running squares splits ----
     logger.debug(f"Polygons: {len(df_squares.geometry)}")
     squares_list = df_squares.geometry.tolist()
-    for i in range(len(df_squares.geometry)):
+    logger.debug(f"Squares: {len(squares_list)}")
+    for i in range(len(squares_list)):
         logger.debug(f"i: {i}")
         square = squares_list[i]
         df_sq = _lines_squares(square, df_coarse, df_dist)
