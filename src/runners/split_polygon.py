@@ -237,11 +237,15 @@ def _intersection_geometry(geometry, wkt_str, jams = None, line_result = None):
 
 
 def _intersection_coarse(geometry, df_dist, wkt = 'coarse_wkt_R'):
+    """
+    The function returns the number of polygons intersecting wkt
+    """
     
     df_dist = df_dist[df_dist.coarse_wkt_R != '(MISSING)']
     in_jams = [_intersection_geometry(geometry, row[wkt], row['jams']) for index, row in df_dist.iterrows()]
     in_polygons = df_dist[[x > 0 for x in in_jams]]
     
+    logger.debug(f"Hexs: {in_polygons.shape}")
     logger.debug(f"SumTimes: {sum(in_jams)}")
     logger.debug(f"SumJams: {sum(df_dist.jams)}")
     logger.debug(f"SumCoarse: {sum(df_coarse.count_lines)}")
@@ -262,10 +266,11 @@ def _pool_lines( arg, geometry, wkt = 'coarse_wkt_R', jams = 'count_lines', line
 def _intersection_lines(df_coarse, in_polygons, geometry):
     
     df_lines = df_coarse.merge(in_polygons[['coarse_wkt_R', 'jams']], how='inner', on = 'coarse_wkt_R')
+    #print(df_lines.head())
     logger.debug(f"Lin: {len(df_lines)}")
     
     with Pool(10) as p:
-        times = p.map( partial(_pool_lines, geometry = geometry), 
+        times = p.map( partial(_pool_lines, geometry = geometry, wkt = 'line_wkt', ), 
                        [(idx, row) for idx, row in df_lines.iterrows()] )        
     logger.debug(f"SumTimes: {sum(times)}")
     logger.debug(f"SumJams: {sum(df_dist.jams)}")
@@ -288,14 +293,17 @@ def _threshold_density_func(geometry, threshold_value):
     th_coarse, in_polygons = _intersection_coarse(geometry, df_dist)
     logger.debug(f"THC: {th_coarse}") 
     
-    if (th_coarse > (threshold_value)*3):
+    if (th_coarse > (threshold_value)*window_max):
+        logger.debug(f"... big difference!")
         return(False)
-    if ((th_coarse <= (threshold_value)*3) & (th_coarse > threshold_value)):
+    if ((th_coarse <= (threshold_value)*window_max) & (th_coarse > threshold_value)):
         # Intersection of lines withing coarse grid
+        logger.debug(f"... lines!")
         th_lines = _intersection_lines(df_coarse, in_polygons, geometry)
         logger.debug(f"THL: {th_lines}")
         return(th_lines <= threshold_value)
     if (th_coarse <= threshold_value):
+        logger.debug(f"... very small difference!")
         return(True)
     
     
@@ -337,7 +345,7 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
     if threshold_func(geometry, threshold_value) or number_tiles == max_number_tiles:
         # either the polygon is smaller than the threshold, or the maximum
         # number of recursions has been reached
-        logger.debug(f"Final Geom: {geometry.area}")
+        logger.debug(f"Final Geom Area: {geometry.area}")
         logger.debug(f"{str(geometry)}")
         return [geometry]
     if height >= width:
@@ -382,6 +390,9 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles, co
     
     logger.info('Katana grid')
     logger.info(f'Run tm {cm}')
+    
+    global window_max
+    window_max = config['window_max']
     
     result = katana(geometry, 
                     threshold_func = threshold_func, 
@@ -439,7 +450,7 @@ def redo_squares(config):
         
     # Date run ----
     global cm
-    cm = str(datetime.today().strftime("%Y%m%d%H%m%s"))
+    cm = str(datetime.today().strftime("%Y%m%d%H%m%s")) #2021092713091632762392
     logger.debug(cm)
 
     # Distribution table ----
@@ -514,6 +525,7 @@ def density_lines_squares(config):
     df_dist = _get_dist_table()
 
     # Coarse grid ----
+    global df_coarse 
     df_coarse = _get_coarse_grid()
 
     #logger.debug(config['cm_read'])
@@ -537,6 +549,7 @@ def density_lines_squares(config):
             
     # Create directory
     path_dir = f"{path_s3}/geo_partition/geo_lines/{cm_read}"
+    logger.debug(f"Output path: {path_dir}")    
     os.makedirs(path_dir, exist_ok=True)
     
     # Running squares splits ----
@@ -640,6 +653,11 @@ def density_lines_figures(config):
     # Map
     _distribution_map(tab, config)
     
+    
+def redo_squares_3(config):
+    
+    redo_squares(config)
+                   
         
 def check_existence(config):
 
