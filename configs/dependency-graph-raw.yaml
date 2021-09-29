@@ -1,18 +1,21 @@
-# Geo ID data
+# Geo Partition ID data
 
-## Create coarse grid
+## Create sample
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: sample_jams
   name: sample_dates
   pass: True
   
+
+## Create coarse grid
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
   name: create_coarse_grid 
-  depends_on: [sample_dates]
+  depends_on: ['sample_dates']
   pass: True
+
 
 ## First squares
 - 
@@ -31,15 +34,16 @@
 #  pass: True
 
 # Second run of squares (big polygons)
-- 
-  path: 'sql/raw/create-raw-jams.sql'
-  runner: split_polygon
-  name: redo_squares
-  cm_read: '2021083013081630344071'
-  ratio_min: 2
-  depends_on: [create_squares, density_squares]
-  max_tiles: 7
-  force: True
+#- 
+#  path: 'sql/raw/create-raw-jams.sql'
+#  runner: split_polygon
+#  name: redo_squares_2
+#  cm_read: '2021083013081630344071'
+#  ratio_min: 2
+#  max_tiles: 5
+#  window_max: 3.5
+#  depends_on: ['create_squares', 'density_squares']
+#  pass: True
 
 #- 
 #  path: 'sql/raw/create-raw-jams.sql'
@@ -55,27 +59,30 @@
 #  cm_read: '2021091413091631639640'
 #  pass: True
   
-## Third run of squares (big cities)  
-#- 
-#  path: 'sql/raw/create-raw-jams.sql'
-#  runner: split_polygon
-#  name: redo_squares
-#  cm_read: '2021091413091631639640'
-#  ratio_min: 2
-#  max_tiles: 5
-#  #depends_on: [create_squares, density_squares]
-#  pass: True
-#
-#- 
-#  path: 'sql/raw/create-raw-jams.sql'
-#  runner: split_polygon
-#  name: density_lines_squares
-#  cm_read: '2021092123091632281795'
-#  pass: True
-#  
-#- 
-#  path: 'sql/raw/create-raw-jams.sql'
-#  runner: split_polygon
-#  name: density_lines_figures
-#  cm_read: '2021092123091632281795'
-#  pass: True
+# Third run of squares (big cities)  
+- 
+  path: 'sql/raw/create-raw-jams.sql'
+  runner: split_polygon
+  name: redo_squares_3
+  cm_read: '2021091413091631639640'
+  ratio_min: 2
+  max_tiles: 5
+  window_max: 7
+  depends_on: ['create_squares', 'density_squares']
+  force: True
+
+- 
+  path: 'sql/raw/create-raw-jams.sql'
+  runner: split_polygon
+  name: density_lines_squares
+  cm_read: '2021092812091632847410'
+  depends_on: ['redo_squares_3']
+  pass: True
+  
+- 
+  path: 'sql/raw/create-raw-jams.sql'
+  runner: split_polygon
+  name: density_lines_figures
+  depends_on: ['density_lines_squares']
+  cm_read: '2021092812091632847410'
+  pass: True
