@@ -153,15 +153,19 @@ def create_coarse_grid(config, h3_resolution=2):
     for x in [1, 2, 3, 4, 5]:
         split_n = split_names[x]
         logger.debug(f"S: {split_n}")
+        
         # Top 6 polygons
         big_polygon = tab.sort_values(by=['lines'], ascending=False)[:6].coarse_wkt[x]
         logger.debug(big_polygon)
+        
         # Tiles resolution 2 for polygon
         geometry = wkt.loads(big_polygon)
         tiles_r2 = Babel('h3').polyfill(geometry, resolution=h3_resolution)
+        
         # Lines
         df_new = df_coarse[df_coarse.coarse_wkt == big_polygon]. \
             assign(split=split_n)
+        
         # Create coarse grid
         _create_coarse_grid(df_lines = df_new, tiles = tiles_r2, split = split_n)
 
@@ -412,7 +416,7 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles, co
     
     path_dir = f"{config['path_s3']}/geo_partition/geo_id/{config['cm_ve']}"
     os.makedirs(path_dir, exist_ok=True)
-    outdf.to_csv(f"{path_dir}/geo_grid_area_{cm}.csv",index = False)
+    outdf.to_csv(f"{path_dir}/geo_grid_area_{cm}.csv", index = False)
     
     
     
@@ -518,21 +522,9 @@ def find_poly(x):
     if x.endswith('.csv'):
         return(os.path.join(mypath, x))
 
-    
-def density_lines_squares(config):
-    
-    # Distribution table ----
-    df_dist = _get_dist_table()
-
-    # Coarse grid ----
-    global df_coarse 
-    df_coarse = _get_coarse_grid()
-
-    #logger.debug(config['cm_read'])
-    path_s3 = '/home/soniame/shared/spd-sdv-omitnik-waze/corona' #config['s3_path']
+def _union_df_squares(path_s3, cm_read):
     
     # Geo grid ----
-    cm_read = config['cm_read']
     read_paths = f"{path_s3}/geo_partition/geo_id/{cm_read}"
     geo_id_paths = [os.path.join(read_paths, x) for x in os.listdir(read_paths)]
     logger.debug(f"Paths: {len(geo_id_paths)}")
@@ -546,6 +538,24 @@ def density_lines_squares(config):
             df['polygon'] = path[path.find('POL'):].replace('.csv', '')
             df_squares = df_squares.append(df)
     logger.debug(f"Sh: {df_squares.shape}")    
+    
+    return(df_squares)
+    
+def density_lines_squares(config):
+    
+    # Distribution table ----
+    df_dist = _get_dist_table()
+
+    # Coarse grid ----
+    global df_coarse 
+    df_coarse = _get_coarse_grid()
+
+    #logger.debug(config['cm_read'])
+    
+    # Geo grid ----
+    cm_read = config['cm_read']
+    path_s3 = '/home/soniame/shared/spd-sdv-omitnik-waze/corona' #config['s3_path']
+    df_squares = _union_df_squares(path_s3, cm_read)
             
     # Create directory
     path_dir = f"{path_s3}/geo_partition/geo_lines/{cm_read}"
@@ -598,7 +608,8 @@ def _lines_join(config):
                             how = 'right')
 
     # Write data to csv
-    df[['line_wkt', 'geo_id', 'jams']].to_csv(f'{path_dir}.csv')
+    df[['line_wkt', 'geo_id', 'jams']].to_csv(f'{path_dir}.csv', index = False)
+    
 
     return(df)
 
@@ -644,13 +655,13 @@ def density_lines_figures(config):
     global df_coarse 
     df_coarse = _get_coarse_grid()
     
-    # Lines 
+    # Lines per square
     df = _lines_join(config)
     
-    # Table
+    # Table of jams and lines per square
     tab = _distribution_tab(df, config)
     
-    # Map
+    # Map of each square
     _distribution_map(tab, config)
     
     

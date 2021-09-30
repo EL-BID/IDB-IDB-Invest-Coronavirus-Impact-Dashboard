@@ -67,22 +67,22 @@
   cm_read: '2021091413091631639640'
   ratio_min: 2
   max_tiles: 5
-  window_max: 7
+  window_max: 5
   depends_on: ['create_squares', 'density_squares']
-  force: True
+  pass: True
 
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
   name: density_lines_squares
-  cm_read: '2021092812091632847410'
+  cm_read: '2021092913091632936317'
   depends_on: ['redo_squares_3']
-  pass: True
+  force: True
   
 - 
   path: 'sql/raw/create-raw-jams.sql'
   runner: split_polygon
   name: density_lines_figures
   depends_on: ['density_lines_squares']
-  cm_read: '2021092812091632847410'
-  pass: True
+  cm_read: '2021092913091632936317'
+  force: True
