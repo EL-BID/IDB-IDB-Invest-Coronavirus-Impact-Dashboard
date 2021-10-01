@@ -467,13 +467,14 @@ def redo_squares(config):
     
     # New distribution
     tab = pd.read_csv(f"{config['path_s3']}/geo_partition/dist/distribution_{config['cm_read']}.csv")
+    tab = tab[['geo_id', 'lines', 'jams']]
     logger.debug(f"UP: {tab.geo_id.nunique()}")
 
     # Polygon geometry definition
     ratio = tab \
         .sort_values('jams', ascending=False) \
         .assign(ratio = lambda x: x.jams /(sum(df_coarse.count_lines)*.01))
-    logger.debug(f"Total .01 {(sum(df_coarse.count_lines)*.01)}")
+    logger.debug(f"Total .01 = {(sum(df_coarse.count_lines)*.01)}")
     squares = ratio[ratio.ratio > config['ratio_min']]
     logger.debug(f"Redo: {len(squares)}")
     
@@ -664,12 +665,47 @@ def density_lines_figures(config):
     # Map of each square
     _distribution_map(tab, config)
     
+
+def redo_squares_2(config):
+    
+    redo_squares(config)
+    
+def density_lines_squares_2(config):
+    
+    density_lines_squares(config)  
+
+def density_lines_figures_2(config):
+    
+    density_lines_figures(config)
+    
+
     
 def redo_squares_3(config):
     
     redo_squares(config)
-                   
+    
+def density_lines_squares_3(config):
+    
+    density_lines_squares(config)                      
         
+def density_lines_figures_3(config):
+    
+    density_lines_figures(config)
+
+    
+    
+def redo_squares_4(config):
+    
+    redo_squares(config)
+    
+def density_lines_squares_4(config):
+    
+    density_lines_squares(config)                      
+        
+def density_lines_figures_4(config):
+    
+    density_lines_figures(config)    
+    
 def check_existence(config):
 
     return True
