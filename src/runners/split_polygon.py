@@ -94,7 +94,7 @@ def _line_to_coarse(line, tiles):
     return(result)
 
 
-def _create_coarse_grid(df_lines, split):
+def _create_coarse_grid(df_lines, tiles, split):
     """
     The function creates de intersection between a H3 grid tiles and the lines in 50 sample dates.
     It's split for parallelization purposes. Each split runns pero split
@@ -118,7 +118,7 @@ def _create_coarse_grid(df_lines, split):
     logger.debug(f'NL: {len(lines)}') # new lines
     
     # Tiles H3
-    tiles = Babel('h3').polyfill(geometry, resolution = 1)
+    #tiles = Babel('h3').polyfill(geometry, resolution = 1)
     logger.debug(f"Tiles: {len(tiles)}")
     
     # Matching lines per tile
@@ -157,14 +157,14 @@ def create_coarse_grid(config, h3_resolution=2):
         
         # Tiles resolution 2 for polygon
         geometry = wkt.loads(big_polygon)
-        tiles_r2 = Babel('h3').polyfill(geometry, resolution=h3_resolution)
+        tiles_r = Babel('h3').polyfill(geometry, resolution=h3_resolution)
         
         # Lines
         df_new = df_coarse[df_coarse.coarse_wkt == big_polygon]. \
             assign(split=split_n)
         
         # Create coarse grid
-        _create_coarse_grid(df_lines = df_new, tiles = tiles_r2, split = split_n)
+        _create_coarse_grid(df_lines = df_new, tiles = tiles_r, split = split_n)
 
     return None
 
