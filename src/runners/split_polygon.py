@@ -23,10 +23,7 @@ from functools import partial
 from loguru import logger
 
 
-
-
-## FUNCTIONS
-
+## Coarse grid
 def _get_lines(update_data = False):
     """
     Get data frame of lines with count of jams per line and split number
@@ -216,13 +213,13 @@ def _get_dist_table():
     logger.debug(f'G: {len(df_dist)}')
 
     return(df_dist)
-    
-    
-### KATANA GRID
+
+
+
+## Create squares
 def threshold_func(geometry, threshold_value):
     """Compares the threshold values with the polygon area"""
     return geometry.area < threshold_value
-
 
 def _intersection_geometry(geometry, wkt_str, jams = None, line_result = None):
 
@@ -284,8 +281,6 @@ def _intersection_lines(df_coarse, in_polygons, geometry):
     
     return( round(th_lines, 4) )
 
-
-
 def _threshold_density_func(geometry, threshold_value):
     """
     Compares in coarse grid
@@ -308,8 +303,7 @@ def _threshold_density_func(geometry, threshold_value):
         return(th_lines <= threshold_value)
     if (th_coarse <= threshold_value):
         logger.debug(f"... very small difference!")
-        return(True)
-    
+        return(True)   
     
 def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_tiles=0):
     """Splits a geometry in tiles forming a grid given a threshold function and
@@ -387,9 +381,7 @@ def katana(geometry, threshold_func, threshold_value, max_number_tiles, number_t
         else:
             final_result.append(g)
     return final_result
-    
-
-    
+     
 def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles, config):
     
     logger.info('Katana grid')
@@ -419,8 +411,6 @@ def _katana_grid(geometry, threshold_func, threshold_value, max_number_tiles, co
     outdf.to_csv(f"{path_dir}/geo_grid_area_{cm}.csv", index = False)
     
     
-    
-## RUNNING
 def create_squares(config):
     
     # Date run ----
@@ -444,8 +434,7 @@ def create_squares(config):
         
     # Running katana splits ----
     r = _katana_grid(geometry_la, _threshold_density_func, .01, 10, config)
-
-    
+  
 def redo_squares(config):
      
     logger.debug(config)
@@ -490,9 +479,7 @@ def redo_squares(config):
         logger.debug(cm)
         
         # Running katana splits 
-        r = _katana_grid(geometry, _threshold_density_func, .01, config['max_tiles'], config)
-    
-    
+        r = _katana_grid(geometry, _threshold_density_func, .01, config['max_tiles'], config)    
     
 def _lines_squares(square, df_coarse, df_dist):
     square = wkt.loads(str(square))
@@ -517,7 +504,6 @@ def _lines_squares(square, df_coarse, df_dist):
         
     df = pd.DataFrame(result).dropna()    
     return(df)
-
 
 def find_poly(x):
     if x.endswith('.csv'):
@@ -573,7 +559,6 @@ def density_lines_squares(config):
         df_sq = _lines_squares(square, df_coarse, df_dist)
         #logger.debug(f"{df_sq.head()}")
         df_sq.to_csv(f'{path_dir}/results_{i}.csv', index = False)
-
         
 def _lines_join(config):
     
@@ -609,8 +594,7 @@ def _lines_join(config):
                             how = 'right')
 
     # Write data to csv
-    df[['line_wkt', 'geo_id', 'jams']].to_csv(f'{path_dir}.csv', index = False)
-    
+    df[['line_wkt', 'geo_id', 'jams']].to_csv(f'{path_dir}.csv', index = False)    
 
     return(df)
 
@@ -632,7 +616,6 @@ def _distribution_tab(df, config):
     
     return(tab)
 
-
 def _distribution_map(tab, config):
 
     logger.info('map')
@@ -646,7 +629,6 @@ def _distribution_map(tab, config):
                       column='jams',legend=True, cmap='OrRd')
         ctx.add_basemap(ax)
         pdf.savefig()  
-
         
 def density_lines_figures(config):
     
@@ -666,6 +648,220 @@ def density_lines_figures(config):
     _distribution_map(tab, config)
     
 
+# Union of squares    
+def _union_squares_redo(config): 
+    
+    cm_read = config['cm_read']
+    
+    df_1 = _union_df_squares(path_s3, cm_read[0]) \
+        .rename(columns = {'geometry':'polygon_1'})
+    df_2 = _union_df_squares(path_s3, cm_read[1]) \
+        .rename(columns = {'polygon':'polygon_1', 'geometry':'polygon_2'})
+    df_3 = _union_df_squares(path_s3, cm_read[2]) \
+        .rename(columns = {'polygon':'polygon_2', 'geometry':'polygon_3'})
+
+    union = df_1 \
+        .merge(df_2, how = 'left', on='polygon_1') \
+        .merge(df_3, how = 'left', on='polygon_2') \
+        .reset_index()
+    union = union[['polygon_1', 'polygon_2', 'polygon_3']]
+    union['polygon_final'] = union['polygon_1']
+    union['polygon_final'].loc[union['polygon_2'].isnull()==False] = union['polygon_2'].loc[union['polygon_2'].isnull()==False]
+    union['polygon_final'].loc[union['polygon_3'].isnull()==False] = union['polygon_3'].loc[union['polygon_3'].isnull()==False] 
+
+    return(union)
+
+def _polygon_to_multipolygon(strings):
+    
+    #strings = strings.tolist()
+    new_strings = []
+    for string in strings:
+        new_strings.append(string.replace("POLYGON ", " "))
+    
+    new_string = 'MULTIPOLYGON (' + ', '.join(new_strings) + ')'
+
+    return(new_string)
+
+def _group_squares(config, dist_union):
+    
+    #dist_union = pd.read_csv(f"{path_s3}/geo_partition/dist/distribution_{cm}.csv")
+    
+    df = dist_union[['geo_id', 'lines', 'jams', 'share_jams']] \
+        .assign(group = 0, 
+                togroup = lambda x:x.share_jams < config['max_value'])
+    
+    df_g = df
+    df_g = df_g[(df_g.group == 0)].sort_values(['geo_id', 'share_jams'])
+    df_final = pd.DataFrame()
+
+    i = 1
+    while len(df_g) > 0:
+        logger.debug(f"{i} : {len(df_g)}")
+
+        df_g = df_g.reset_index(drop = True)
+        df_g['cumulative'] = df_g.share_jams.cumsum()
+
+        if ((df_g['cumulative'].tolist()[0]) >= config['max_value']):
+            df_g.loc[0, 'group'] = i
+        else:
+            df_g.loc[df_g.cumulative <= config['max_value'], 'group'] = i  
+
+        df_final = df_final.append(df_g[(df_g.group != 0)])        
+
+        i+=1
+        df_g = df_g[(df_g.group == 0)]    
+
+    df_final.group = df_final.group.astype(str).str.pad(width=2, side='left', fillchar='0')   
+    
+    return(df_final)
+
+
+def _df_geo_partition_id(df_final):
+    
+    df_geo_partition = df_final \
+        .groupby('group')\
+        .geo_id.agg(_polygon_to_multipolygon)\
+        .reset_index()\
+        .rename(columns={'geo_id':'geo_partition_wkt'}) \
+        .merge(df_final \
+                   .groupby('group')\
+                   .share_jams.agg(sum)\
+                   .reset_index())
+    
+    return(df_geo_partition)
+    
+
+def _distribution_squares_redo(config, union):
+    
+    cm_read = config['cm_read']
+    
+    dist = pd.DataFrame()
+    for c in cm_read:
+        dist = dist.append(pd.read_csv(f"{path_s3}/geo_partition/dist/distribution_{c}.csv")) \
+            [['geo_id', 'lines', 'jams']] 
+
+    dist_union = union \
+        .merge(dist, right_on='geo_id', left_on='polygon_final') 
+    dist_union['share_jams'] = dist_union['jams']/507139112   
+    dist_union['ratio'] = dist_union['jams']/(507139112*.01)
+    
+    return(dist_union)
+
+def union_squares(config):
+    
+    union = _union_squares_redo(config)
+    
+    dist_union = _distribution_squares_redo(config, union)
+    
+    df_final = _group_squares(config, dist_union)
+    
+    df_geo_partition = _df_geo_partition_id(df_final)
+    
+    # saving table
+    cm = '2021093011101633064931'
+    df_geo_partition.to_csv(f"{path_s3}/geo_partition/dist/distribution_{cm}.csv", index=False)
+    
+    # creating map
+    logger.info('map')
+    pdf_path = f"{path_s3}/geo_partition/figures/map_distribution_{cm}.pdf"
+    with PdfPages(pdf_path) as pdf:
+        tab = gpd.GeoDataFrame(df_geo_partition)
+        tab['geometry'] = gpd.GeoSeries.from_wkt(tab['geo_partition_wkt'])
+        tab.crs = "EPSG:4326"
+        tab = tab.to_crs(epsg=3857)
+        ax = tab.plot(figsize=(10, 10), alpha=0.5, 
+                      column='group',legend=False, cmap='prism')
+        ctx.add_basemap(ax)
+        
+def _complement_square(config, df_final):
+    
+    # Differences
+    polygon_list_A = _polygon_to_multipolygon(df_final.geo_id)
+    polygon_la = 'POLYGON((-129.454 37.238,-90.781 27.311,-67.117 20.333,-68.721 17.506,-23.765 -9.114,-65.601 -60.714,-126.421 -23.479,-129.454 37.238))'
+    
+    differences = list()
+    for polygon in df_final.geo_id:
+        polygon1 = wkt.loads(polygon_la)
+        polygon2 = wkt.loads(polygon)
+        differences.append(polygon1-polygon2)
+
+    # Intersection of differences
+    differences_int = differences[0]
+    for k in range(1, len(differences)):
+        polygon1 = differences_int
+        polygon2 = differences[k]
+        dif = (polygon1.intersection(polygon2))
+        differences_int = (polygon1.intersection(polygon2))
+
+    # Only polygons    
+    polygons = list()
+    for s in differences_int.wkt.split("), "):
+        if s.find('POLYGON') != -1:
+            polygons.append(s + ') ')        
+
+    polygon_diff = polygon_to_multipolygon(polygons)      
+
+    # New definition of difference
+    dic_diff = {'group': '999', 'geo_partition_wkt':polygon_diff, 'share_jams':0, 'geometry':None}
+ 
+    return(dic_diff)
+
+def union_squares_redo(config):
+    
+    union = _union_squares_redo(config)
+    
+    # add last redo (polygon 4) 
+    df_4 = _union_df_squares(path_s3, cm_read[3]) \
+        .rename(columns = {'polygon':'polygon_final', 'geometry':'polygon_4'})
+    union = union \
+        .merge(df_4, how = 'left', on='polygon_final') 
+    union['polygon_final'].loc[union['polygon_4'].isnull()==False] = union['polygon_4'].loc[union['polygon_4'].isnull()==False] 
+    
+    # distribution
+    dist_union = _distribution_squares_redo(config, union)
+    
+    # union of squarer
+    df_final = _group_squares(config, dist_union)
+    
+    df_geo_partition = _df_geo_partition_id(df_final)
+    
+    # saving data
+    cm = '2021100301601633066162'
+    df_geo_partition.to_csv(f"{path_s3}/geo_partition/dist/distribution_{cm}.csv", index=False)
+    
+    # creating map
+    logger.info('map')
+    pdf_path = f"{path_s3}/geo_partition/figures/map_distribution_{cm}.pdf"
+    with PdfPages(pdf_path) as pdf:
+        tab = gpd.GeoDataFrame(df_geo_partition)
+        tab['geometry'] = gpd.GeoSeries.from_wkt(tab['geo_partition_wkt'])
+        tab.crs = "EPSG:4326"
+        tab = tab.to_crs(epsg=3857)
+        ax = tab.plot(figsize=(10, 10), alpha=0.5, 
+                      column='group',legend=False, cmap='prism')
+        ctx.add_basemap(ax)
+        
+    # Waze polygon complement
+    dic_diff = _complement_square(config, df_final)
+    df_geo_partition = df_geo_partition.append(dic_diff, ignore_index=True)
+    
+    # saving data
+    cm = '2021100323101633318356'
+    df_geo_partition.to_csv(f"{path_s3}/geo_partition/dist/distribution_{cm}.csv", index=False)
+    
+    # creating map
+    pdf_path = f"{path_s3}/geo_partition/figures/map_distribution_{cm}.pdf"
+    with PdfPages(pdf_path) as pdf:
+        df = gpd.GeoDataFrame(df_geo_partition)
+        df['geometry'] = gpd.GeoSeries.from_wkt(df['geo_partition_wkt'])
+        df.crs = "EPSG:4326"
+        df = df.to_crs(epsg=3857)
+        ax = df.plot(figsize=(10, 10), alpha=0.5, 
+                      column='group',legend=False, cmap='prism')
+        ctx.add_basemap(ax)
+    
+    
+# Redo functions rename
 def redo_squares_2(config):
     
     redo_squares(config)
@@ -679,7 +875,7 @@ def density_lines_figures_2(config):
     density_lines_figures(config)
     
 
-    
+# Redo functions rename    
 def redo_squares_3(config):
     
     redo_squares(config)
@@ -694,6 +890,7 @@ def density_lines_figures_3(config):
 
     
     
+# Redo functions rename    
 def redo_squares_4(config):
     
     redo_squares(config)
@@ -706,6 +903,9 @@ def density_lines_figures_4(config):
     
     density_lines_figures(config)    
     
+
+
+# start function
 def check_existence(config):
 
     return True
