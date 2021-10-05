@@ -166,6 +166,9 @@ The objective of the pipeline is to process, according to specifications in a co
     - `example_runner.py`
 
 
+
+
+
 ### Run the pipeline
 
 To run the pipeline you need three parameters:
@@ -207,6 +210,80 @@ There are different slugs to run the pipeline. Each slug has a different directo
     start: 2021-07-11
     end: 2021-09-10                       # intervalo de fechas a procesar
 ```    
+
+
+### Runner  `partitioned_athena_query.py`
+
+
+In order to run paralel queries to populate the same table, the trick
+is to create an empty table that points to a specific S3 path. Then,
+a bunch of temporary tables are through an Athena process that points
+to the same path. This populates the initial table that now can be
+queried normally by Athena.
+
+This also allows us to do that asynchronously. This function implements
+that by using `multiprocessing.Pool` from python standard library.
+
+First, it creates a list of dictionaries, `queries`, with two objects:
+    - `make`: a query that creates the table
+    - `drop`: a query that drops the same table
+
+Then, this list is called by a Pool that has a number of jobs set by
+the user in the config.yaml file and number_of_athena_jobs.
+
+Parameter specified:
+
+- query_path : str - path to the query that creates the table
+- config : dict -  variables from config.yaml
+
+
+Start process:
+
+
+1. Create table if required
+
+```
+PARTITIONED BY (
+    region_slug string
+  )
+  STORED AS ORC
+  LOCATION '{{ s3_path }}/{{ slug }}/{{ current_millis }}/{{ raw_table }}/{{ name }}'
+	 TBLPROPERTIES (
+	  'classification'='orc', 
+	  'compressionType'='zlib')
+```
+
+2. Partition query to run paralel queries to populate the same table. Generate query fills a string with jinja2 placeholders, {{ }}, with variables from the config.yaml file.
+
+```
+create table {{ athena_database }}.{{ slug }}_{{ raw_table }}_{{ name }}_{{ p_name }}
+with (
+      external_location = '{{ s3_path }}/{{ slug }}/{{ current_millis }}/{{ raw_table }}/{{ name }}/{{ p_path }}',
+	  format='orc', orc_compression = 'ZLIB'
+      )
+``` 
+
+3. Repair of table from partiition queries.
+
+```
+MSCK REPAIR TABLE  {{ athena_database }}.{{ slug }}_{{ raw_table }}_{{ name }};
+```
+
+#### Storage Organization
+
+
+    ├── corona
+    │   ├── dev    
+    │   │   ├── v13    
+    │   │   │   ├── daily 
+    │   │   │   │   ├── daily 
+    │   │   │   │   │   ├── region_slug=aguascalientes
+    │   │   │   │   │   │   ├── year2020month03
+    │   │   │   │   │   │   ├── year2020month04
+    │   │   │   │   │   │   ├── year2020month05
+    │   │   │   │   │   │   ├── year2020month06
+    │   │   │   │   │   │   ├── year2021month07day01
+    │   │   │   │   │   │   ├── year2021month07day02
 
 
 
