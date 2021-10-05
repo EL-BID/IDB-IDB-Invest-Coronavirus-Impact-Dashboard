@@ -135,7 +135,6 @@ The objective of the pipeline is to process, according to specifications in a co
     │   ├── treated                <- The cleaned and treated 
     ├── docs                       <- Code documentation   
     ├── notebooks                  <- Jupyter notebooks
-    ├── etl                        <- Reports to be auto-generated
     ├── sql                        <- SQL files called to run pipeline
     ├── src                        <- Pipeline python files
     ├── tests                      <- Test module file
@@ -225,19 +224,15 @@ This also allows us to do that asynchronously. This function implements
 that by using `multiprocessing.Pool` from python standard library.
 
 First, it creates a list of dictionaries, `queries`, with two objects:
+
     - `make`: a query that creates the table
     - `drop`: a query that drops the same table
 
 Then, this list is called by a Pool that has a number of jobs set by
 the user in the config.yaml file and number_of_athena_jobs.
 
-Parameter specified:
 
-- query_path : str - path to the query that creates the table
-- config : dict -  variables from config.yaml
-
-
-Start process:
+Process:
 
 
 1. Create table if required
