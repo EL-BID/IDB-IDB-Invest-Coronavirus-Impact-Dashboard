@@ -76,6 +76,8 @@ For the second grid, the output are several tables, one per polygon, including t
 2. `2021091413091631639640/`: 10 squares 
 2. `2021092622091632708970/`: 10 squares 
 3. `2021092812091632847410/`: 6 squares 
+4. `2021100101101633066162/`: 70 squares 
+4. `2021100323101633318356/`: 80 squares (FINAL VERSION)
 
 
 **3b.** Tune the parameters to get a reasonable number of tiles. 
