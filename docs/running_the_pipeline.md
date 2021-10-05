@@ -121,7 +121,7 @@ This file will execute the file `run_prod.sh` that runs the pipeline.
 
 ----
 
-## Processing daily data
+## Pipeline description
 
 
 The objective of the pipeline is to process, according to specifications in a configuration file, the jams information by day and time for different regions (region_slug) of Latin America.
@@ -168,7 +168,7 @@ The objective of the pipeline is to process, according to specifications in a co
 
 
 
-### Run the pipeline
+### Run single
 
 To run the pipeline you need three parameters:
 
