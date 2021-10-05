@@ -882,7 +882,7 @@ def _run_single(region_slug,
                 athena_path = "/home/soniame/shared/spd-sdv-omitnik-waze/corona"):
     
     logger.info(f'... here we go {region_slug}...\n')  
-    region_slug = region_slug #df_run.region_slug.unique()
+    #region_slug = region_slug #df_run.region_slug.unique()
     
     # 0. download data
     df_run = _reading_data(region_slug, version)
