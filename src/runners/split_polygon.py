@@ -57,7 +57,7 @@ def _get_lines(update_data = False):
         # Read current table
         logger.debug("Reading lines")
         
-        path_vs = f'{path_s3]/geo_partition/lines/line_wkt_count_202010712.csv'
+        path_vs = f'{path_s3}/geo_partition/lines/line_wkt_count_202010712.csv'
         logger.debug(f"From {path_vs}")
         
         df_lines = pd.read_csv(path_vs)
