@@ -154,7 +154,7 @@
   runner: split_polygon
   name: upload_squares
   cm: '2021100323101633318356'
-  table_name: 'raw_geo_partition_id'
+  table_name: 'raw_geo_partition'
   depends_on: ['union_squares_redo']
   force: True
 
