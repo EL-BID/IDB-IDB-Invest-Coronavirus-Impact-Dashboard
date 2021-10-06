@@ -15,6 +15,7 @@ import io
 from dateutil import rrule
 import boto3
 from boto3.session import Session
+import awswrangler as wr
 
 from contextlib import contextmanager
 
@@ -190,7 +191,7 @@ def query_athena(query, config, config_path="configs/athena.yaml"):
         if config["force"]:
 
             cursor.execute(
-                f'drop table \
+                f'drop table if exists \
                 {config["athena_database"]}.{config["slug"]}_{config["raw_table"]}_{config["name"]}'
             )
 
@@ -340,3 +341,43 @@ def delete_s3_path(p_path, config):
             print("Deleted", pag_args["Prefix"])
     except KeyError:
         pass
+
+    
+def upload_to_athena(df, config):
+
+    res = wr.s3.to_parquet(
+        df=df,
+        path="{s3_path}/athena/{slug}/{current_millis}/{table_name}".format(**config),
+        dataset=True,
+        database=config["athena_database"],
+        table=config["table_name"],
+        mode=config.get("mode", "overwrite"),
+        partition_cols=config.get("partition_cols"),
+        boto3_session=boto3.Session(region_name="us-east-1"),
+    )
+
+
+def save_local(df, config, freq = None, replace=True, header = False, index=True):
+
+    path = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:])
+        / "athena"
+        / config["slug"]
+        / config["name"]
+        / config["current_millis"]
+    )
+    
+    safe_create_path(path, replace)
+    
+    logger.debug(f'writing to {path}')
+    
+    if freq == None:
+        df.to_csv(
+            path / (config["name"] + ".csv"), index=index, header=header, sep="|"
+        )
+    if fre1 != None:
+        df.to_csv(
+            path / (config["name"] + f"_{freq}" + ".csv"), index=index, header=header, sep="|"
+        )

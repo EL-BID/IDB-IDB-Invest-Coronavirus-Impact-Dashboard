@@ -1,6 +1,7 @@
 pandas==1.0.5
 pyaml
 ipykernel
+keplergl
 pyathena
 fire
 networkx<=2.0.0
@@ -21,3 +22,13 @@ matplotlib
 plotly
 cufflinks
 seaborn
+plotnine
+siuba
+adtk
+pyod
+tsmoothie
+osmpy
+geopandas
+openpyxl
+folium
+contextily

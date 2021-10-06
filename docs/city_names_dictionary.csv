@@ -1,0 +1,63 @@
+country_iso_code__dash,country_name__dash,region_slug__dash,region_name__dash,country__waze,city__waze,country_region_code__goo,country_region__goo,sub_region_1__goo,sub_region_2__goo
+AR,Argentina,buenosaires,Buenos Aires,Argentina,Buenos Aires,AR,Argentina,Buenos Aires,None
+AR,Argentina,cordoba,Córdoba,,,AR,Argentina,Cordoba,None
+AR,Argentina,rosario,Rosario,,,,,,
+BO,Bolivia,santacruzdelasierra,Santa Cruz de la Sierra,,,BO,Bolivia,Santa Cruz Department,None
+BR,Brazil,belem,Belém,,,BR,Brazil,State of Pará,Belém
+BR,Brazil,belohorizonte,Belo Horizonte,Brazil,Belo Horizonte,BR,Brazil,State of Minas Gerais,Belo Horizonte
+BR,Brazil,brasilia,Brasília,Brazil,Brasilia,BR,Brazil,State of Minas Gerais,Brasília de Minas
+BR,Brazil,campinas,Campinas,,,BR,Brazil,State of São Paulo,Campinas
+BR,Brazil,curitiba,Curitiba,Brazil,Curitiba,BR,Brazil,State of Paraná,Curitiba
+BR,Brazil,fortaleza,Fortaleza,Brazil,Fortaleza,BR,Brazil,State of Ceará,Fortaleza
+BR,Brazil,goiania,Goiânia,,,BR,Brazil,State of Goiás,Goiânia
+BR,Brazil,joaopessoa,João Pessoa,,,BR,Brazil,State of Paraíba,João Pessoa
+BR,Brazil,maceio,Maceió,,,BR,Brazil,State of Alagoas,Maceió
+BR,Brazil,manaus,Manaus,,,BR,Brazil,State of Amazonas,Manaus
+BR,Brazil,natal,Natal,,,BR,Brazil,State of Rio Grande do Norte,Natal
+BR,Brazil,porto_alergre,Porto Alegre,Brazil,Porto Alegre,BR,Brazil,State of Rio Grande do Sul,Porto Alegre
+BR,Brazil,recife,Recife,Brazil,Recife,BR,Brazil,State of Pernambuco,Recife
+BR,Brazil,riodejaneiro,Rio de Janeiro,Brazil,Rio De Janeiro,BR,Brazil,State of Rio de Janeiro,Rio de Janeiro
+BR,Brazil,salvador,Salvador,Brazil,Salvador,BR,Brazil,State of Bahia,Salvador
+BR,Brazil,santos,Santos,,,BR,Brazil,State of São Paulo,Santos
+BR,Brazil,saojosedoscampos,São José dos Campos,,,BR,Brazil,State of São Paulo,Sao Jose dos Campos
+BR,Brazil,saoluis,São Luís,,,BR,Brazil,State of Maranhão,São Luís
+BR,Brazil,saopaulo,São Paulo,Brazil,Sao Paulo,BR,Brazil,State of São Paulo,"Pinhalzinho, São Paulo"
+BR,Brazil,sorocaba,Sorocaba,,,BR,Brazil,State of São Paulo,Sorocaba
+BR,Brazil,teresina,Teresina,,,BR,Brazil,State of Piauí,Teresina
+BR,Brazil,vitoria,Vitória,Brazil,Vitoria,BR,Brazil,State of Espírito Santo,Vitória
+CL,Chile,santiago,Santiago,Chile,Santiago,CL,Chile,Santiago Metropolitan Region,Santiago Province
+CO,Colombia,barranquilla,Barranquilla,,,CO,Colombia,Atlantico,Barranquilla
+CO,Colombia,bogota,Bogotá,Colombia,Bogota,CO,Colombia,Bogota,None
+CO,Colombia,bucaramanga,Bucaramanga,,,CO,Colombia,Santander,Bucaramanga
+CO,Colombia,cali,Cali,Colombia,Cali,CO,Colombia,Valle del Cauca,Cali
+CO,Colombia,cartagena,Cartagena de Indias,,,CO,Colombia,Bolivar,Cartagena Province
+CO,Colombia,cucuta,Cúcuta,,,CO,Colombia,North Santander,Cucuta
+CO,Colombia,medellin,Medellín,Colombia,Medellin,CO,Colombia,Antioquia,Medellin
+CO,Colombia,pereira,Pereira,,,CO,Colombia,Risaralda,Pereira
+CO,Colombia,santamarta,Santa Marta,,,CO,Colombia,Magdalena,Santa Marta
+CR,Costa Rica,sanjose,San José,Costa Rica,San Jose,,,,
+DO,Dominican Republic,santiagocaballeros,Santiago de los Caballeros,,,DO,Dominican Republic,Santiago Province,None
+DO,Dominican Republic,santodomingo,Santo Domingo,,,DO,Dominican Republic,Santo Domingo Province,None
+EC,Ecuador,cuenca,Cuenca,,,EC,Ecuador,Azuay,Cuenca
+EC,Ecuador,guayaquil,Guayaquil,,,EC,Ecuador,Guayas,Guayaquil
+EC,Ecuador,quito,Quito,Ecuador,Quito,EC,Ecuador,Pichincha,Metropolitan District of Quito
+GT,Guatemala,guatemala,Ciudad de Guatemala,,,GT,Guatemala,Guatemala Department,Guatemala
+HN,Honduras,tegucigalpa,Tegucigalpa,,,,,,
+JM,Jamaica,kingston,Kingston,,,JM,Jamaica,Kingston Parish,None
+MX,Mexico,aguascalientes,Aguascalientes,,,MX,Mexico,Aguascalientes,None
+MX,Mexico,guadalajara,Guadalajara,Mexico,Guadalajara,MX,Mexico,Jalisco,None
+MX,Mexico,leon,León,,,MX,Mexico,Guanajuato,None
+MX,Mexico,merida,Mérida,,,MX,Mexico,Yucatan,None
+MX,Mexico,mexicocity,Ciudad de México,Mexico,Mexico City,MX,Mexico,Mexico City,None
+MX,Mexico,monterrey,Monterrey,Mexico,Monterrey,MX,Mexico,Nuevo Leon,None
+MX,Mexico,pueble,Puebla,Mexico,Puebla City,MX,Mexico,Puebla,None
+MX,Mexico,queretaro,Querétaro,Mexico,Santiago De Queretaro,MX,Mexico,Querétaro,None
+MX,Mexico,sanluispotosi,San Luis Potosí,,,MX,Mexico,San Luis Potosi,None
+MX,Mexico,toluca,Toluca,,,MX,Mexico,State of Mexico,None
+MX,Mexico,torreon,Torreón,,,MX,Mexico,Coahuila,None
+NI,Nicaragua,managua,Managua,,,NI,Nicaragua,Managua,None
+PA,Panama,panamacity,Ciudad de Panamá,,,,,,
+PE,Peru,arequipa,Arequipa,,,PE,Peru,Arequipa,Arequipa
+PE,Peru,lima,Lima,Peru,Lima,PE,Peru,Lima Region,None
+SV,El Salvador,sansalvador,San Salvador,,,SV,El Salvador,San Salvador Department,None
+UY,Uruguay,montevideo,Montevideo,Uruguay,Montevideo,UY,Uruguay,Montevideo Department,None

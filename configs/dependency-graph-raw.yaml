@@ -1,0 +1,152 @@
+# Geo Partition ID data
+
+## Create sample
+- 
+  path: 'sql/raw/create-raw-jams.sql'
+  runner: sample_jams
+  name: sample_dates
+  pass: True
+  
+
+## Create coarse grid
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: create_coarse_grid 
+  depends_on: ['sample_dates']
+  pass: True
+
+
+## First squares
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: create_squares
+  depends_on: ['create_coarse_grid']
+  pass: True
+
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: density_lines_squares
+  cm_read: '2021083013081630344071'
+  depends_on: ['create_squares']
+  pass: True
+  
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: density_lines_figures
+  cm_read: '2021083013081630344071'
+  depends_on: ['density_lines_squares']
+  pass: True  
+
+# Second run of squares (big polygons)
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: redo_squares_2
+  cm_read: '2021083013081630344071'
+  ratio_min: 2
+  max_tiles: 5
+  window_max: 3.5
+  depends_on: ['density_lines_figures']
+  pass: True
+
+- 
+  path: 'sql/raw/create-raw-jams.sql'
+  runner: split_polygon
+  name: density_lines_squares_2
+  cm_read: '2021091413091631639640'
+  depends_on: ['redo_squares_2']
+  pass: True
+  
+- 
+  path: 'sql/raw/create-raw-jams.sql'
+  runner: split_polygon
+  name: density_lines_figures_2
+  cm_read: '2021091413091631639640'
+  depends_on: ['density_lines_squares_2']
+  pass: True
+  
+  
+# Third run of squares (big cities)  
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: redo_squares_3
+  cm_read: '2021091413091631639640'
+  ratio_min: 2
+  max_tiles: 5
+  window_max: 5
+  depends_on: ['density_lines_figures_2']
+  pass: True
+
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: density_lines_squares_3
+  cm_read: '2021092913091632936317'
+  depends_on: ['redo_squares_3']
+  pass: True
+  
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: density_lines_figures_3
+  depends_on: ['density_lines_squares_3']
+  cm_read: '2021092913091632936317'
+  pass: True
+  
+  
+## Union of distributions
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: union_squares
+  cm_read: ['2021083013081630344071', '2021091413091631639640', '2021092812091632847410']
+  max_value: .015
+  depends_on: ['density_lines_figures_3']
+  pass: True
+
+
+## Final run of squares 
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: redo_squares_4
+  cm_read: '2021093011101633064931'
+  ratio_min: 1.5
+  max_tiles: 6
+  window_max: 6
+  depends_on: ['density_lines_squares_3']
+  pass: True
+  
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: density_lines_squares_4
+  cm_read: '2021100101101633066162'
+  depends_on: ['redo_squares_4']
+  pass: True
+  
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: density_lines_figures_4
+  depends_on: ['density_lines_squares_4']
+  cm_read: '2021100101101633066162'
+  pass: True
+ 
+ 
+# Final union 
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: union_squares_redo
+  cm_read: ['2021083013081630344071', '2021091413091631639640', '2021092812091632847410', '2021100101101633066162']
+  max_value: .016
+  depends_on: ['density_lines_figures_4']
+  pass: True
+  
+  

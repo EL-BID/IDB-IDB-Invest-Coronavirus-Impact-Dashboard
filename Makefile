@@ -18,10 +18,13 @@ create-env: setup-secrets
 update-env:
 	source activate $(REPO); \
 	pip3 install --upgrade -r requirements.txt;
+    
+update-env-dev:
+	source activate $(REPO); \
+	pip3 install --upgrade -r requirements-dev.txt;    
 
 setup-secrets:
 	cp ~/shared/spd-sdv-omitnik-waze/corona/configs/* configs/
-
 
 cron-tab:
 	#write out current crontab
@@ -31,3 +34,11 @@ cron-tab:
 	#install new cron file
 	crontab mycron
 	rm mycron
+
+activate-extensions:
+	source activate $(REPO); \
+	jupyter contrib nbextension install --user; \
+	jupyter nbextension install toc2/main --user; \
+	jupyter nbextension enable toc2/main --user; \
+	jupyter nbextension install --py --user keplergl; \
+	jupyter nbextension enable --py --user keplergl
