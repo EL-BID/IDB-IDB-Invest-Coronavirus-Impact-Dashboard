@@ -347,7 +347,7 @@ def upload_to_athena(df, config):
 
     res = wr.s3.to_parquet(
         df=df,
-        path="{s3_path}/athena/{slug}/{current_millis}/{table_name}".format(**config),
+        path="{s3_path}/athena/{slug}/{table_name}".format(**config),
         dataset=True,
         database=config["athena_database"],
         table=config["table_name"],

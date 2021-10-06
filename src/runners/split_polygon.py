@@ -1,11 +1,14 @@
 
 # LIBRARIES
 import os
+from pathlib import Path
+
 import pandas as pd
 from siuba import group_by, ungroup, arrange, summarize, _
 import numpy as np
 import geopandas as gpd
 from datetime import datetime
+from uuid import uuid4
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -22,6 +25,9 @@ from functools import partial
 
 from loguru import logger
 
+from src.utils import (
+    upload_to_athena
+)
 
 ## Coarse grid
 def _get_lines(update_data = False):
@@ -29,6 +35,12 @@ def _get_lines(update_data = False):
     Get data frame of lines with count of jams per line and split number
     """ 
     logger.info('Lines')
+    
+    path_s3 = (
+                Path.home()
+                / "shared"
+                / "/".join(config["s3_path"].split("/")[3:])
+            )
     
     if update_data:
         # Download data from Athena
@@ -40,12 +52,12 @@ def _get_lines(update_data = False):
             from spd_sdv_waze_corona.raw_sample_jams
             group by line_wkt"""
         df_lines = pd.read_sql_query(qry, conn)
-        df_lines.to_csv('/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/lines/line_wkt_count_202010712.csv', index=False)
+        df_lines.to_csv(f'{path_s3}/geo_partition/lines/line_wkt_count_202010712.csv', index=False)
     else:
         # Read current table
         logger.debug("Reading lines")
         
-        path_vs = '/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/lines/line_wkt_count_202010712.csv'
+        path_vs = f'{path_s3]/geo_partition/lines/line_wkt_count_202010712.csv'
         logger.debug(f"From {path_vs}")
         
         df_lines = pd.read_csv(path_vs)
@@ -130,7 +142,7 @@ def _create_coarse_grid(df_lines, tiles, split):
     
     # Locallty saved - Join is made at 
     # Notebook: notebooks/katana_bounds.ipynb#Split-lines-into-grid
-    path_vs = f"/home/soniame/private/projects/corona_geo_id/coarse_grid/coarse_id_new_{split}.csv"
+    path_vs = f"{Path.home()}private/projects/corona_geo_id/coarse_grid/coarse_id_new_{split}.csv"
     logger.debug(f"To {path_vs}")
     df_coarse.to_csv(path_vs, index = False)
     
@@ -207,7 +219,17 @@ def _get_coarse_grid():
 def _get_dist_table():
     
     logger.info('Get distribution table')
-    path_dist = '/home/soniame/shared/spd-sdv-omitnik-waze/corona/geo_partition/figures/coarse_grid_distribution_R.csv'
+    
+    path_dist = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:])
+        / "geo_partition"
+        / "figures"
+        / "coarse_grid_distribution_R.csv"
+    )
+    
+    #path_dist = f'{path_s3}/geo_partition/figures/coarse_grid_distribution_R.csv'
     df_dist   = pd.read_csv(path_dist)
 
     logger.debug(f'G: {len(df_dist)}')
@@ -434,12 +456,15 @@ def create_squares(config):
         
     # Running katana splits ----
     r = _katana_grid(geometry_la, _threshold_density_func, .01, 10, config)
-  
-def redo_squares(config):
+    
+
+def redo_squares(config): 
      
-    logger.debug(config)
-        
-    config['path_s3'] = '/home/soniame/shared/spd-sdv-omitnik-waze/corona'
+    logger.debug(config) 
+    config['path_s3'] = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:]))
         
     # Date run ----
     global cm
@@ -480,8 +505,11 @@ def redo_squares(config):
         
         # Running katana splits 
         r = _katana_grid(geometry, _threshold_density_func, .01, config['max_tiles'], config)    
+        
+        
     
 def _lines_squares(square, df_coarse, df_dist):
+    
     square = wkt.loads(str(square))
     logger.debug(f'{square}')
     
@@ -541,7 +569,12 @@ def density_lines_squares(config):
     
     # Geo grid ----
     cm_read = config['cm_read']
-    path_s3 = '/home/soniame/shared/spd-sdv-omitnik-waze/corona' #config['s3_path']
+    path_s3 = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:])
+    )
+    
     df_squares = _union_df_squares(path_s3, cm_read)
             
     # Create directory
@@ -632,7 +665,11 @@ def _distribution_map(tab, config):
         
 def density_lines_figures(config):
     
-    config['path_s3'] = '/home/soniame/shared/spd-sdv-omitnik-waze/corona'
+    config['path_s3'] = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:])
+    )
     
     # Coarse grid ----
     global df_coarse 
@@ -651,6 +688,11 @@ def density_lines_figures(config):
 # Union of squares    
 def _union_squares_redo(config): 
     
+    path_s3 = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:])
+    )
     cm_read = config['cm_read']
     
     df_1 = _union_df_squares(path_s3, cm_read[0]) \
@@ -749,6 +791,12 @@ def _distribution_squares_redo(config, union):
 
 def union_squares(config):
     
+    path_s3 = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:])
+    )
+    
     union = _union_squares_redo(config)
     
     dist_union = _distribution_squares_redo(config, union)
@@ -808,6 +856,12 @@ def _complement_square(config, df_final):
 
 def union_squares_redo(config):
     
+    path_s3 = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:])
+    )
+    
     union = _union_squares_redo(config)
     
     # add last redo (polygon 4) 
@@ -859,6 +913,23 @@ def union_squares_redo(config):
         ax = df.plot(figsize=(10, 10), alpha=0.5, 
                       column='group',legend=False, cmap='prism')
         ctx.add_basemap(ax)
+    
+    
+def upload_squares(config):
+    
+    logger.debug('upload to Athena')
+    
+    config['path_s3'] = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:])
+    )
+    
+    df = pd.read_csv("{path_s3}/geo_partition/dist/distribution_{cm}.csv".format(**config))
+    df['geo_partition_id'] = [str(uuid4()) for k in df.group ]
+    df = df[['geo_partition_id', 'geo_partition_wkt', 'group']]
+   
+    upload_to_athena(df, config)
     
     
 # Redo functions rename

@@ -149,4 +149,13 @@
   depends_on: ['density_lines_figures_4']
   pass: True
   
+- 
+  path: 'sql/raw/'
+  runner: split_polygon
+  name: upload_squares
+  cm: '2021100323101633318356'
+  table_name: 'raw_geo_partition_id'
+  depends_on: ['union_squares_redo']
+  force: True
+
   
