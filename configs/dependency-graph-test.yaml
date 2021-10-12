@@ -71,7 +71,7 @@
   depends_on: [
     metadata_variation
   ]
-  current_millis: t2
+  current_millis: t3
   mode: 'incremental'
   interval:
     start: 2020-04-28

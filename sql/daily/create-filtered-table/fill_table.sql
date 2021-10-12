@@ -30,14 +30,14 @@ with t as (
 		{% endfor %}
 	)
 	select 
-		length,
+		--length,
 		line,
  		retrievaltime,
-		rank() over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
-								date_parse(format_datetime(date_add('minute', 
-									cast(date_diff('minute',
-										timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
-										timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') order by retrievaltime) n_row
+		first_value(length) over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
+                                                                date_parse(format_datetime(date_add('minute',
+                                                                        cast(date_diff('minute',
+                                                                                timestamp '2015-01-01 00:00:00', retrievaltime) / 5 as bigint) * 5,
+                                                                                timestamp '2015-01-01 00:00:00'), 'H:m'), '%H:%i') order by retrievaltime) length
 	from raw)
 select
     year(retrievaltime) as year,
@@ -57,5 +57,3 @@ group by
     hour(retrievaltime),
     day_of_week(retrievaltime),
     line
- order by n_row
- limit 1
