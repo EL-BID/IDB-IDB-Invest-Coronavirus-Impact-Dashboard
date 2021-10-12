@@ -78,7 +78,7 @@ countries: [CO,MX,HO,AR,CI,BR,DR,CS,ES,CW,JM,GT,CU,PA,BB,EC,PE,NS,VE,PM,NU,BL,
 
 cv_exception: ['country_brazil']
 
-#selected_regions: ['mexicocity', 'bogota', 'saopaulo']
+selected_regions: ['lima']
 
 accepted_osm_keys: [
     motorway,

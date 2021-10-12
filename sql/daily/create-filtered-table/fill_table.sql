@@ -33,26 +33,29 @@ with t as (
 		length,
 		line,
  		retrievaltime,
-		row_number() over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
+		rank() over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
 								date_parse(format_datetime(date_add('minute', 
 									cast(date_diff('minute',
 										timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
 										timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') order by retrievaltime) n_row
 	from raw)
-select 
-	year(retrievaltime) as year,
-	month(retrievaltime) as month,
-	day(retrievaltime) as day,
-	hour(retrievaltime) as hour,
-	day_of_week(retrievaltime) as dow,
-	line,
-	cast(sum(length) as bigint) as tci
+select
+    year(retrievaltime) as year,
+    month(retrievaltime) as month,
+    day(retrievaltime) as day,
+    hour(retrievaltime) as hour,
+    day_of_week(retrievaltime) as dow,
+    line,
+    cast(sum(length) as bigint) as tci
 from t
-where n_row = 1
+--where n_row = 1
 group by
-	year(retrievaltime),
-	month(retrievaltime),
-	day(retrievaltime),
-	hour(retrievaltime),
-	day_of_week(retrievaltime),
-	line
+    n_row,
+    year(retrievaltime),
+    month(retrievaltime),
+    day(retrievaltime),
+    hour(retrievaltime),
+    day_of_week(retrievaltime),
+    line
+ order by n_row
+ limit 1
