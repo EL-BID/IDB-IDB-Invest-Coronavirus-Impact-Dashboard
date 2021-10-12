@@ -51,6 +51,7 @@ Code can be found at `notebooks/katana_bounds.ipynb` (1.1  Sample dates) and fun
 
 
 
+
 **2. Coarse grid for lines using H3 Grid resolution 1 and resolution 2.**
 
 This step was implemented as consequence of the slow run time of katana grid. So the idea is to first intersect tiles (hexagons) with lines. Every grid has one millon or less lines included. 
@@ -168,11 +169,13 @@ st_polygon(<REGION_SLUG_GEO>))
 
 ### Run 
 
-To run the pipeline 
+To run the pipeline use the following command. 
 
 ```
 python src/entrypoint.py single --slug=raw --n_tries=1 --dependency_graph_path=configs/dependency-graph-raw.yaml --config_path=configs/config-raw.yaml &>> log.log
 ```
+
+The slug to run this pipeline is `raw`. Remember that each slug has a different directory in S3 where data is stored. Also, the slug defines the name of the table name created in Athena.
 
 ----
 

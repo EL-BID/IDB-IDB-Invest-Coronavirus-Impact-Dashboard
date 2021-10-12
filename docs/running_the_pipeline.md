@@ -182,11 +182,20 @@ These parameters are defined in the following code ran in a terminal with the en
 python src/entrypoint.py single --slug=raw --n_tries=1 --dependency_graph_path=configs/dependency-graph-raw.yaml --config_path=configs/config-raw.yaml
 ```
 
-There are different slugs to run the pipeline. Each slug has a different directory in S3 where data created is stored. Also, teh slug defines the name of the table name created in Athena. 
+There are different slugs to run the pipeline. Each slug has a different directory in S3 where data created is stored. Also, the slug defines the name of the table name created in Athena. 
 
 - `prod`: version running in master with cron tab. To be cautious with duplicated version
+    - daily `current_millis: v12`
+    - historical_2020 `current_millis: v13`
+    
 - `dev`: version with data updated up to July 2021 excluding country Mexico and country Brazil
-- `raw`: slug created for geo_partition_id step
+    - daily `current_millis: v13`
+    - historical_2020 `current_millis: v13`   
+    
+Testing ran under slug dev with the following parameter :    
+    - test-v1 `current_millis: t1`
+    - test-v2 `current_millis: t2`
+    - test-v3 `current_millis: t3`
 
 
 
