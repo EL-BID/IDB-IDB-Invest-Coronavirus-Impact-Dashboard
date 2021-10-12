@@ -33,7 +33,7 @@ with t as (
 		length,
 		line,
  		retrievaltime,
-		row_number() over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
+		rank() over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
 								date_parse(format_datetime(date_add('minute', 
 									cast(date_diff('minute',
 										timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
@@ -50,9 +50,9 @@ select
 from t
 where n_row = 1
 group by
-	year(retrievaltime),
-	month(retrievaltime),
-	day(retrievaltime),
-	hour(retrievaltime),
-	day_of_week(retrievaltime),
-	line
+        year(retrievaltime),
+        month(retrievaltime),
+        day(retrievaltime),
+        hour(retrievaltime),
+        day_of_week(retrievaltime),
+        line
