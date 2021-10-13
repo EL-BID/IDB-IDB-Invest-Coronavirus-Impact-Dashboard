@@ -327,7 +327,32 @@ def dummy_2019(config):
 
     _save_local(df, config, df.columns)
 
+    
+    
+def save_test_daily(config):
 
+    df = get_data_from_athena(
+            "select * from "
+            f"{config['athena_database']}.{config['slug']}_daily_daily"
+        )
+
+    path = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:])
+        / "test"
+        / "test_daily_queries"
+    )
+
+
+    safe_create_path(path, replace)
+
+    df.to_csv(
+        path / (config["name"] + '_'  config["test"] + ".csv"), index=False, sep="|"
+    )
+
+    
+    
 def check_existence(config):
 
     res = get_data_from_athena(
