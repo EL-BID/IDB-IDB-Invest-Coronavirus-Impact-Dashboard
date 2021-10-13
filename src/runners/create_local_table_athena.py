@@ -331,11 +331,6 @@ def dummy_2019(config):
     
 def save_test_daily(config):
 
-    df = get_data_from_athena(
-            "select * from "
-            f"{config['athena_database']}.{config['slug']}_daily_daily"
-        )
-
     path = (
         Path.home()
         / "shared"
@@ -343,7 +338,14 @@ def save_test_daily(config):
         / "test"
         / "test_daily_queries"
     )
-
+    
+    
+    cp_log = f"cp log_{config['test']}.log {path}"
+    
+    df = get_data_from_athena(
+            "select * from "
+            f"{config['athena_database']}.{config['slug']}_daily_daily"
+        )
 
     safe_create_path(path, replace)
 
