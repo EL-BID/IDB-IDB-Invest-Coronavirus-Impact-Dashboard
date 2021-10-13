@@ -30,14 +30,14 @@ with t as (
 		{% endfor %}
 	)
 	select 
-		--length,
+		length,
 		line,
  		retrievaltime,
-		first_value(length) over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
+		first_value(retrievaltime) over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
                                                                 date_parse(format_datetime(date_add('minute',
                                                                         cast(date_diff('minute',
                                                                                 timestamp '2015-01-01 00:00:00', retrievaltime) / 5 as bigint) * 5,
-                                                                                timestamp '2015-01-01 00:00:00'), 'H:m'), '%H:%i') order by retrievaltime) length
+                                                                                timestamp '2015-01-01 00:00:00'), 'H:m'), '%H:%i') order by retrievaltime) retrievaltime_first
 	from raw)
 select
     year(retrievaltime) as year,
@@ -48,7 +48,7 @@ select
     line,
     cast(sum(length) as bigint) as tci
 from t
---where n_row = 1
+where retrievaltime_first = retrievaltime
 group by
     n_row,
     year(retrievaltime),
