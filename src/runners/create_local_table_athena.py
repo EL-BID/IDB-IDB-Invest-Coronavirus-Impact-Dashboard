@@ -14,6 +14,7 @@ from shapely import wkt
 import awswrangler as wr
 import boto3
 from timezonefinder import TimezoneFinder
+import os
 
 tf = TimezoneFinder()
 from src.utils import (
@@ -327,7 +328,33 @@ def dummy_2019(config):
 
     _save_local(df, config, df.columns)
 
+    
+    
+def save_test_daily(config):
 
+    path = (
+        Path.home()
+        / "shared"
+        / "/".join(config["s3_path"].split("/")[3:])
+        / "test"
+        / "test_daily_queries"
+    )
+    
+    
+    cp_log = f"cp log_{config['test']}.log {path}"
+    os.system(cp_log)
+    
+    df = get_data_from_athena(
+            "select * from "
+            f"{config['athena_database']}.{config['slug']}_daily_daily"
+        )
+
+    df.to_csv(
+        path / (config["name"] + '_' + config["test"] + ".csv"), index=False, sep="|"
+    )
+
+    
+    
 def check_existence(config):
 
     res = get_data_from_athena(
