@@ -67,15 +67,15 @@
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
   name: daily
-  verbose: True
+  verbose: False
   depends_on: [
     metadata_variation
   ]
   current_millis: t3
   mode: 'incremental'
   interval:
-    start: 2020-04-28
-    end: 2020-04-28
+    start: 2021-05-06
+    end: 2021-05-06
     
 
 - 
@@ -94,7 +94,7 @@
 - 
   path: 'sql/daily/create-daily-index-table.sql'
   runner: basic_athena_query
-  verbose: True
+  verbose: False
   depends_on: [
     metadata_variation,
     daily,
@@ -165,3 +165,11 @@
     #   overall_drop: []
     #   public_drop: []
 
+- 
+  path: 'sql/daily/'
+  runner: create_local_table_athena
+  test: 'test-v3'
+  depends_on: [
+    daily
+  ]
+  name: save_test_daily

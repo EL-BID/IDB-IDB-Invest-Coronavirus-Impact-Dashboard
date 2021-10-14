@@ -50,7 +50,6 @@ select
 from t
 where retrievaltime_first = retrievaltime
 group by
-    n_row,
     year(retrievaltime),
     month(retrievaltime),
     day(retrievaltime),
