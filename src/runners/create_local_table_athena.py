@@ -14,6 +14,7 @@ from shapely import wkt
 import awswrangler as wr
 import boto3
 from timezonefinder import TimezoneFinder
+import os
 
 tf = TimezoneFinder()
 from src.utils import (
@@ -341,16 +342,15 @@ def save_test_daily(config):
     
     
     cp_log = f"cp log_{config['test']}.log {path}"
+    os.system(cp_log)
     
     df = get_data_from_athena(
             "select * from "
             f"{config['athena_database']}.{config['slug']}_daily_daily"
         )
 
-    safe_create_path(path, replace)
-
     df.to_csv(
-        path / (config["name"] + '_'  config["test"] + ".csv"), index=False, sep="|"
+        path / (config["name"] + '_' + config["test"] + ".csv"), index=False, sep="|"
     )
 
     
