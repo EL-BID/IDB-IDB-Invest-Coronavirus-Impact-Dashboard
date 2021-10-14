@@ -74,8 +74,8 @@
   current_millis: t0
   mode: 'incremental'
   interval:
-    start: 2020-04-28
-    end: 2020-04-28
+    start: 2021-05-06
+    end: 2021-05-06
     
 
 - 
@@ -164,4 +164,13 @@
     #   worksheet: grouphours
     #   overall_drop: []
     #   public_drop: []
+
+- 
+  path: 'sql/daily/'
+  runner: create_local_table_athena
+  test: 'test-v0'
+  depends_on: [
+    daily
+  ]
+  name: save_test_daily
 
