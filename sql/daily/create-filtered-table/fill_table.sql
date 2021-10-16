@@ -15,6 +15,10 @@ with t as (
 		-- 					from {{ athena_database }}.{{ slug }}_analysis_metadata_variation 
 		-- 					where region_slug = '{{ partition }}')
 		-- ) as varchar), 19, '000'), '%Y-%m-%d %k:%i:%s') retrievaltime,
+            date_parse(format_datetime(date_add('minute', 
+                cast(date_diff('minute',
+                    timestamp '{{ reference_timestamp }}', from_unixtime(retrievaltime/1000)) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
+                    timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i')
 			datetime
 		from pwazetransformeddb.jams
 		where regexp_like(datetime, '{{ date_filter }}')
@@ -30,15 +34,14 @@ with t as (
 		{% endfor %}
 	)
 	select 
-		length,
-		line,
- 		retrievaltime,
-		rank() over (partition by uuid, year(retrievaltime), month(retrievaltime), day(retrievaltime),
-								date_parse(format_datetime(date_add('minute', 
-									cast(date_diff('minute',
-										timestamp '{{ reference_timestamp }}', retrievaltime) / {{ feed_frequency }} as bigint) * {{ feed_frequency }},
-										timestamp '{{ reference_timestamp }}'), 'H:m'), '%H:%i') order by retrievaltime) n_row
-	from raw)
+        length,
+        line,
+        retrievaltime,
+        minute_range
+    from raw
+    group by uuid, line, length, retrievaltime, minute_range
+    order by retrievaltime
+    limit 1)
 select
     year(retrievaltime) as year,
     month(retrievaltime) as month,
@@ -48,14 +51,10 @@ select
     line,
     cast(sum(length) as bigint) as tci
 from t
---where n_row = 1
 group by
-    n_row,
     year(retrievaltime),
     month(retrievaltime),
     day(retrievaltime),
     hour(retrievaltime),
     day_of_week(retrievaltime),
     line
- order by n_row
- limit 1
