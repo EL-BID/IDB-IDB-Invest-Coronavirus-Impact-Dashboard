@@ -74,9 +74,9 @@
   current_millis: t0
   mode: 'incremental'
   interval:
-    start: 2021-05-06
-    end: 2021-05-06
-    
+    start: 2021-05-07
+    end: 2021-05-08
+
 
 - 
   path: 'sql/daily/create-filtered-table'
@@ -168,9 +168,8 @@
 - 
   path: 'sql/daily/'
   runner: create_local_table_athena
-  test: 'test-v0'
+  test: 'test-v0-country_brazil'
   depends_on: [
     daily
   ]
   name: save_test_daily
-
