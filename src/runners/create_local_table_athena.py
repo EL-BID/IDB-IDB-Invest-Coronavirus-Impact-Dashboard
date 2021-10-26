@@ -274,7 +274,7 @@ def write_index(config):
 
         # print(df.apply(lambda x: max(len(str))))
 
-        drive_config = yaml.load(open("configs/drive-config.yaml", "r"))
+        drive_config = yaml.load(open("configs/drive-config.yaml", "r"), Loader=yaml.Loader)
 
         if config["slug"] == "dev":
             

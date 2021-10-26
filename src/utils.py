@@ -119,7 +119,7 @@ def get_config(path="configs/config.yaml"):
         variables from config.yaml
     """
 
-    config = yaml.load(open(path))
+    config = yaml.load(open(path), Loader=yaml.Loader)
 
     current_time_string = datetime.strftime(datetime.now(), "%Y-%m-%d-%H-%M-%S")
 
@@ -142,7 +142,7 @@ def get_dependency_graph(path="configs/dependency-graph.yaml"):
         variables from dependency-graph.yaml
     """
 
-    config = yaml.load(open(path))
+    config = yaml.load(open(path), Loader=yaml.Loader)
 
     return config
 
@@ -156,7 +156,7 @@ def connect_athena(path="configs/athena.yaml"):
         Athena database cursor
     """
 
-    athena_config = yaml.load(open(path, "r"))
+    athena_config = yaml.load(open(path, "r"), Loader=yaml.Loader)
 
     return connect(**athena_config)
 
