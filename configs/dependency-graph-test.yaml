@@ -165,3 +165,11 @@
     #   overall_drop: []
     #   public_drop: []
 
+- 
+  path: 'sql/daily/'
+  runner: create_local_table_athena
+  test: 'test-v2-country_brazil'
+  depends_on: [
+    daily
+  ]
+  name: save_test_daily
