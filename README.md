@@ -1,7 +1,10 @@
 # Coronavirus Traffic Congestion Impact in Latin America with Waze Data
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=EL-BID_Covid-19-Traffic-Impact-Dashboard&metric=alert_status)](https://sonarcloud.io/dashboard?id=EL-BID_Covid-19-Traffic-Impact-Dashboard)
-[![Analytics](https://gabeacon.irvinlim.com/UA-4677001-16/IDB-IDB-Invest-Coronavirus-Impact-Dashboard/readme?useReferer)](https://github.com/EL-BID/IDB-IDB-Invest-Coronavirus-Impact-Dashboard)
+![analytics image (flat)](https://raw.githubusercontent.com/vitr/google-analytics-beacon/master/static/badge-flat.gif)
+![analytics](https://www.google-analytics.com/collect?v=1&cid=555&t=pageview&ec=repo&ea=open&dp=/IDB-IDB-Invest-Coronavirus-Impact-Dashboard/readme&dt=&tid=UA-4677001-16)
+
+
 
 Follow  the impact of Coronavirus outbreak in Latin America in **real time**. 
 
