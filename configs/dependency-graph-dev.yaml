@@ -74,9 +74,10 @@
   current_millis: v13
   mode: 'incremental'
   interval:
-    start: 2021-07-11
-    end: 2021-09-10
-
+    start: 2021-12-20
+    end: 'today'
+  pass: True
+    
 - 
   path: 'sql/daily/create-filtered-table'
   runner: partitioned_athena_query
@@ -90,7 +91,7 @@
     start: 2020-03-02
     end: 2020-03-08
   pass: True
-
+  
 - 
   path: 'sql/daily/create-daily-index-table.sql'
   runner: basic_athena_query
@@ -110,7 +111,7 @@
     historical_2020
   ]
   name: weekly_index
-
+  
 - 
   path: 'sql/daily/create-hourly-index-table.sql'
   runner: basic_athena_query

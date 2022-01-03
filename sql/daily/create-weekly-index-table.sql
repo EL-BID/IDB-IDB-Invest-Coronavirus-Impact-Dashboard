@@ -10,8 +10,9 @@ with dates as (
 		day, 
 		dow,
 		date_parse(concat(cast(year as varchar), ' ', 
-		cast(month as varchar), ' ', 
-		cast(day as varchar)), '%Y %m %e') as date
+            cast(month as varchar), ' ', 
+            cast(day as varchar)), '%Y %m %e') as date,
+		case when dow = 1 then 1 else 0 end as monday
 	from {{ athena_database }}.{{ slug }}_daily_daily
 	where date_parse(concat(cast(year as varchar), ' ', 
 		cast(month as varchar), ' ', 
@@ -19,8 +20,8 @@ with dates as (
 	),
 weeks as (
 	select year, month, day,
-		--SUM (monday) OVER (ORDER BY date) AS week_number_obs
-		FLOOR( ((ROW_NUMBER() over (ORDER BY date)) -1) /7 )+1 AS week_number_obs,
+		SUM (monday) OVER (ORDER BY date) AS week_number_obs,
+		--FLOOR( ((ROW_NUMBER() over (ORDER BY date)) -1) /7 )+1 AS week_number_obs,
 		WEEK(date_parse(concat(cast(year as varchar), ' ', 
 		cast(month as varchar), ' ', 
 		cast(day as varchar)), '%Y %m %e')) week_number
@@ -69,8 +70,8 @@ ratios as (
 		from (
                select 
                     da.*, 
-                    weeks.week_number_obs, 
-                    weeks.week_number 
+                    weeks.week_number, 
+                    weeks.week_number_obs
                from {{ athena_database }}.{{ slug }}_daily_daily as da
                join weeks 
                on (da."year" = weeks.year and
@@ -78,8 +79,9 @@ ratios as (
                    da."day" = weeks.day)
              )
 		group by region_slug, 
-                week_number_obs,
-				week_number
+                week_number,
+                week_number_obs
+				
 		) d
 	on d.region_slug = h.region_slug)
 select
