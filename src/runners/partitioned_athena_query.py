@@ -9,6 +9,8 @@ import pytz
 from datetime import datetime
 
 import logging
+from loguru import logger
+
 
 log = logging.getLogger(__name__)
 
@@ -197,6 +199,7 @@ def historical_2020(config):
 
 def daily(config):
 
+    logger.info(config)
     return _region_slug_partition(config)
 
 
