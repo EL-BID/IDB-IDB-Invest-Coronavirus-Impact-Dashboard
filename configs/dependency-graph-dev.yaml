@@ -75,8 +75,7 @@
   mode: 'incremental'
   interval:
     start: 2021-12-20
-    end: 'today'
-  pass: True
+    end: 2022-01-08
     
 - 
   path: 'sql/daily/create-filtered-table'
