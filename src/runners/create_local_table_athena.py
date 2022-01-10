@@ -86,11 +86,13 @@ def _write_sheets_table(df, freq, config, drive_config):
     wks_name = freq
     d2g.upload(df, spreadsheet_key, wks_name, row_names=False, credentials=credentials)
 
+    
 def _write_csv_table(df, freq, config, public=False):
 
     cm = 'private'
     if public == True:
-        cm = 'public'     
+        cm = 'public'
+           
     path = (
             Path.home()
             / "shared"
@@ -255,6 +257,18 @@ def load_metadata_tables(config):
             _save_local(dfs[name], config, config["columns"])
 
 
+def _remove_countries(df, public = False):
+    
+    # Remove countries columns
+    df.loc[df.region_slug.isin(['country_brazil', 'country_mexico']), 'tcp'] = None
+    
+    df.loc[df.region_slug.isin(['country_brazil', 'country_mexico']), 'dashboard'] = 'FALSE'
+    
+    print(sum(df.dashboard == 'TRUE'))    
+        
+    return df
+    
+    
 def write_index(config):
 
     for table in config["to_write"]:
@@ -263,7 +277,11 @@ def write_index(config):
             "select * from "
             f"{config['athena_database']}.{config['slug']}_{table['table']}"
         )
+        
+        # Remove countries observations
+        df = _remove_countries(df) 
 
+        # Remove columns overall drop
         if "region_shapefile_wkt" in df.columns:
             df["region_shapefile_wkt"] = df["region_shapefile_wkt"].apply(
                 lambda x: str(simplify(wkt.loads(x)))
@@ -276,12 +294,20 @@ def write_index(config):
 
         drive_config = yaml.load(open("configs/drive-config.yaml", "r"), Loader=yaml.Loader)
 
+        
         if config["slug"] == "dev":
             
             _write_csv_table(
                 df, 
                 table["worksheet"],
                 config)
+            
+            df = df[df.dashboard.isin([True, 'TRUE'])].drop(table["public_drop"], 1)
+            _write_csv_table(
+                df, 
+                table["worksheet"],
+                config, 
+                public=True)
 
         elif config["slug"] == "prod":
             
@@ -290,14 +316,18 @@ def write_index(config):
                 table["worksheet"],
                 config)
             
+            print(df.shape)
+            df = df[df.dashboard.isin([True, 'TRUE'])]
+            print(df.shape)
             df = df.drop(table["public_drop"], 1)
+            print(df.shape)
             _write_csv_table(
                 df, 
                 table["worksheet"],
                 config, 
                 public=True)
+        
        
-
 
 def dummy_2019(config):
     def _daterange(start_date, end_date):
