@@ -75,8 +75,7 @@
   mode: 'incremental'
   interval:
     start: 2021-12-20
-    end: 2022-01-08
-  pass: True
+    end: 'today'
     
 - 
   path: 'sql/daily/create-filtered-table'
@@ -101,7 +100,6 @@
     historical_2020
   ]
   name: daily_index
-  pass: True
   
 - 
   path: 'sql/daily/create-weekly-index-table.sql'
@@ -112,7 +110,6 @@
     historical_2020
   ]
   name: weekly_index
-  pass: True
   
 - 
   path: 'sql/daily/create-hourly-index-table.sql'
@@ -149,11 +146,11 @@
     - table: daily_daily_index
       worksheet: daily
       overall_drop: [region_shapefile_wkt]
-      public_drop: ['observed', 'expected_2020', 'dashboard', 'ratio_20']
+      public_drop: ['observed', 'expected_2020', 'dashboard']
     - table: daily_weekly_index
       worksheet: weekly
       overall_drop: [region_shapefile_wkt]
-      public_drop: ['observed', 'expected_2020', 'dashboard', 'ratio_20']
+      public_drop: ['observed', 'expected_2020', 'dashboard']
     - table: analysis_metadata_variation
       worksheet: metadata
       overall_drop: ['region_shapefile_binary', 'area']
@@ -162,7 +159,6 @@
                    'waze_code', 'idb_code', 'country_name_idb_eng', 'n_days',
                    'daily_mean_weekend', 'daily_std_weekend', 'daily_mean_weekday',
                    'daily_std_weekday']
-  force: True
     # - table: daily_grouphours_index
     #   worksheet: grouphours
     #   overall_drop: []
