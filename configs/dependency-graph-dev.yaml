@@ -76,7 +76,6 @@
   interval:
     start: 2022-01-20 # Data begins at 2020-03-09
     end: 'today' # Option to set specific date
-  force: True
     
 - 
   path: 'sql/daily/create-filtered-table'
