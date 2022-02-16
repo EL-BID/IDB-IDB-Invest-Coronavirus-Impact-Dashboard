@@ -74,8 +74,8 @@
   current_millis: v13
   mode: 'incremental'
   interval:
-    start: 2021-12-20
-    end: 2022-02-13
+    start: 2022-01-20 # Data begins at 2020-03-09
+    end: 'today' # Option to set specific date
   force: True
     
 - 

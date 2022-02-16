@@ -105,6 +105,10 @@ def _write_csv_table(df, freq, config, public=False):
 
     safe_create_path(path)
     
+    if freq == 'weekly' and cm = 'private':
+        print(f'Drop {freq}')
+        df = df.drop('max_year', 1)
+    
     df.to_csv(
         path / ( freq + ".csv"), 
         index=False, header=True#, sep="|"
