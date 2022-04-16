@@ -113,7 +113,7 @@ Technical Team Leaders
 
 Technical Team 
 
-- IDB: João Carabetta, Daniel Martinez, Edgar Salgado, Beatrice Zimmermann 
+- IDB: João Carabetta, Daniel Martinez, Edgar Salgado, Beatrice Zimmermann, Sonia Mendizabal 
 
 - IDB Invest: Mattia Chiapello, Luciano Sanguino
 
