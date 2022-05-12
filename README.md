@@ -39,9 +39,9 @@ The latest version of the data is easily available through the methods below.
 
 ### Download Manually
 
-- [daily](http://tiny.cc/idb-traffic-daily)
-- [weekly](http://tiny.cc/idb-traffic-weekly)
-- [metadata](http://tiny.cc/idb-traffic-metadata)
+- [daily](https://drive.google.com/file/d/1w7agEtKX54c7pGW5Ua1Q8d0cyZZvFZAM/view?usp=sharing)
+- [weekly](https://drive.google.com/file/d/1DGpJAjpGRjKCaIXH6Zg0P7Iq6yPzM8zd/view?usp=sharing)
+- [metadata](https://docs.google.com/spreadsheets/d/1PAS6uPwJ3nX-oh-6__-OPO8PXUA87yg_/edit?usp=sharing&ouid=101752774292135053408&rtpof=true&sd=true)
 
 Access the [sheets](http://tiny.cc/idb-traffic-sheets)
 
@@ -51,9 +51,9 @@ Access the [sheets](http://tiny.cc/idb-traffic-sheets)
 ```
 import pandas as pd
 
-daily = pd.read_csv('http://tiny.cc/idb-traffic-daily')
-weekly = pd.read_csv('http://tiny.cc/idb-traffic-weekly')
-metadata = pd.read_csv('http://tiny.cc/idb-traffic-metadata')
+daily = pd.read_csv('[daily]')
+weekly = pd.read_csv('[weekly]')
+metadata = pd.read_csv('[metadata]')
 ```
 
 ### R
@@ -61,17 +61,17 @@ metadata = pd.read_csv('http://tiny.cc/idb-traffic-metadata')
 ```
 library(readr)
 
-daily<-read_csv('http://tiny.cc/idb-traffic-daily')
-weekly<-read_csv('http://tiny.cc/idb-traffic-weekly')
-metadata<-read_csv('http://tiny.cc/idb-traffic-metadata')
+daily<-read_csv('[daily]')
+weekly<-read_csv('[weekly]')
+metadata<-read_csv('[metadata])
 ```
 
 ### Stata
 
 ```
-import delimited using "http://tiny.cc/idb-traffic-daily", clear
-import delimited using "http://tiny.cc/idb-traffic-weekly", clear
-import delimited using "http://tiny.cc/idb-traffic-medata", clear
+import delimited using "[daily]", clear
+import delimited using "[metadata]", clear
+import delimited using "[metadata]", clear
 ```
 
 ## Waze for Cities Partners
