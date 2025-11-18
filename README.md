@@ -124,8 +124,7 @@ IT Team
 - IDB Invest: Maiquel Sampaio de Melo 
 
 ### License
-
-This work is licensed under a Creative Commons IGO 3.0 - see the [LICENSE.md](LICENSE.md) file for details.
+See the [LICENSE.md](LICENSE.md) file for details.
 
 ### Acknowledgments
 
